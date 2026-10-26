@@ -19,21 +19,3 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
----
-
-Third-party data included in this repository
---------------------------------------------
-
-data/igem_parts.json and data/reference_vectors/PSB1*.json, PSB4C5.json
-    Source: iGEM Registry of Standard Biological Parts (iGEM Foundation),
-    https://registry.igem.org
-    License: Creative Commons Attribution 4.0 International (CC BY 4.0),
-    https://creativecommons.org/licenses/by/4.0/
-
-data/reference_vectors/*.json (all others)
-    Source: NCBI Nucleotide (GenBank). NCBI places no restrictions on the
-    use or distribution of the data contained therein.
-
-Restriction enzyme data is read at run time from REBASE as distributed with
-Biopython (http://rebase.neb.com).

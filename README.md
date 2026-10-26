@@ -158,6 +158,10 @@ kaynak satırı gösterilir. `tools/fetch_igem_parts.py` her parçanın
 lisansını API'den okur ve `cc-by` ile başlamayan bir kayıt gelirse onu
 atlar — lisans varsayılmaz, doğrulanır.
 
+Lisans ayrıntıları: kodun kendisi [MIT](LICENSE), veri dosyalarının
+lisansları [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) içinde
+dosya dosya yazılı.
+
 Betikler yalnızca veriyi yenilemek için elle çalıştırılır:
 
 ```bash
