@@ -1,0 +1,382 @@
+{
+ "vector_id": "PBR322",
+ "accession": "J01749",
+ "version": "J01749.1",
+ "definition": "Cloning vector pBR322, complete sequence",
+ "organism": "Cloning vector pBR322",
+ "genbank_topology": "circular",
+ "length": 4361,
+ "sequence": "TTCTCATGTTTGACAGCTTATCATCGATAAGCTTTAATGCGGTAGTTTATCACAGTTAAATTGCTAACGCAGTCAGGCACCGTGTATGAAATCTAACAATGCGCTCATCGTCATCCTCGGCACCGTCACCCTGGATGCTGTAGGCATAGGCTTGGTTATGCCGGTACTGCCGGGCCTCTTGCGGGATATCGTCCATTCCGACAGCATCGCCAGTCACTATGGCGTGCTGCTAGCGCTATATGCGTTGATGCAATTTCTATGCGCACCCGTTCTCGGAGCACTGTCCGACCGCTTTGGCCGCCGCCCAGTCCTGCTCGCTTCGCTACTTGGAGCCACTATCGACTACGCGATCATGGCGACCACACCCGTCCTGTGGATCCTCTACGCCGGACGCATCGTGGCCGGCATCACCGGCGCCACAGGTGCGGTTGCTGGCGCCTATATCGCCGACATCACCGATGGGGAAGATCGGGCTCGCCACTTCGGGCTCATGAGCGCTTGTTTCGGCGTGGGTATGGTGGCAGGCCCCGTGGCCGGGGGACTGTTGGGCGCCATCTCCTTGCATGCACCATTCCTTGCGGCGGCGGTGCTCAACGGCCTCAACCTACTACTGGGCTGCTTCCTAATGCAGGAGTCGCATAAGGGAGAGCGTCGACCGATGCCCTTGAGAGCCTTCAACCCAGTCAGCTCCTTCCGGTGGGCGCGGGGCATGACTATCGTCGCCGCACTTATGACTGTCTTCTTTATCATGCAACTCGTAGGACAGGTGCCGGCAGCGCTCTGGGTCATTTTCGGCGAGGACCGCTTTCGCTGGAGCGCGACGATGATCGGCCTGTCGCTTGCGGTATTCGGAATCTTGCACGCCCTCGCTCAAGCCTTCGTCACTGGTCCCGCCACCAAACGTTTCGGCGAGAAGCAGGCCATTATCGCCGGCATGGCGGCCGACGCGCTGGGCTACGTCTTGCTGGCGTTCGCGACGCGAGGCTGGATGGCCTTCCCCATTATGATTCTTCTCGCTTCCGGCGGCATCGGGATGCCCGCGTTGCAGGCCATGCTGTCCAGGCAGGTAGATGACGACCATCAGGGACAGCTTCAAGGATCGCTCGCGGCTCTTACCAGCCTAACTTCGATCACTGGACCGCTGATCGTCACGGCGATTTATGCCGCCTCGGCGAGCACATGGAACGGGTTGGCATGGATTGTAGGCGCCGCCCTATACCTTGTCTGCCTCCCCGCGTTGCGTCGCGGTGCATGGAGCCGGGCCACCTCGACCTGAATGGAAGCCGGCGGCACCTCGCTAACGGATTCACCACTCCAAGAATTGGAGCCAATCAATTCTTGCGGAGAACTGTGAATGCGCAAACCAACCCTTGGCAGAACATATCCATCGCGTCCGCCATCTCCAGCAGCCGCACGCGGCGCATCTCGGGCAGCGTTGGGTCCTGGCCACGGGTGCGCATGATCGTGCTCCTGTCGTTGAGGACCCGGCTAGGCTGGCGGGGTTGCCTTACTGGTTAGCAGAATGAATCACCGATACGCGAGCGAACGTGAAGCGACTGCTGCTGCAAAACGTCTGCGACCTGAGCAACAACATGAATGGTCTTCGGTTTCCGTGTTTCGTAAAGTCTGGAAACGCGGAAGTCAGCGCCCTGCACCATTATGTTCCGGATCTGCATCGCAGGATGCTGCTGGCTACCCTGTGGAACACCTACATCTGTATTAACGAAGCGCTGGCATTGACCCTGAGTGATTTTTCTCTGGTCCCGCCGCATCCATACCGCCAGTTGTTTACCCTCACAACGTTCCAGTAACCGGGCATGTTCATCATCAGTAACCCGTATCGTGAGCATCCTCTCTCGTTTCATCGGTATCATTACCCCCATGAACAGAAATCCCCCTTACACGGAGGCATCAGTGACCAAACAGGAAAAAACCGCCCTTAACATGGCCCGCTTTATCAGAAGCCAGACATTAACGCTTCTGGAGAAACTCAACGAGCTGGACGCGGATGAACAGGCAGACATCTGTGAATCGCTTCACGACCACGCTGATGAGCTTTACCGCAGCTGCCTCGCGCGTTTCGGTGATGACGGTGAAAACCTCTGACACATGCAGCTCCCGGAGACGGTCACAGCTTGTCTGTAAGCGGATGCCGGGAGCAGACAAGCCCGTCAGGGCGCGTCAGCGGGTGTTGGCGGGTGTCGGGGCGCAGCCATGACCCAGTCACGTAGCGATAGCGGAGTGTATACTGGCTTAACTATGCGGCATCAGAGCAGATTGTACTGAGAGTGCACCATATGCGGTGTGAAATACCGCACAGATGCGTAAGGAGAAAATACCGCATCAGGCGCTCTTCCGCTTCCTCGCTCACTGACTCGCTGCGCTCGGTCGTTCGGCTGCGGCGAGCGGTATCAGCTCACTCAAAGGCGGTAATACGGTTATCCACAGAATCAGGGGATAACGCAGGAAAGAACATGTGAGCAAAAGGCCAGCAAAAGGCCAGGAACCGTAAAAAGGCCGCGTTGCTGGCGTTTTTCCATAGGCTCCGCCCCCCTGACGAGCATCACAAAAATCGACGCTCAAGTCAGAGGTGGCGAAACCCGACAGGACTATAAAGATACCAGGCGTTTCCCCCTGGAAGCTCCCTCGTGCGCTCTCCTGTTCCGACCCTGCCGCTTACCGGATACCTGTCCGCCTTTCTCCCTTCGGGAAGCGTGGCGCTTTCTCATAGCTCACGCTGTAGGTATCTCAGTTCGGTGTAGGTCGTTCGCTCCAAGCTGGGCTGTGTGCACGAACCCCCCGTTCAGCCCGACCGCTGCGCCTTATCCGGTAACTATCGTCTTGAGTCCAACCCGGTAAGACACGACTTATCGCCACTGGCAGCAGCCACTGGTAACAGGATTAGCAGAGCGAGGTATGTAGGCGGTGCTACAGAGTTCTTGAAGTGGTGGCCTAACTACGGCTACACTAGAAGGACAGTATTTGGTATCTGCGCTCTGCTGAAGCCAGTTACCTTCGGAAAAAGAGTTGGTAGCTCTTGATCCGGCAAACAAACCACCGCTGGTAGCGGTGGTTTTTTTGTTTGCAAGCAGCAGATTACGCGCAGAAAAAAAGGATCTCAAGAAGATCCTTTGATCTTTTCTACGGGGTCTGACGCTCAGTGGAACGAAAACTCACGTTAAGGGATTTTGGTCATGAGATTATCAAAAAGGATCTTCACCTAGATCCTTTTAAATTAAAAATGAAGTTTTAAATCAATCTAAAGTATATATGAGTAAACTTGGTCTGACAGTTACCAATGCTTAATCAGTGAGGCACCTATCTCAGCGATCTGTCTATTTCGTTCATCCATAGTTGCCTGACTCCCCGTCGTGTAGATAACTACGATACGGGAGGGCTTACCATCTGGCCCCAGTGCTGCAATGATACCGCGAGACCCACGCTCACCGGCTCCAGATTTATCAGCAATAAACCAGCCAGCCGGAAGGGCCGAGCGCAGAAGTGGTCCTGCAACTTTATCCGCCTCCATCCAGTCTATTAATTGTTGCCGGGAAGCTAGAGTAAGTAGTTCGCCAGTTAATAGTTTGCGCAACGTTGTTGCCATTGCTGCAGGCATCGTGGTGTCACGCTCGTCGTTTGGTATGGCTTCATTCAGCTCCGGTTCCCAACGATCAAGGCGAGTTACATGATCCCCCATGTTGTGCAAAAAAGCGGTTAGCTCCTTCGGTCCTCCGATCGTTGTCAGAAGTAAGTTGGCCGCAGTGTTATCACTCATGGTTATGGCAGCACTGCATAATTCTCTTACTGTCATGCCATCCGTAAGATGCTTTTCTGTGACTGGTGAGTACTCAACCAAGTCATTCTGAGAATAGTGTATGCGGCGACCGAGTTGCTCTTGCCCGGCGTCAACACGGGATAATACCGCGCCACATAGCAGAACTTTAAAAGTGCTCATCATTGGAAAACGTTCTTCGGGGCGAAAACTCTCAAGGATCTTACCGCTGTTGAGATCCAGTTCGATGTAACCCACTCGTGCACCCAACTGATCTTCAGCATCTTTTACTTTCACCAGCGTTTCTGGGTGAGCAAAAACAGGAAGGCAAAATGCCGCAAAAAAGGGAATAAGGGCGACACGGAAATGTTGAATACTCATACTCTTCCTTTTTCAATATTATTGAAGCATTTATCAGGGTTATTGTCTCATGAGCGGATACATATTTGAATGTATTTAGAAAAATAAACAAATAGGGGTTCCGCGCACATTTCCCCGAAAAGTGCCACCTGACGTCTAAGAAACCATTATTATCATGACATTAACCTATAAAAATAGGCGTATCACGAGGCCCTTTCGTCTTCAAGAA",
+ "features": [
+  {
+   "type": "misc_binding",
+   "start": 24,
+   "end": 27,
+   "strand": 1,
+   "label": "",
+   "note": ""
+  },
+  {
+   "type": "regulatory",
+   "start": 27,
+   "end": 33,
+   "strand": -1,
+   "label": "promoter P1 (6)",
+   "note": "promoter P1 (6)"
+  },
+  {
+   "type": "misc_binding",
+   "start": 39,
+   "end": 42,
+   "strand": 1,
+   "label": "",
+   "note": ""
+  },
+  {
+   "type": "regulatory",
+   "start": 43,
+   "end": 49,
+   "strand": 1,
+   "label": "promoter P2 (6)",
+   "note": "promoter P2 (6)"
+  },
+  {
+   "type": "misc_binding",
+   "start": 53,
+   "end": 56,
+   "strand": 1,
+   "label": "",
+   "note": ""
+  },
+  {
+   "type": "misc_binding",
+   "start": 67,
+   "end": 70,
+   "strand": 1,
+   "label": "",
+   "note": ""
+  },
+  {
+   "type": "misc_binding",
+   "start": 80,
+   "end": 83,
+   "strand": 1,
+   "label": "",
+   "note": ""
+  },
+  {
+   "type": "CDS",
+   "start": 86,
+   "end": 1276,
+   "strand": 1,
+   "label": "tet",
+   "note": ""
+  },
+  {
+   "type": "misc_feature",
+   "start": 141,
+   "end": 142,
+   "strand": -1,
+   "label": "Endo.Sce I cleavage site coordinated with site at base 146 (10)",
+   "note": "Endo.Sce I cleavage site coordinated with site at base 146 (10)"
+  },
+  {
+   "type": "misc_feature",
+   "start": 146,
+   "end": 147,
+   "strand": 1,
+   "label": "tet",
+   "note": "Endo.Sce I cleavage site coordinated with site at base 142 (10)"
+  },
+  {
+   "type": "misc_binding",
+   "start": 411,
+   "end": 414,
+   "strand": 1,
+   "label": "tet",
+   "note": ""
+  },
+  {
+   "type": "misc_difference",
+   "start": 426,
+   "end": 426,
+   "strand": 1,
+   "label": "tet",
+   "note": "conflict"
+  },
+  {
+   "type": "misc_binding",
+   "start": 469,
+   "end": 472,
+   "strand": 1,
+   "label": "tet",
+   "note": ""
+  },
+  {
+   "type": "old_sequence",
+   "start": 526,
+   "end": 528,
+   "strand": 1,
+   "label": "tet",
+   "note": ""
+  },
+  {
+   "type": "repeat_region",
+   "start": 1515,
+   "end": 1519,
+   "strand": -1,
+   "label": "gamma-delta insertion target sequence",
+   "note": "gamma-delta insertion target sequence"
+  },
+  {
+   "type": "misc_feature",
+   "start": 1636,
+   "end": 1762,
+   "strand": 1,
+   "label": "from pSC101 (bp 1860-1986)",
+   "note": "from pSC101 (bp 1860-1986)"
+  },
+  {
+   "type": "repeat_region",
+   "start": 1788,
+   "end": 1792,
+   "strand": -1,
+   "label": "gamma-delta insertion target sequence",
+   "note": "gamma-delta insertion target sequence"
+  },
+  {
+   "type": "misc_difference",
+   "start": 1891,
+   "end": 1892,
+   "strand": 1,
+   "label": "conflict",
+   "note": "conflict"
+  },
+  {
+   "type": "old_sequence",
+   "start": 1892,
+   "end": 1893,
+   "strand": 1,
+   "label": "",
+   "note": ""
+  },
+  {
+   "type": "regulatory",
+   "start": 1905,
+   "end": 1910,
+   "strand": 1,
+   "label": "",
+   "note": ""
+  },
+  {
+   "type": "regulatory",
+   "start": 1905,
+   "end": 1909,
+   "strand": 1,
+   "label": "Shine-Dalgarno sequence",
+   "note": "Shine-Dalgarno sequence"
+  },
+  {
+   "type": "misc_difference",
+   "start": 1913,
+   "end": 1914,
+   "strand": 1,
+   "label": "conflict",
+   "note": "conflict"
+  },
+  {
+   "type": "old_sequence",
+   "start": 1914,
+   "end": 1915,
+   "strand": 1,
+   "label": "",
+   "note": ""
+  },
+  {
+   "type": "CDS",
+   "start": 1915,
+   "end": 2106,
+   "strand": 1,
+   "label": "ROP protein",
+   "note": ""
+  },
+  {
+   "type": "misc_feature",
+   "start": 2011,
+   "end": 2167,
+   "strand": 1,
+   "label": "H-strand Y effector site",
+   "note": "H-strand Y effector site"
+  },
+  {
+   "type": "repeat_region",
+   "start": 2245,
+   "end": 2249,
+   "strand": -1,
+   "label": "gamma-delta insertion target sequence",
+   "note": "gamma-delta insertion target sequence"
+  },
+  {
+   "type": "misc_feature",
+   "start": 2351,
+   "end": 2414,
+   "strand": -1,
+   "label": "L-strand Y effector site",
+   "note": "L-strand Y effector site"
+  },
+  {
+   "type": "misc_binding",
+   "start": 2439,
+   "end": 2447,
+   "strand": 1,
+   "label": "",
+   "note": ""
+  },
+  {
+   "type": "rep_origin",
+   "start": 2535,
+   "end": 2535,
+   "strand": 1,
+   "label": "",
+   "note": ""
+  },
+  {
+   "type": "old_sequence",
+   "start": 2729,
+   "end": 2730,
+   "strand": 1,
+   "label": "revision according to (17)",
+   "note": "revision according to (17)"
+  },
+  {
+   "type": "old_sequence",
+   "start": 2729,
+   "end": 2729,
+   "strand": 1,
+   "label": "",
+   "note": ""
+  },
+  {
+   "type": "old_sequence",
+   "start": 2730,
+   "end": 2730,
+   "strand": 1,
+   "label": "revision according to (16)",
+   "note": "revision according to (16)"
+  },
+  {
+   "type": "mobile_element",
+   "start": 3148,
+   "end": 4361,
+   "strand": 1,
+   "label": "",
+   "note": ""
+  },
+  {
+   "type": "repeat_region",
+   "start": 3148,
+   "end": 3185,
+   "strand": 1,
+   "label": "corresponds to one of the 38bp repeats found in Tn3 (bp 1-38 and complement (4920-4957))",
+   "note": "corresponds to one of the 38bp repeats found in Tn3 (bp 1-38 and complement (4920-4957))"
+  },
+  {
+   "type": "CDS",
+   "start": 3293,
+   "end": 4153,
+   "strand": -1,
+   "label": "bla",
+   "note": "E-286"
+  },
+  {
+   "type": "sig_peptide",
+   "start": 4085,
+   "end": 4153,
+   "strand": -1,
+   "label": "bla",
+   "note": ""
+  },
+  {
+   "type": "mat_peptide",
+   "start": 3296,
+   "end": 4084,
+   "strand": -1,
+   "label": "bla",
+   "note": ""
+  },
+  {
+   "type": "regulatory",
+   "start": 4161,
+   "end": 4165,
+   "strand": -1,
+   "label": "Shine-Dalgarno sequence",
+   "note": "Shine-Dalgarno sequence"
+  },
+  {
+   "type": "regulatory",
+   "start": 4188,
+   "end": 4194,
+   "strand": -1,
+   "label": "promoter P3 (6)",
+   "note": "promoter P3 (6)"
+  },
+  {
+   "type": "misc_binding",
+   "start": 4268,
+   "end": 4271,
+   "strand": -1,
+   "label": "",
+   "note": ""
+  },
+  {
+   "type": "misc_binding",
+   "start": 4280,
+   "end": 4283,
+   "strand": -1,
+   "label": "",
+   "note": ""
+  },
+  {
+   "type": "misc_binding",
+   "start": 4285,
+   "end": 4288,
+   "strand": -1,
+   "label": "",
+   "note": ""
+  },
+  {
+   "type": "misc_binding",
+   "start": 4296,
+   "end": 4299,
+   "strand": -1,
+   "label": "",
+   "note": ""
+  },
+  {
+   "type": "misc_binding",
+   "start": 4311,
+   "end": 4314,
+   "strand": -1,
+   "label": "",
+   "note": ""
+  },
+  {
+   "type": "misc_binding",
+   "start": 4317,
+   "end": 4320,
+   "strand": -1,
+   "label": "",
+   "note": ""
+  },
+  {
+   "type": "misc_binding",
+   "start": 4331,
+   "end": 4334,
+   "strand": -1,
+   "label": "",
+   "note": ""
+  }
+ ],
+ "fetched": "2026-10-26",
+ "source": "NCBI Nucleotide J01749.1"
+}

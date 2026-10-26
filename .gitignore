@@ -1,0 +1,25 @@
+# Üretilen veritabanı - uygulama her açılışta parts_seed.py'den kurar.
+# Depoya girmemeli: bulutta zaten sıfırdan kuruluyor, yerelde de
+# herkesin kendi kayıtları kendinde kalmalı.
+data/*.db
+data/*.db-journal
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# Ortam ve sırlar
+.env
+.streamlit/secrets.toml
+
+# İşletim sistemi
+Thumbs.db
+.DS_Store
+
+# İndirilen ham GenBank dosyaları - yalnızca fetch betiğinin önbelleği.
+# Depoya giren asıl veri data/reference_vectors/*.json; ham kayda
+# ihtiyaç olursa aksesyon numarasıyla yeniden çekilir.
+data/reference_vectors/_genbank/
