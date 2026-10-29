@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from core import provenance
+from core.extracted_seed import extracted_parts
 from core.igem_seed import igem_parts
 from core.parts_seed import ALL_PARTS, HOSTS
 
@@ -118,7 +119,8 @@ def init_db(force_reseed: bool = False) -> None:
         con.executescript(SCHEMA)
 
         if force_reseed:
-            con.execute("DELETE FROM parts WHERE source IN ('seed', 'igem')")
+            con.execute(
+                "DELETE FROM parts WHERE source IN ('seed','igem','vector')")
             con.execute("DELETE FROM hosts")
 
         n_parts = con.execute(
@@ -137,6 +139,16 @@ def init_db(force_reseed: bool = False) -> None:
         if n_igem != len(igem):
             con.execute("DELETE FROM parts WHERE source = 'igem'")
             for part in igem:
+                _insert_part(con, part)
+
+        # Referans vektörlerden çıkarılmış parçalar üçüncü kaynak.
+        cikarilan = extracted_parts()
+        n_vektor = con.execute(
+            "SELECT COUNT(*) FROM parts WHERE source = 'vector'"
+        ).fetchone()[0]
+        if n_vektor != len(cikarilan):
+            con.execute("DELETE FROM parts WHERE source = 'vector'")
+            for part in cikarilan:
                 _insert_part(con, part)
 
         n_hosts = con.execute("SELECT COUNT(*) FROM hosts").fetchone()[0]

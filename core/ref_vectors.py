@@ -347,30 +347,105 @@ SEVA_ORI = {
 }
 
 
+# Kargo hanesi. Bu tablo da TAHMİN DEĞİL: 99 kaydın öznitelik tabloları
+# kargo hanesine göre gruplanıp okundu. "2" olanların hepsinde lacZa_19,
+# "6" olanların hepsinde luxCDABE, "8" olanların hepsinde xylS ve Pm
+# görünüyor.
+SEVA_CARGO: dict[str, tuple[str, str]] = {
+    "1": ("boş çoklu klonlama bölgesi",
+          "Kargo yok, yalnızca standart klonlama bölgesi. Kendi "
+          "kasetinizi kuracaksanız başlangıç noktası budur."),
+    "2": ("lacZ-alfa (pUC19 dizilimi)",
+          "Mavi/beyaz tarama yapılabilir. Klonlama bölgesi pUC19'un "
+          "polilinker dizilimindedir; konağın lacZ-delta-M15 taşıması "
+          "gerekir."),
+    "2S": ("lacZ-alfa + I-SceI bölgesi",
+           "Mavi/beyaz taramaya ek olarak I-SceI tanıma bölgesi var. "
+           "I-SceI 18 bazlık bir diziyi tanır ve bakteri genomunda "
+           "pratik olarak hiç bulunmaz; bu yüzden plazmiti hücre içinde "
+           "tek bir yerden kesmek ve kromozoma entegrasyonu seçmek için "
+           "kullanılır."),
+    "3": ("lacZ-alfa (pUC18 dizilimi)",
+          "2 numaralı kargoyla aynı, farkı klonlama bölgesinin ters "
+          "yönde olmasıdır. Insertin promotöre göre hangi yönde "
+          "gireceğini seçmek istediğinizde ikisi arasından seçersiniz."),
+    "4": ("lacI-q + Ptrc promotörü",
+          "IPTG ile indüklenen ifade kaseti. Plazmit kendi lacI-q "
+          "genini taşıdığı için baskılama konaktan bağımsızdır - "
+          "E. coli dışı bakterilerde çalışmanın yolu budur, çünkü o "
+          "konaklarda kromozomal lacI yoktur."),
+    "5": ("lacZ (tam gen)",
+          "Alfa parçası değil, beta-galaktosidazın tamamı. Promotör "
+          "gücü ölçmek için klasik muhabir: ONPG ile renk ölçümü "
+          "yaparak ifadeyi sayısallaştırırsınız."),
+    "5T": ("lacZ (terminatörlü sürüm)",
+           "5 numaralı kargonun varyantı."),
+    "6": ("luxCDABE ışıma operonu",
+          "Hücre kendi ışığını üretir - substrat eklemeniz gerekmez, "
+          "çünkü luxC, luxD ve luxE substratı da sentezler. Canlı "
+          "hücrede zamana bağlı ifade izlemek için en pratik muhabirdir; "
+          "floresan proteinlerin aksine olgunlaşma süresi yoktur."),
+    "7C": ("CFP (camgöbeği floresan protein)",
+           "Floresan muhabir. Aynı hücrede birden çok sinyali ayrı ayrı "
+           "izlemek için 7C/7D/7R/7Y dörtlüsü farklı dalga boylarında "
+           "çalışır."),
+    "7D": ("DsRed2 (kırmızı floresan protein)",
+           "Floresan muhabir; tetramerik yapısı füzyon proteinlerinde "
+           "sorun çıkarabilir, serbest muhabir olarak kullanın."),
+    "7R": ("mCherry (kırmızı floresan protein)",
+           "Monomerik kırmızı muhabir. DsRed2'ye göre füzyonlarda daha "
+           "güvenlidir."),
+    "7Y": ("YFP (sarı floresan protein)",
+           "Floresan muhabir; CFP ile birlikte FRET ölçümlerinde "
+           "kullanılan çifttir."),
+    "8": ("xylS + Pm promotörü",
+          "m-toluat ile indüklenen ifade kaseti. Pseudomonas'ta çok "
+          "kullanılır ve IPTG'ye göre üstünlüğü, indükleyicinin ucuz "
+          "olması ve konağın onu tüketmemesidir. lacI/Ptrc sisteminin "
+          "çalışmadığı konaklarda alternatiftir."),
+}
+
+
 def _seva_entry(code: str) -> dict[str, Any]:
-    """pSEVA kodundan editöryel kayıt üret (örn. '241')."""
-    m, o = code[0], code[1]
+    """pSEVA kodundan editöryel kayıt üret (örn. '241', '227C', '112S').
+
+    Kod üç haneli: [marker][orijin][kargo]. Kargo hanesi harfle
+    uzatılmış olabilir (2S, 5T, 7C...). Üç tablo da kayıtların kendi
+    öznitelik tablolarından okunarak kuruldu.
+    """
+    m, o, kargo_kodu = code[0], code[1], code[2:]
     marker, antibiyotik = SEVA_MARKER[m]
     ori_ad, ori_ozet, ori_not = SEVA_ORI[o]
+    kargo_ad, kargo_not = SEVA_CARGO.get(
+        kargo_kodu, ("tanımlanmamış kargo", ""))
+
+    kullanim = "ifade" if kargo_kodu in ("4", "8") else "klonlama"
     return {
         "name": f"pSEVA{code}",
-        "ozet": f"SEVA standart iskeleti: {marker.split()[0]} + {ori_ad}.",
-        "kullanim": "klonlama",
+        "ozet": f"SEVA: {marker.split()[0]} + {ori_ad} + {kargo_ad}.",
+        "kullanim": kullanim,
         "kopya": ori_ozet,
         "inc_group": ori_ad,
         "markerlar": [marker],
-        "promotor": "yok - kargo kendi promotörünü getirir",
+        "promotor": ("Ptrc (IPTG)" if kargo_kodu == "4"
+                     else "Pm (m-toluat)" if kargo_kodu == "8"
+                     else "yok - kargo kendi promotörünü getirir"),
         "mcs": "SEVA standart çoklu klonlama bölgesi (PacI ve SpeI arasında)",
         "organizma": "geniş (Gram-negatif)",
+        "seva_marker": m,
+        "seva_ori": o,
+        "seva_cargo": kargo_kodu,
         "notlar": (
             f"SEVA koleksiyonu, parçaları sabit tutup tek tek "
             f"değiştirebilmek için tasarlandı. Her iskelette aynı mimari "
             f"var: marker, orijin ve kargo üç ayrı modül halinde duruyor "
             f"ve aralarındaki sınırlar hep aynı enzimlerle kesiliyor. "
-            f"Yani orijini değiştirmek istediğinizde yapının geri kalanını "
-            f"yeniden kurmanız gerekmiyor.\n\n"
-            f"Bu iskelette seçilim {antibiyotik} ile yapılır. "
-            f"Orijin {ori_ad}: {ori_not}\n\n"
+            f"Orijini değiştirmek istediğinizde yapının geri kalanını "
+            f"yeniden kurmanız gerekmiyor - adın üç hanesi tam olarak bu "
+            f"üç modülü gösterir.\n\n"
+            f"**Marker ({m}):** {marker}, seçilim {antibiyotik} ile.\n\n"
+            f"**Orijin ({o}):** {ori_ad}. {ori_not}\n\n"
+            f"**Kargo ({kargo_kodu}):** {kargo_ad}. {kargo_not}\n\n"
             f"Kargo bölgesinin iki yanında T0 ve T1 terminatörleri var; "
             f"bu, kargo ile iskelet arasındaki okuma geçişini keser ve "
             f"ifadeyi ölçülebilir kılar. Ayrıca oriT taşıdığı için "
@@ -381,9 +456,12 @@ def _seva_entry(code: str) -> dict[str, Any]:
     }
 
 
-for _kod in ("111", "211", "311", "411", "511", "611",
-             "221", "231", "241", "251", "321", "331", "341", "351"):
-    CURATED[f"PSEVA{_kod}"] = _seva_entry(_kod)
+# Diskteki her SEVA kaydı için editöryel kayıt üret - koleksiyon
+# büyürse elle liste güncellemeye gerek kalmasın.
+for _yol in sorted(DATA.glob("PSEVA*.json")):
+    _kod = _yol.stem[5:]
+    if len(_kod) >= 3 and _kod[0] in SEVA_MARKER and _kod[1] in SEVA_ORI:
+        CURATED[f"PSEVA{_kod}"] = _seva_entry(_kod)
 
 
 # ---------------------------------------------------------------------------
@@ -693,10 +771,7 @@ ORDER = [
     "PTRC99A", "PBAD24", "PBAD18", "PBAD33", "PSC101",
     # BioBrick iskeletleri
     "PSB1C3", "PSB1A3", "PSB1K3", "PSB4C5",
-    # SEVA standart koleksiyonu
-    "PSEVA111", "PSEVA211", "PSEVA311", "PSEVA411", "PSEVA511", "PSEVA611",
-    "PSEVA221", "PSEVA231", "PSEVA241", "PSEVA251",
-    "PSEVA321", "PSEVA331", "PSEVA341", "PSEVA351",
+    # SEVA koleksiyonu ORDER'a asagida toplu eklenir.
     # Genis konak arali
     "PBBR1MCS", "PBHR1", "RSF1010",
     # Genom duzenleme
@@ -704,6 +779,13 @@ ORDER = [
     # Gram-pozitif ve diger bakteriler
     "PUB110", "PC194", "PNZ8048", "PWV01", "PCG1",
 ]
+
+
+# SEVA kayitlari marker/orijin/kargo sirasiyla eklenir.
+ORDER = ORDER + sorted(
+    (p.stem for p in DATA.glob("PSEVA*.json")),
+    key=lambda v: (v[5], v[6], v[7:]),
+)
 
 
 def organisms() -> list[str]:
@@ -715,6 +797,50 @@ def organisms() -> list[str]:
         if o not in gorulen:
             gorulen.append(o)
     return gorulen
+
+
+def seva_facets() -> dict[str, dict[str, str]]:
+    """SEVA süzgeçleri için hane -> açıklama tabloları."""
+    return {
+        "marker": {k: v[0] for k, v in SEVA_MARKER.items()},
+        "ori": {k: v[0] for k, v in SEVA_ORI.items()},
+        "cargo": {k: v[0] for k, v in SEVA_CARGO.items()},
+    }
+
+
+def filter_vectors(
+    organism: str | None = None,
+    use: str | None = None,
+    seva_marker: str | None = None,
+    seva_ori: str | None = None,
+    seva_cargo: str | None = None,
+    search: str = "",
+) -> list[str]:
+    """Vektörleri süz. 126 kaydı tek listede sunmak kullanışsızdır."""
+    out = []
+    ara = (search or "").strip().lower()
+    for vid in available():
+        rec = load(vid)
+        if not rec:
+            continue
+        if organism and rec.get("organizma") != organism:
+            continue
+        if use and rec.get("kullanim") != use:
+            continue
+        if seva_marker and rec.get("seva_marker") != seva_marker:
+            continue
+        if seva_ori and rec.get("seva_ori") != seva_ori:
+            continue
+        if seva_cargo and rec.get("seva_cargo") != seva_cargo:
+            continue
+        if ara:
+            govde = " ".join(str(rec.get(k, "")) for k in
+                             ("name", "ozet", "inc_group", "accession"))
+            govde += " " + " ".join(rec.get("markerlar") or [])
+            if ara not in govde.lower():
+                continue
+        out.append(vid)
+    return out
 
 
 def by_organism(organism: str) -> list[str]:

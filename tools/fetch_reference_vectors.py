@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import datetime as _dt
 import json
+import re
 import sys
 import time
 from pathlib import Path
@@ -39,25 +40,8 @@ WANTED: dict[str, tuple[str, int]] = {
     "PTRC99A":  ("U13872", 4176),
     "PBSIIKS":  ("X52327", 2961),
     "PSC101":   ("NC_002056", 9263),
-    # --- SEVA koleksiyonu (Standard European Vector Architecture) --------
-    # Adlandirma sistematiktir: pSEVA[marker][orijin][kargo]. Asagidaki
-    # set butun marker harflerini ve bes farkli orijini kapsiyor; kargo
-    # hanesi hepsinde ayni (varsayilan klonlama bolgesi) oldugu icin
-    # aradaki fark yalnizca marker ve orijindir.
-    "PSEVA111":  ("JX560321", 2094),
-    "PSEVA211":  ("JX560326", 1993),
-    "PSEVA311":  ("JX560331", 1838),
-    "PSEVA411":  ("JX560336", 2052),
-    "PSEVA511":  ("JX560341", 2330),
-    "PSEVA611":  ("JX560346", 1871),
-    "PSEVA221":  ("JX560327", 3823),
-    "PSEVA231":  ("JX560328", 3123),
-    "PSEVA241":  ("JX560329", 3570),
-    "PSEVA251":  ("JX560330", 5275),
-    "PSEVA321":  ("JX560332", 3668),
-    "PSEVA331":  ("JX560333", 2968),
-    "PSEVA341":  ("JX560334", 3415),
-    "PSEVA351":  ("JX560335", 5120),
+    # SEVA koleksiyonu burada listelenmez; discover_seva() ile
+    # NCBI'dan kesfedilir ve WANTED'a eklenir.
     # --- Genom duzenleme (lambda-Red) ------------------------------------
     "PKD46":     ("AY048746", 6329),
     "PKD4":      ("AY048743", 3267),
@@ -78,6 +62,41 @@ WANTED: dict[str, tuple[str, int]] = {
 KEEP_QUALIFIERS = ("gene", "product", "note", "label", "standard_name",
                    "bound_moiety", "regulatory_class", "mobile_element_type")
 SKIP_TYPES = {"source", "gene"}  # gene, CDS ile birebir tekrar ediyor
+
+
+def discover_seva() -> dict[str, tuple[str, int]]:
+    """SEVA koleksiyonunu NCBI'dan keşfet.
+
+    99 aksesyonu elle yazmak yerine koleksiyonu sorguluyoruz: liste
+    büyürse betik kendiliğinden yakalar ve yanlış kopyalama riski
+    kalmaz. Beklenen uzunluk da kaydın kendi üst verisinden alınır,
+    yani indirilen dizi eksikse yine fark edilir.
+    """
+    r = requests.get(f"{EUTILS}/esearch.fcgi", headers=HEADERS, timeout=90,
+                     params={"db": "nuccore", "retmax": 300,
+                             "retmode": "json", "tool": "vectorlab",
+                             "term": '"Standard European Vector '
+                                     'Architecture"[All Fields]'})
+    r.raise_for_status()
+    uids = r.json()["esearchresult"].get("idlist", [])
+    out: dict[str, tuple[str, int]] = {}
+    for i in range(0, len(uids), 100):
+        s2 = requests.get(f"{EUTILS}/esummary.fcgi", headers=HEADERS,
+                          timeout=90,
+                          params={"db": "nuccore", "retmode": "json",
+                                  "tool": "vectorlab",
+                                  "id": ",".join(uids[i:i + 100])})
+        s2.raise_for_status()
+        res = s2.json()["result"]
+        for u in res.get("uids", []):
+            d = res[u]
+            m = re.search(r"\bpSEVA([0-9]{3}[A-Z]?)\b", d.get("title", ""))
+            if not m:
+                continue
+            out[f"PSEVA{m.group(1)}"] = (d.get("caption", ""),
+                                         int(d.get("slen", 0)))
+        time.sleep(0.4)
+    return out
 
 
 def fetch_genbank(acc: str) -> str:
@@ -127,14 +146,23 @@ def to_record(vector_id: str, acc: str, gb_text: str) -> dict:
 def main() -> int:
     OUT.mkdir(parents=True, exist_ok=True)
     RAW.mkdir(parents=True, exist_ok=True)
+
+    hedef = dict(WANTED)
+    try:
+        seva = discover_seva()
+        hedef.update(seva)
+        print(f"SEVA koleksiyonu: {len(seva)} vektör bulundu.")
+    except Exception as exc:
+        print(f"SEVA keşfi başarısız ({exc}); yalnızca sabit liste.")
+
     bad = []
-    for vid, (acc, expect) in WANTED.items():
+    for vid, (acc, expect) in hedef.items():
         raw = RAW / f"{acc}.gb"
         if not raw.exists() or raw.stat().st_size < 500:
             raw.write_text(fetch_genbank(acc), encoding="utf-8")
             time.sleep(0.5)
         rec = to_record(vid, acc, raw.read_text(encoding="utf-8"))
-        if rec["length"] != expect:
+        if expect and rec["length"] != expect:
             bad.append(f"{vid}: {rec['length']} bp geldi, {expect} bekleniyordu")
             continue
         (OUT / f"{vid}.json").write_text(

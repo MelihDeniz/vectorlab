@@ -292,3 +292,63 @@ def test_kaydedilen_yapi_surum_izi_tasir():
     iz = kayitlar["test_surum_izi"].get("provenance", "")
     assert provenance.VERSION in iz
     db.delete_construct("test_surum_izi")
+
+
+# ---------------------------------------------------------------------------
+# Vektörlerden çıkarılmış parçalar
+# ---------------------------------------------------------------------------
+
+
+def test_cikarilan_parcalar_kaynak_vektorde_birebir_bulunur():
+    """Her çıkarılan parça, kaydettiği aksesyon ve koordinatta
+    gerçekten o dizide olmalı. Bu, parçanın kanıtını sınar."""
+    from core import extracted_seed as xs
+    from core.seq_utils import revcomp
+    aksesyon_to_vid = {rv.load(v)["accession"]: v for v in rv.available()}
+    denetlenen = 0
+    for p in xs.extracted_parts():
+        ak, _, aralik = p["accession"].partition(":")
+        vid = aksesyon_to_vid.get(ak)
+        if not vid:
+            continue
+        ters = "ters zincir" in aralik
+        aralik = aralik.split(" ")[0]
+        bas, _, son = aralik.partition("..")
+        dizi = rv.region(vid, int(bas), int(son))
+        if ters:
+            dizi = revcomp(dizi)
+        assert dizi == p["sequence"], p["part_id"]
+        denetlenen += 1
+    assert denetlenen > 30, f"yalnızca {denetlenen} parça denetlendi"
+
+
+def test_cikarilan_parcalar_katalogda():
+    parcalar = {p["part_id"] for p in db.list_parts()
+                if p["source"] == "vector"}
+    assert len(parcalar) > 40
+
+
+def test_seva_koleksiyonu_tam():
+    seva = [v for v in rv.available() if v.startswith("PSEVA")]
+    assert len(seva) >= 95, f"yalnızca {len(seva)} SEVA vektörü"
+
+
+def test_seva_hane_tablolari_kayitla_tutar():
+    """Marker, orijin ve kargo haneleri kayıtların öznitelik
+    tablolarından türetildi; örneklerle doğrula."""
+    beklenen = [("PSEVA232", "lacZa_19"), ("PSEVA246", "luxC"),
+                ("PSEVA237R", "mcherry"), ("PSEVA528", "xylS"),
+                ("PSEVA414", "lacIq")]
+    for vid, iz in beklenen:
+        if vid not in rv.available():
+            continue
+        etiketler = " ".join(f["label"] for f in rv.genbank_features(vid))
+        assert iz in etiketler, f"{vid} içinde {iz} yok"
+
+
+def test_seva_suzgeci_calisir():
+    kanamisin = rv.filter_vectors(seva_marker="2")
+    assert kanamisin
+    for vid in kanamisin:
+        assert rv.load(vid)["seva_marker"] == "2"
+    assert len(rv.filter_vectors(seva_cargo="7R")) == 3

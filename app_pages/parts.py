@@ -8,6 +8,7 @@ from core.seq_utils import clean_seq, gc_percent
 
 SOURCE_TR = {"seed": "VectorLab çekirdek katalog",
              "igem": "iGEM Registry (CC BY 4.0)",
+             "vector": "referans vektörlerden çıkarıldı",
              "user": "sizin eklediğiniz"}
 
 counts = db.category_counts()

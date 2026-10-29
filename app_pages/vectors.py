@@ -45,20 +45,61 @@ def _commercial():
 labels = {v["vector_id"]: f"{v['name']} — {v['length']} bp · {v['kullanim']}"
           for v in vectors}
 
-top = st.container(horizontal=True, vertical_alignment="bottom")
-with top:
+facet = rv.seva_facets()
+
+f1 = st.container(horizontal=True, vertical_alignment="bottom")
+with f1:
     organizmalar = ["tümü"] + rv.organisms()
-    org = st.selectbox(
+    org = f1.selectbox(
         "Hedef organizma", organizmalar,
-        format_func=lambda o: "Tümü" if o == "tümü" else o, width=300,
+        format_func=lambda o: "Tümü" if o == "tümü" else o, width=260,
         help="Vektörün hangi bakteride çoğalabildiği. E. coli plazmiti "
              "Bacillus'ta çoğalmaz; buradan süzerek doğru replikonu "
              "seçersiniz.",
     )
-    ids = ([v["vector_id"] for v in vectors] if org == "tümü"
-           else rv.by_organism(org))
-    vid = st.selectbox("Vektör", ids, format_func=lambda i: labels[i],
-                       width=330)
+    kullanim = f1.selectbox("Amaç", ["tümü", "klonlama", "ifade",
+                                     "genom düzenleme"],
+                            format_func=lambda u: u.capitalize(), width=180)
+    arama = f1.text_input("Ara", placeholder="pUC, KanR, p15A…", width=200)
+
+st.caption(
+    f"Katalogda {len(vectors)} referans vektör var; {len(facet['cargo'])} "
+    "farklı kargo ve altı marker ile SEVA koleksiyonunun tamamı dahil. "
+    "Aşağıdaki hanelerle süzebilirsiniz."
+)
+
+f2 = st.container(horizontal=True, vertical_alignment="bottom")
+with f2:
+    s_marker = f2.selectbox(
+        "SEVA markerı", ["tümü"] + list(facet["marker"]),
+        format_func=lambda k: ("Tümü" if k == "tümü"
+                               else f"{k} — {facet['marker'][k]}"), width=240)
+    s_ori = f2.selectbox(
+        "SEVA orijini", ["tümü"] + list(facet["ori"]),
+        format_func=lambda k: ("Tümü" if k == "tümü"
+                               else f"{k} — {facet['ori'][k]}"), width=240)
+    s_cargo = f2.selectbox(
+        "SEVA kargosu", ["tümü"] + list(facet["cargo"]),
+        format_func=lambda k: ("Tümü" if k == "tümü"
+                               else f"{k} — {facet['cargo'][k]}"), width=300)
+
+ids = rv.filter_vectors(
+    organism=None if org == "tümü" else org,
+    use=None if kullanim == "tümü" else kullanim,
+    seva_marker=None if s_marker == "tümü" else s_marker,
+    seva_ori=None if s_ori == "tümü" else s_ori,
+    seva_cargo=None if s_cargo == "tümü" else s_cargo,
+    search=arama,
+)
+if not ids:
+    st.info("Bu süzgeçlerle eşleşen vektör yok. Filtreleri gevşetin.",
+            icon=":material/search_off:")
+    st.stop()
+
+top = st.container(horizontal=True, vertical_alignment="bottom")
+with top:
+    vid = st.selectbox(f"Vektör ({len(ids)})", ids,
+                       format_func=lambda i: labels[i], width=400)
     benzerlik = st.slider(
         "Benzerlik eşiği (%)", 85.0, 100.0, 90.0, 0.5, width=240,
         help="Katalog parçaları bu orandan daha benzer bölgelerde "
