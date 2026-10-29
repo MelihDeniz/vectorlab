@@ -7,6 +7,7 @@ import streamlit as st
 from core import (
     assembly_methods as am, db, enzymes as ez, gel, protein,
     protocol as pr, ref_vectors as rv, report, troubleshoot as ts,
+    verification as vf,
 )
 from core.assembly import assemble, sort_canonical
 from core.cloning import fragments, plan
@@ -112,9 +113,10 @@ if insert_seq:
 
 st.divider()
 
-tab_pro, tab_gel, tab_prot, tab_montaj, tab_sorun, tab_rap = st.tabs(
+(tab_pro, tab_gel, tab_prot, tab_montaj, tab_dogrula, tab_sorun,
+ tab_rap) = st.tabs(
     ["Protokol", "Jel simülasyonu", "Protein", "Montaj yöntemleri",
-     "Sorun giderme", "Rapor"]
+     "Dizileme doğrulaması", "Sorun giderme", "Rapor"]
 )
 
 # ---------------------------------------------------------------------------
@@ -439,7 +441,123 @@ with tab_montaj:
 
 
 # ---------------------------------------------------------------------------
-# 5. Sorun giderme
+# 6. Dizileme doğrulaması
+# ---------------------------------------------------------------------------
+
+with tab_dogrula:
+    alt_plan, alt_oku = st.tabs(["Dizileme planı", "Okumayı karşılaştır"])
+
+    with alt_plan:
+        st.caption(
+            "Sanger okuması ~900 nükleotiddir ve primerin hemen ardındaki "
+            "ilk 50 baz güvenilir okunmaz. Tek primerle uzun bir yapıyı "
+            "okutup 'doğruladım' demek, aradaki bölgeyi hiç görmemek "
+            "demektir. Burası baştan sona kapatmak için kaç primer "
+            "gerektiğini hesaplar."
+        )
+        d = st.container(horizontal=True, vertical_alignment="bottom")
+        okuma_uz = d.slider("Okuma uzunluğu (nt)", 400, 1200,
+                            vf.READ_LENGTH, 50, key="vf_read", width=240)
+        olu = d.slider("Primer sonrası okunmayan (nt)", 0, 120,
+                       vf.DEAD_ZONE, 10, key="vf_dead", width=260)
+        iki_zincir = d.toggle("İki zincirden de okut", value=False,
+                              key="vf_both")
+
+        splan = vf.sequencing_plan(seq, read_length=int(okuma_uz),
+                                   dead_zone=int(olu),
+                                   both_strands=iki_zincir)
+        sm = st.container(horizontal=True)
+        sm.metric("Primer", len(splan.primers))
+        sm.metric("Kapsanan", f"{splan.covered} / {splan.length} nt")
+        sm.metric("Kapsama", f"%{round(100 * splan.covered / max(splan.length, 1), 1)}")
+        sm.metric("Boşluk", len(splan.gaps))
+
+        for n in splan.notes:
+            {"hata": st.error, "uyari": st.warning,
+             "bilgi": st.info}.get(n["kind"], st.info)(
+                f"**{n['title']}** — {n['detail']}")
+
+        if splan.primers:
+            st.dataframe(
+                [{"Ad": p3.name, "Dizi": p3.sequence,
+                  "Konum": p3.position,
+                  "Yön": "+" if p3.strand > 0 else "−",
+                  "Tm": round(p3.tm, 1) if p3.tm else None,
+                  "GC": f"%{p3.gc}",
+                  "Okur": f"{p3.covers_from}–{p3.covers_to}",
+                  "Uyarı": "; ".join(p3.warnings) if p3.warnings else "—"}
+                 for p3 in splan.primers],
+                width="stretch", hide_index=True,
+                alt="Dizileme primerleri ve kapsadıkları bölgeler",
+            )
+            st.download_button(
+                "Dizileme primerlerini indir",
+                "ad,dizi,konum,yon,tm\n" + "\n".join(
+                    f"{p3.name},{p3.sequence},{p3.position},"
+                    f"{'+' if p3.strand > 0 else '-'},{p3.tm}"
+                    for p3 in splan.primers),
+                file_name=f"{ad}-dizileme-primerleri.csv", mime="text/csv",
+                icon=":material/download:",
+            )
+
+    with alt_oku:
+        st.caption(
+            "Dizileme sonucunu yapıştırın: tasarımla hizalanır ve her "
+            "fark tek tek çıkarılır. Kodlayan bölgedeki farkların amino "
+            "asit karşılığı da hesaplanır - sessiz mi, değiştiren mi, "
+            "yoksa erken durdurma mı."
+        )
+        okuma = st.text_area(
+            "Okunan dizi (FASTA ya da düz)", height=130,
+            placeholder="Dizileme firmasından gelen diziyi yapıştırın…",
+            key="vf_okuma",
+        )
+        k2 = st.container(horizontal=True, vertical_alignment="bottom")
+        kirp = k2.number_input("Baştan atılacak baz", 0, 200, 0,
+                               key="vf_trim", width=220,
+                               help="Kromatogramın başındaki güvenilmez "
+                                    "bölgeyi atmak için.")
+        cds_var = k2.toggle("Kodlayan bölge var", value=bool(insert_seq),
+                            key="vf_cds")
+        cds_bas = None
+        if cds_var:
+            cds_bas = k2.number_input(
+                "Başlama kodonunun konumu", 1, max(len(seq), 1),
+                min(1, len(seq)) or 1, key="vf_cdsbas", width=250)
+
+        if clean_seq(okuma):
+            rap2 = vf.compare_read(seq, okuma, cds_start=cds_bas,
+                                   trim=int(kirp))
+            om = st.container(horizontal=True)
+            om.metric("Benzerlik", f"%{rap2.identity}")
+            om.metric("Hizalanan", f"{rap2.aligned_from}–{rap2.aligned_to}")
+            om.metric("Okuma", f"{rap2.read_length} nt")
+            om.metric("Fark", len(rap2.differences))
+
+            for n in rap2.notes:
+                {"hata": st.error, "uyari": st.warning,
+                 "bilgi": st.info}.get(n["kind"], st.info)(
+                    f"**{n['title']}** — {n['detail']}")
+
+            if rap2.differences:
+                st.dataframe(
+                    [{"Konum": f2.position,
+                      "Tür": {"degisim": "değişim", "eksik": "eksik baz",
+                              "fazla": "fazla baz"}[f2.kind],
+                      "Tasarımda": f2.expected, "Okumada": f2.observed,
+                      "Kodon": f2.codon_no or "—",
+                      "Protein": f2.aa_change or "—"}
+                     for f2 in rap2.differences],
+                    width="stretch", hide_index=True,
+                    alt="Okuma ile tasarım arasındaki farklar",
+                )
+        else:
+            st.info("Karşılaştırmak için bir okuma yapıştırın.",
+                    icon=":material/content_paste:")
+
+
+# ---------------------------------------------------------------------------
+# 7. Sorun giderme
 # ---------------------------------------------------------------------------
 
 with tab_sorun:

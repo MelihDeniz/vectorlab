@@ -164,6 +164,15 @@ Tasarımı tezgâha taşıyan sayfa. Dört sekme:
   dizilemeye kadar fark edilmez; Gibson'da örtüşmenin Tm'i ve GC'si
   tutmazsa birleşme olmaz. Sipariş edilecek primerler kuyruklarıyla
   birlikte üretilir ve CSV olarak indirilir.
+- **Dizileme doğrulaması** — iki bölüm. *Dizileme planı* yapıyı baştan
+  sona okutmak için kaç primer gerektiğini ve nereye konacaklarını
+  hesaplar; Sanger okumasının ~900 nt olduğunu ve primerin hemen
+  ardındaki ~50 bazın güvenilmez olduğunu hesaba katar, kapanmayan
+  bölgeleri açıkça gösterir. *Okumayı karşılaştır* dizileme sonucunu
+  tasarımla hizalar (Biopython `PairwiseAligner`), her farkı çıkarır ve
+  kodlayan bölgedekilerin amino asit karşılığını hesaplar: sessiz mi,
+  değiştiren mi, erken durdurma mı. Ters zincirden okunan diziyi kendi
+  bulup çevirir.
 - **Sorun giderme** — iki bölüm. *Çift kesim uyumluluğu* iki enzimin
   aynı tüpte kullanılıp kullanılamayacağını denetler: sıcaklıklar,
   metilasyon, uç uyumu. Tampon seçimi bilinçli olarak dışarıda bırakıldı
@@ -480,6 +489,7 @@ core/
   cloning.py           restriksiyonla klonlama planı ve denetimi
   assembly_methods.py  Golden Gate, Gibson, mutagenez
   troubleshoot.py      çift kesim denetimi, sorun giderme ağacı
+  verification.py      dizileme planı ve okuma karşılaştırması
   codon.py             CAI ve kodon optimizasyonu
   structure.py         mRNA saç tokası taraması
   protocol.py          tasarımdan laboratuvar protokolü
