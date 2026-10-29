@@ -44,12 +44,21 @@ def _commercial():
 
 labels = {v["vector_id"]: f"{v['name']} — {v['length']} bp · {v['kullanim']}"
           for v in vectors}
-ids = [v["vector_id"] for v in vectors]
 
 top = st.container(horizontal=True, vertical_alignment="bottom")
 with top:
+    organizmalar = ["tümü"] + rv.organisms()
+    org = st.selectbox(
+        "Hedef organizma", organizmalar,
+        format_func=lambda o: "Tümü" if o == "tümü" else o, width=300,
+        help="Vektörün hangi bakteride çoğalabildiği. E. coli plazmiti "
+             "Bacillus'ta çoğalmaz; buradan süzerek doğru replikonu "
+             "seçersiniz.",
+    )
+    ids = ([v["vector_id"] for v in vectors] if org == "tümü"
+           else rv.by_organism(org))
     vid = st.selectbox("Vektör", ids, format_func=lambda i: labels[i],
-                       width=360)
+                       width=330)
     benzerlik = st.slider(
         "Benzerlik eşiği (%)", 85.0, 100.0, 90.0, 0.5, width=240,
         help="Katalog parçaları bu orandan daha benzer bölgelerde "
@@ -64,6 +73,7 @@ m.metric("Uzunluk", f"{rec['length']} bp")
 m.metric("GC", f"%{rec['gc']}")
 m.metric("Kopya sayısı", rec.get("kopya", "—"))
 m.metric("Uyumsuzluk grubu", rec.get("inc_group", "—"))
+m.metric("Organizma", rec.get("organizma", "E. coli"))
 m.metric("Etiketlenen bölge", len(feats))
 
 with st.container(border=True):

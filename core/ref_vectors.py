@@ -305,9 +305,421 @@ CURATED: dict[str, dict[str, Any]] = {
     },
 }
 
-ORDER = ["PUC19", "PUC18", "PBSIIKS", "PBR322", "PACYC184", "PACYC177",
-         "PTRC99A", "PBAD24", "PBAD18", "PBAD33", "PSC101",
-         "PSB1C3", "PSB1A3", "PSB1K3", "PSB4C5"]
+
+# ---------------------------------------------------------------------------
+# SEVA koleksiyonu
+# ---------------------------------------------------------------------------
+# Adlandırma sistematiktir: pSEVA[marker][orijin][kargo]. Aşağıdaki iki
+# tablo TAHMİN DEĞİL - her kaydın kendi GenBank öznitelik tablosundan
+# okundu. pSEVA111'de `bla` ve `R6K`, pSEVA211'de `neo` ve `R6K`,
+# pSEVA221'de `neo` ve `trfA` görünüyor; haneler bu şekilde eşleşiyor.
+
+SEVA_MARKER = {
+    "1": ("AmpR (bla)", "ampisilin"),
+    "2": ("KanR (neo)", "kanamisin"),
+    "3": ("CmR (cat)", "kloramfenikol"),
+    "4": ("SpecR/StrepR (aadA)", "spektinomisin / streptomisin"),
+    "5": ("TetR (tetA)", "tetrasiklin"),
+    "6": ("GmR (acc3)", "gentamisin"),
+}
+
+SEVA_ORI = {
+    "1": ("R6K", "koşullu - yalnızca pir⁺ konakta çoğalır",
+          "Replikasyonu için konağın *pi* proteinini (pir geni) "
+          "üretmesi gerekir. Normal bir suşta hiç çoğalmaz; bu yüzden "
+          "entegrasyon (suicide) vektörü olarak kullanılır: plazmit "
+          "kromozoma girmezse kaybolur."),
+    "2": ("RK2 (trfA)", "düşük kopya, çok geniş konak aralığı",
+          "RK2/RP4 replikonu neredeyse bütün Gram-negatif bakterilerde "
+          "çalışır. Kopya sayısı düşüktür, bu da kararlılık ve düşük "
+          "metabolik yük demektir."),
+    "3": ("pBBR1", "orta kopya, geniş konak aralığı",
+          "Pseudomonas, Rhizobium ve birçok Gram-negatifte çalışır; "
+          "ColE1 ile uyumsuz değildir, aynı hücrede durabilir."),
+    "4": ("pRO1600/ColE1", "orta-yüksek kopya",
+          "İki orijinli melez: E. coli'de ColE1, Pseudomonas'ta "
+          "pRO1600 kolu çalışır. İki organizma arasında gidip gelen "
+          "çalışmalar için elverişlidir."),
+    "5": ("RSF1010", "düşük kopya, en geniş konak aralığı",
+          "IncQ grubundan; bilinen en geniş konak aralıklı "
+          "replikonlardan biridir. Kendi mobilizasyon genlerini de "
+          "taşıdığı için konjugasyonla aktarılabilir."),
+}
+
+
+def _seva_entry(code: str) -> dict[str, Any]:
+    """pSEVA kodundan editöryel kayıt üret (örn. '241')."""
+    m, o = code[0], code[1]
+    marker, antibiyotik = SEVA_MARKER[m]
+    ori_ad, ori_ozet, ori_not = SEVA_ORI[o]
+    return {
+        "name": f"pSEVA{code}",
+        "ozet": f"SEVA standart iskeleti: {marker.split()[0]} + {ori_ad}.",
+        "kullanim": "klonlama",
+        "kopya": ori_ozet,
+        "inc_group": ori_ad,
+        "markerlar": [marker],
+        "promotor": "yok - kargo kendi promotörünü getirir",
+        "mcs": "SEVA standart çoklu klonlama bölgesi (PacI ve SpeI arasında)",
+        "organizma": "geniş (Gram-negatif)",
+        "notlar": (
+            f"SEVA koleksiyonu, parçaları sabit tutup tek tek "
+            f"değiştirebilmek için tasarlandı. Her iskelette aynı mimari "
+            f"var: marker, orijin ve kargo üç ayrı modül halinde duruyor "
+            f"ve aralarındaki sınırlar hep aynı enzimlerle kesiliyor. "
+            f"Yani orijini değiştirmek istediğinizde yapının geri kalanını "
+            f"yeniden kurmanız gerekmiyor.\n\n"
+            f"Bu iskelette seçilim {antibiyotik} ile yapılır. "
+            f"Orijin {ori_ad}: {ori_not}\n\n"
+            f"Kargo bölgesinin iki yanında T0 ve T1 terminatörleri var; "
+            f"bu, kargo ile iskelet arasındaki okuma geçişini keser ve "
+            f"ifadeyi ölçülebilir kılar. Ayrıca oriT taşıdığı için "
+            f"konjugasyonla aktarılabilir - dönüştürülmesi zor "
+            f"bakterilerde elektroporasyon yerine eşleşme kullanılır."
+        ),
+        "lit_query": "SEVA standard European vector architecture Silva-Rocha",
+    }
+
+
+for _kod in ("111", "211", "311", "411", "511", "611",
+             "221", "231", "241", "251", "321", "331", "341", "351"):
+    CURATED[f"PSEVA{_kod}"] = _seva_entry(_kod)
+
+
+# ---------------------------------------------------------------------------
+# Genom düzenleme ve özel amaçlı vektörler
+# ---------------------------------------------------------------------------
+
+CURATED.update({
+    "PKD46": {
+        "name": "pKD46",
+        "ozet": "Lambda-Red rekombinaz plazmiti - kromozomda gen silme.",
+        "kullanim": "genom düzenleme",
+        "kopya": "düşük",
+        "inc_group": "repA101ts (sıcaklığa duyarlı)",
+        "markerlar": ["AmpR (bla)"],
+        "promotor": "araBAD (P-BAD), araC ile",
+        "mcs": "yok",
+        "organizma": "E. coli",
+        "notlar": (
+            "Kromozomda gen silmenin standart yolu. Plazmit üç Red genini "
+            "taşır (gam, bet, exo) ve arabinozla açılır: gam konağın "
+            "doğrusal DNA'yı parçalayan RecBCD nükleazını bloke eder, "
+            "bet ve exo ise kısa homoloji kollarıyla rekombinasyonu "
+            "yapar. Böylece 40-50 bazlık homoloji taşıyan bir PCR ürünü "
+            "kromozomdaki hedefin yerine geçebilir.\n\n"
+            "Orijini sıcaklığa duyarlıdır: 30 °C'de çoğalır, 37 °C'nin "
+            "üstünde kaybolur. İşiniz bittiğinde hücreyi 37 °C'de "
+            "büyüterek plazmitten kurtulursunuz - ayrıca bir şey yapmaya "
+            "gerek yoktur. Bu yüzden bütün çalışma 30 °C'de yürütülür."
+        ),
+        "lit_query": "one-step inactivation chromosomal genes PCR products "
+                     "Datsenko Wanner",
+    },
+    "PKD4": {
+        "name": "pKD4",
+        "ozet": "FRT ile kuşatılmış kanamisin kaseti - kalıp plazmit.",
+        "kullanim": "genom düzenleme",
+        "kopya": "orta",
+        "inc_group": "R6K (koşullu)",
+        "markerlar": ["KanR"],
+        "promotor": "kasetin kendi promotörü",
+        "mcs": "yok",
+        "organizma": "E. coli",
+        "notlar": (
+            "pKD46 ile birlikte kullanılır. Bu plazmitten, iki yanına "
+            "hedef gene özgü 40-50 bazlık homoloji kolları eklenmiş "
+            "primerlerle kanamisin kaseti çoğaltılır; ürün Red "
+            "rekombinazı taşıyan hücreye verilince kromozomdaki hedefin "
+            "yerine geçer.\n\n"
+            "Kasetin iki yanındaki FRT bölgeleri işin ikinci yarısıdır: "
+            "silme doğrulandıktan sonra FLP rekombinaz taşıyan bir "
+            "plazmit (pCP20) verilir ve direnç kaseti kromozomdan "
+            "çıkarılır. Geriye tek bir FRT izi kalır. Böylece aynı "
+            "markerı bir sonraki silme için tekrar kullanabilirsiniz."
+        ),
+        "lit_query": "FRT flanked resistance cassette FLP recombinase "
+                     "chromosomal deletion E coli",
+    },
+    "PKD3": {
+        "name": "pKD3",
+        "ozet": "FRT ile kuşatılmış kloramfenikol kaseti - kalıp plazmit.",
+        "kullanim": "genom düzenleme",
+        "kopya": "orta",
+        "inc_group": "R6K (koşullu)",
+        "markerlar": ["CmR (cat)"],
+        "promotor": "kasetin kendi promotörü",
+        "mcs": "yok",
+        "organizma": "E. coli",
+        "notlar": (
+            "pKD4 ile aynı mantık, markerı kloramfenikoldür. Arka arkaya "
+            "iki gen silecekseniz ikisini sırayla kullanmak işi "
+            "kolaylaştırır: ilk silmede kanamisin, ikincisinde "
+            "kloramfenikol seçilimi yaparsınız.\n\n"
+            "Her iki kalıp plazmitin de orijini R6K'dır, yani ancak "
+            "pir⁺ bir suşta çoğalır. Bu kasıtlıdır: PCR kalıbı olarak "
+            "kullandığınız plazmitin hedef suşta çoğalmasını istemezsiniz, "
+            "yoksa plazmitten gelen direnç, kromozoma giren kasetle "
+            "karışır."
+        ),
+        "lit_query": "pKD3 chloramphenicol FRT cassette lambda Red",
+    },
+    "PBBR1MCS": {
+        "name": "pBBR1MCS",
+        "ozet": "Geniş konak aralıklı, orta kopyalı klonlama vektörü.",
+        "kullanim": "klonlama",
+        "kopya": "orta",
+        "inc_group": "pBBR1",
+        "markerlar": ["CmR (cat)"],
+        "promotor": "lac (mavi/beyaz tarama ile)",
+        "mcs": "pBluescript tipi MCS, lacZ-alfa içinde",
+        "organizma": "geniş (Gram-negatif)",
+        "notlar": (
+            "E. coli dışındaki Gram-negatiflerde çalışmak istediğinizde "
+            "ilk akla gelen iskeletlerden biri. Replikonu IncP, IncQ ve "
+            "IncW gruplarının hiçbirine ait değildir, bu yüzden o "
+            "gruplardaki plazmitlerle aynı hücrede durabilir.\n\n"
+            "lacZ-alfa taşıdığı için E. coli'de mavi/beyaz tarama "
+            "çalışır; klonlamayı E. coli'de yapıp doğruladıktan sonra "
+            "asıl konağa aktarmak yaygın bir yoldur."
+        ),
+        "lit_query": "pBBR1MCS broad host range cloning vector Kovach",
+    },
+    "RSF1010": {
+        "name": "RSF1010",
+        "ozet": "Doğal IncQ plazmiti; en geniş konak aralıklı replikon.",
+        "kullanim": "klonlama",
+        "kopya": "düşük-orta",
+        "inc_group": "IncQ (RSF1010)",
+        "markerlar": ["SmR", "SulR"],
+        "promotor": "yok",
+        "mcs": "yok",
+        "organizma": "çok geniş (Gram-negatif, bazı Gram-pozitif)",
+        "notlar": (
+            "Klonlama vektörü değil, doğal bir plazmit - ama birçok "
+            "geniş konaklı vektörün replikonu buradan gelir (SEVA'nın "
+            "5 numaralı orijini dahil). Kendi replikasyon proteinlerini "
+            "(repA, repB, repC) taşıdığı için konağın kendi replikasyon "
+            "makinesine bağımlılığı azdır; konak aralığının bu kadar "
+            "geniş olmasının sebebi budur.\n\n"
+            "Mobilizasyon genleri de üzerinde olduğundan, yardımcı bir "
+            "konjugasyon plazmiti varlığında başka bakterilere "
+            "aktarılabilir."
+        ),
+        "lit_query": "RSF1010 IncQ broad host range replicon mobilization",
+    },
+    "PBHR1": {
+        "name": "pBHR1",
+        "ozet": "pBBR1 türevi, iki markerlı geniş konaklı vektör.",
+        "kullanim": "klonlama",
+        "kopya": "orta",
+        "inc_group": "pBBR1",
+        "markerlar": ["KanR", "CmR"],
+        "promotor": "lac",
+        "mcs": "MCS, lacZ-alfa içinde",
+        "organizma": "geniş (Gram-negatif)",
+        "notlar": (
+            "pBBR1MCS ailesinden; farkı iki direnç markerı taşımasıdır. "
+            "Biriyle seçilim yapıp diğerini insersiyonel inaktivasyon "
+            "için kullanabilirsiniz, ya da konağa göre uygun olanı "
+            "seçersiniz - bazı bakteriler kloramfenikole doğal dirençli "
+            "olduğu için orada kanamisin gerekir."
+        ),
+        "lit_query": "pBHR1 broad host range vector pBBR1 derivative",
+    },
+})
+
+
+# ---------------------------------------------------------------------------
+# Gram-pozitif bakteriler
+# ---------------------------------------------------------------------------
+
+CURATED.update({
+    "PUB110": {
+        "name": "pUB110",
+        "ozet": "B. subtilis'in klasik replikonu; kanamisin dirençli.",
+        "kullanim": "klonlama",
+        "kopya": "yüksek",
+        "inc_group": "pUB110 (rolling circle)",
+        "markerlar": ["KanR/NeoR (aadD)", "BleoR (bleO)"],
+        "promotor": "yok",
+        "mcs": "yok",
+        "organizma": "Gram-pozitif (B. subtilis, S. aureus)",
+        "notlar": (
+            "*Bacillus subtilis* vektörlerinin çoğu bu replikondan "
+            "türer. Çoğalma biçimi E. coli plazmitlerinden farklıdır: "
+            "yuvarlanan halka (rolling circle) replikasyonu yapar ve "
+            "ara ürün olarak tek zincirli DNA üretir. Bunun pratik "
+            "sonucu şudur - uzun insertler (>5-6 kb) bu replikonda "
+            "kararsızdır, silinmeye ve yeniden düzenlenmeye eğilimlidir. "
+            "Büyük parçalar için theta replikasyonu yapan bir iskelet "
+            "seçin.\n\n"
+            "E. coli'de çoğalmaz; klonlamayı E. coli'de yapmak "
+            "istiyorsanız iki orijinli bir mekik (shuttle) vektör "
+            "gerekir."
+        ),
+        "lit_query": "pUB110 Bacillus subtilis rolling circle replication "
+                     "plasmid stability",
+    },
+    "PC194": {
+        "name": "pC194",
+        "ozet": "Gram-pozitif kloramfenikol replikonu.",
+        "kullanim": "klonlama",
+        "kopya": "yüksek",
+        "inc_group": "pC194 (rolling circle)",
+        "markerlar": ["CmR (catA)"],
+        "promotor": "yok",
+        "mcs": "yok",
+        "organizma": "Gram-pozitif (B. subtilis, S. aureus)",
+        "notlar": (
+            "Gram-pozitif mekik vektörlerinin kloramfenikol kolu "
+            "genellikle buradan alınır. pUB110 gibi yuvarlanan halka "
+            "replikasyonu yapar, aynı kararlılık sınırı burada da "
+            "geçerlidir.\n\n"
+            "E. coli'deki `cat` geninden farklı bir alleldir; "
+            "Gram-pozitif ribozom bağlanma bölgesiyle gelir, bu yüzden "
+            "E. coli'de ifade edilmesi beklenmez."
+        ),
+        "lit_query": "pC194 chloramphenicol resistance Gram-positive "
+                     "rolling circle plasmid",
+    },
+    "PE194": {
+        "name": "pE194",
+        "ozet": "Sıcaklığa duyarlı Gram-pozitif replikon; eritromisin.",
+        "kullanim": "genom düzenleme",
+        "kopya": "orta",
+        "inc_group": "pE194 (rolling circle, ısıya duyarlı)",
+        "markerlar": ["ErmR (ermC)"],
+        "promotor": "yok",
+        "mcs": "yok",
+        "organizma": "Gram-pozitif (B. subtilis, S. aureus)",
+        "notlar": (
+            "Asıl değeri sıcaklığa duyarlı olmasıdır: 30 °C'de çoğalır, "
+            "42-45 °C'de çoğalamaz. Bu, Gram-pozitif bakterilerde "
+            "kromozoma entegrasyonla gen değiştirmenin standart "
+            "yöntemini mümkün kılar - plazmit izin verici sıcaklıkta "
+            "çoğaltılır, sonra sıcaklık yükseltilip seçilim sürdürülür; "
+            "ayakta kalabilen tek hücreler plazmiti kromozoma entegre "
+            "etmiş olanlardır.\n\n"
+            "pKD46'nın E. coli'de yaptığı işin Gram-pozitif karşılığı "
+            "sayılabilir, yöntem farklı olsa da mantık aynıdır: işi "
+            "bitince kendiliğinden gitsin."
+        ),
+        "lit_query": "pE194 temperature sensitive replicon Bacillus "
+                     "allelic exchange",
+    },
+    "PNZ8048": {
+        "name": "pNZ8048 türevi (kargo içerir)",
+        "ozet": "Lactococcus nisinle indüklenen ifade vektörü.",
+        "kullanim": "ifade",
+        "kopya": "orta",
+        "inc_group": "pSH71 / pWV01 türevi",
+        "markerlar": ["CmR (cat)", "ErmR (ermC)"],
+        "promotor": "nisinle indüklenen (NICE sistemi)",
+        "mcs": "NcoI başlama kodonu üzerinde",
+        "organizma": "Lactococcus lactis",
+        "notlar": (
+            "*Lactococcus lactis* için NICE (nisin controlled expression) "
+            "sisteminin ifade plazmiti. İndükleyici nisindir - bu bir "
+            "bakteriyosin, yani gıda sınıfı bir peptit; sistemin gıda "
+            "biyoteknolojisinde tercih edilmesinin sebebi budur. "
+            "Konağın nisK/nisR iki bileşenli algılayıcısını taşıması "
+            "gerekir (NZ9000 gibi).\n\n"
+            "DİKKAT: buradaki GenBank kaydı (MK297322) boş vektör "
+            "değildir; içinde bir kargo (murine leptin) ve ek elemanlar "
+            "var. Replikon, markerlar ve promotör mimarisi incelemek "
+            "için doğrudur, ama bunu boş iskelet sanıp uzunluk hesabı "
+            "yapmayın."
+        ),
+        "lit_query": "NICE nisin controlled expression Lactococcus lactis "
+                     "pNZ8048",
+    },
+    "PWV01": {
+        "name": "pWV01",
+        "ozet": "Lactococcus doğal plazmiti; geniş Gram-pozitif replikon.",
+        "kullanim": "klonlama",
+        "kopya": "orta",
+        "inc_group": "pWV01 (rolling circle)",
+        "markerlar": ["yok (doğal plazmit)"],
+        "promotor": "yok",
+        "mcs": "yok",
+        "organizma": "Gram-pozitif (Lactococcus ve ötesi)",
+        "notlar": (
+            "Laktik asit bakterilerinde kullanılan vektörlerin büyük "
+            "kısmı bu replikondan türer (pSH71, pNZ ailesi). Konak "
+            "aralığı Gram-pozitifler arasında oldukça geniştir ve "
+            "bazı koşullarda E. coli'de de çoğalabilir - bu yüzden "
+            "mekik vektör kurmak için elverişlidir.\n\n"
+            "Doğal plazmit olduğu için üzerinde direnç markerı yoktur; "
+            "vektör kurarken marker dışarıdan eklenir."
+        ),
+        "lit_query": "pWV01 Lactococcus lactis replicon lactic acid "
+                     "bacteria vector",
+    },
+    "PCG1": {
+        "name": "pCG1",
+        "ozet": "Corynebacterium glutamicum replikonu.",
+        "kullanim": "klonlama",
+        "kopya": "orta",
+        "inc_group": "pCG1",
+        "markerlar": ["yok (yalnızca rep bölgesi)"],
+        "promotor": "yok",
+        "mcs": "yok",
+        "organizma": "Corynebacterium glutamicum",
+        "notlar": (
+            "*C. glutamicum* endüstriyel amino asit üretiminin "
+            "(glutamat, lizin) ana organizmasıdır ve bu plazmit o "
+            "organizmada kullanılan vektörlerin replikonudur - pEKEx ve "
+            "pXMJ ailesi buradan türer.\n\n"
+            "Kayıt yalnızca replikasyon bölgesini içerir; kullanılabilir "
+            "bir vektör kurmak için marker ve klonlama bölgesi "
+            "eklenmesi gerekir. E. coli orijiniyle birleştirilip mekik "
+            "vektör yapılması standart yoldur, çünkü klonlama adımları "
+            "E. coli'de çok daha hızlıdır."
+        ),
+        "lit_query": "pCG1 Corynebacterium glutamicum plasmid replicon "
+                     "shuttle vector",
+    },
+})
+
+
+# Varsayilan olarak E. coli kabul edilir; digerleri kendi kaydinda yazar.
+for _vid, _rec in CURATED.items():
+    _rec.setdefault("organizma", "E. coli")
+
+ORDER = [
+    # E. coli klonlama ve ifade
+    "PUC19", "PUC18", "PBSIIKS", "PBR322", "PACYC184", "PACYC177",
+    "PTRC99A", "PBAD24", "PBAD18", "PBAD33", "PSC101",
+    # BioBrick iskeletleri
+    "PSB1C3", "PSB1A3", "PSB1K3", "PSB4C5",
+    # SEVA standart koleksiyonu
+    "PSEVA111", "PSEVA211", "PSEVA311", "PSEVA411", "PSEVA511", "PSEVA611",
+    "PSEVA221", "PSEVA231", "PSEVA241", "PSEVA251",
+    "PSEVA321", "PSEVA331", "PSEVA341", "PSEVA351",
+    # Genis konak arali
+    "PBBR1MCS", "PBHR1", "RSF1010",
+    # Genom duzenleme
+    "PKD46", "PKD4", "PKD3", "PE194",
+    # Gram-pozitif ve diger bakteriler
+    "PUB110", "PC194", "PNZ8048", "PWV01", "PCG1",
+]
+
+
+def organisms() -> list[str]:
+    """Katalogdaki vektörlerin hedef organizmaları."""
+    gorulen: list[str] = []
+    for vid in available():
+        rec = load(vid)
+        o = (rec or {}).get("organizma", "E. coli")
+        if o not in gorulen:
+            gorulen.append(o)
+    return gorulen
+
+
+def by_organism(organism: str) -> list[str]:
+    return [v for v in available()
+            if (load(v) or {}).get("organizma") == organism]
 
 
 # ---------------------------------------------------------------------------

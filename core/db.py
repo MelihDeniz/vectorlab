@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS parts (
 CREATE TABLE IF NOT EXISTS hosts (
     host_id       TEXT PRIMARY KEY,
     name          TEXT NOT NULL,
+    organism      TEXT NOT NULL DEFAULT 'E. coli',
     use           TEXT,
     t7_polymerase INTEGER NOT NULL DEFAULT 0,
     laciq         INTEGER NOT NULL DEFAULT 0,
@@ -43,6 +44,7 @@ CREATE TABLE IF NOT EXISTS hosts (
     recA          INTEGER NOT NULL DEFAULT 1,
     endA          INTEGER NOT NULL DEFAULT 1,
     rare_trna     INTEGER NOT NULL DEFAULT 0,
+    pir           INTEGER NOT NULL DEFAULT 0,
     genotype      TEXT NOT NULL DEFAULT '',
     notes         TEXT NOT NULL DEFAULT ''
 );
@@ -139,13 +141,16 @@ def init_db(force_reseed: bool = False) -> None:
         if n_hosts == 0:
             for host in HOSTS:
                 con.execute(
-                    """INSERT INTO hosts (host_id, name, use, t7_polymerase, laciq,
-                           lacz_dm15, recA, endA, rare_trna, genotype, notes)
-                       VALUES (:host_id, :name, :use, :t7_polymerase, :laciq,
-                           :lacz_dm15, :recA, :endA, :rare_trna, :genotype, :notes)""",
-                    {**host, **{k: int(host[k]) for k in
-                                ("t7_polymerase", "laciq", "lacz_dm15",
-                                 "recA", "endA", "rare_trna")}},
+                    """INSERT INTO hosts (host_id, name, organism, use,
+                           t7_polymerase, laciq, lacz_dm15, recA, endA,
+                           rare_trna, pir, genotype, notes)
+                       VALUES (:host_id, :name, :organism, :use,
+                           :t7_polymerase, :laciq, :lacz_dm15, :recA, :endA,
+                           :rare_trna, :pir, :genotype, :notes)""",
+                    {"organism": "E. coli", "pir": False, **host,
+                     **{k: int(host.get(k, False)) for k in
+                        ("t7_polymerase", "laciq", "lacz_dm15",
+                         "recA", "endA", "rare_trna", "pir")}},
                 )
     con.close()
 
@@ -259,7 +264,9 @@ def category_counts() -> dict[str, int]:
 
 def list_hosts() -> list[dict[str, Any]]:
     con = connect()
-    rows = con.execute("SELECT * FROM hosts ORDER BY use, name").fetchall()
+    rows = con.execute(
+        "SELECT * FROM hosts ORDER BY organism != 'E. coli', use, name"
+    ).fetchall()
     con.close()
     return [dict(r) for r in rows]
 

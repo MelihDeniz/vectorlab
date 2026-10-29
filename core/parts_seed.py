@@ -1714,3 +1714,356 @@ HOSTS = [
         ),
     },
 ]
+
+# ---------------------------------------------------------------------------
+# Ek konak suşları
+# ---------------------------------------------------------------------------
+# `genotype` alanı, yaygın olarak aynı biçimde yayımlanan suşlarda tam
+# yazıldı. Mühendislik ürünü ticari suşlarda (Lemo21, NiCo21, Arctic
+# Express) tam genotip üreticiye özgüdür ve burada ezberden yazılmadı -
+# o kayıtlarda alan, işlevi anlatan kısa bir tarif taşır ve kataloğa
+# bakılması söylenir. E. coli dışı konaklarda T7 / lacI-q / lacZ-dM15
+# alanları anlamsızdır ve False bırakılmıştır.
+
+EXTRA_HOSTS = [
+    {
+        "host_id": "BL21STAR",
+        "name": "BL21 Star (DE3)",
+        "organism": "E. coli",
+        "use": "ifade",
+        "t7_polymerase": True,
+        "laciq": False,
+        "lacz_dm15": False,
+        "recA": False,
+        "endA": True,
+        "rare_trna": False,
+        "genotype": "F- ompT hsdSB(rB- mB-) gal dcm rne131 (DE3)",
+        "notes": (
+            "BL21(DE3)'ün rne131 mutasyonlu hali: RNaz E'nin bozulma "
+            "yapan bölgesi devre dışıdır, bu yüzden mRNA daha uzun "
+            "ömürlüdür ve aynı promotörden daha çok protein çıkar. "
+            "Özellikle mRNA'sı hızlı yıkılan hedeflerde fark yaratır. "
+            "Buna karşılık kararsız ya da toksik ürünlerde yük artar."
+        ),
+    },
+    {
+        "host_id": "TUNER",
+        "name": "Tuner (DE3)",
+        "organism": "E. coli",
+        "use": "ifade",
+        "t7_polymerase": True,
+        "laciq": False,
+        "lacz_dm15": False,
+        "recA": False,
+        "endA": True,
+        "rare_trna": False,
+        "genotype": "F- ompT hsdSB(rB- mB-) gal dcm lacY1 (DE3)",
+        "notes": (
+            "lacY (laktoz permeaz) geni bozulmuştur. Normal suşlarda "
+            "IPTG permeazla hücreye taşınır ve bu taşıma ya hep ya hiç "
+            "çalışır: düşük IPTG'de hücrelerin bir kısmı tam indüklenir, "
+            "kalanı hiç indüklenmez. lacY⁻ suşta IPTG hücreye yalnızca "
+            "difüzyonla girer, böylece bütün hücreler aynı oranda "
+            "indüklenir. Sonuç: IPTG derişimiyle ifade düzeyini gerçekten "
+            "kademelendirebilirsiniz - çözünürlük sorunu olan "
+            "proteinlerde bu çok işe yarar."
+        ),
+    },
+    {
+        "host_id": "LEMO21",
+        "name": "Lemo21 (DE3)",
+        "organism": "E. coli",
+        "use": "ifade",
+        "t7_polymerase": True,
+        "laciq": False,
+        "lacz_dm15": False,
+        "recA": False,
+        "endA": True,
+        "rare_trna": False,
+        "genotype": "BL21(DE3) + pLemo (T7 lizozim, rhaBAD kontrolünde) — "
+                    "tam genotip için üreticinin kataloğuna bakın",
+        "notes": (
+            "T7 polimerazın gücünü KADEMELİ olarak kısabilen suş. "
+            "Taşıdığı yardımcı plazmit, T7 polimerazı bastıran T7 "
+            "lizozimi ramnozla ayarlanan bir promotörden üretir: ramnoz "
+            "arttıkça lizozim artar, polimeraz yavaşlar. Yani ifade "
+            "hızını sıfırdan tam güce kadar ayarlayabilirsiniz.\n\n"
+            "Zar proteinleri ve toksik ürünler için tasarlanmıştır - "
+            "T7'nin tam gücü bu hedeflerde hücreyi öldürür ya da her "
+            "şeyi çökelti haline getirir. pLysS'in sabit bastırmasına "
+            "göre üstünlüğü, baskının ayarlanabilir olmasıdır."
+        ),
+    },
+    {
+        "host_id": "NICO21",
+        "name": "NiCo21 (DE3)",
+        "organism": "E. coli",
+        "use": "ifade",
+        "t7_polymerase": True,
+        "laciq": False,
+        "lacz_dm15": False,
+        "recA": False,
+        "endA": True,
+        "rare_trna": False,
+        "genotype": "BL21(DE3) türevi; IMAC kirleticisi proteinler "
+                    "etiketlenmiş — tam genotip için üreticinin kataloğu",
+        "notes": (
+            "His etiketli protein saflaştırırken jelde çıkan o birkaç "
+            "inatçı yabancı bandın sebebi, E. coli'nin kendi "
+            "histidince zengin proteinlerinin de nikel kolona "
+            "bağlanmasıdır. Bu suşta o proteinler kendilerine kitin "
+            "bağlanma etiketi eklenerek değiştirilmiştir: IMAC'tan "
+            "sonra kolonu kitin reçinesinden geçirirseniz onlar "
+            "tutulur, hedefiniz akıp geçer.\n\n"
+            "İfade düzeyi için bir avantajı yoktur; faydası yalnızca "
+            "saflıktadır."
+        ),
+    },
+    {
+        "host_id": "ARCTIC",
+        "name": "Arctic Express (DE3)",
+        "organism": "E. coli",
+        "use": "ifade",
+        "t7_polymerase": True,
+        "laciq": False,
+        "lacz_dm15": False,
+        "recA": False,
+        "endA": True,
+        "rare_trna": False,
+        "genotype": "BL21 türevi + soğuğa uyarlanmış şaperonin "
+                    "(Cpn10/Cpn60) — tam genotip için üreticinin kataloğu",
+        "notes": (
+            "Düşük sıcaklıkta ifade için. Protein çökeltiye gitmesin "
+            "diye 10-12 °C'ye inildiğinde E. coli'nin kendi "
+            "şaperonları iyi çalışmaz; bu suş, soğukta etkin kalan bir "
+            "psikrofil bakteriden alınmış şaperoninleri üretir ve "
+            "katlanmaya o sıcaklıkta da yardım eder.\n\n"
+            "Düşük sıcaklıkta büyüme yavaştır: indüksiyon bir gece "
+            "değil, 24 saate kadar sürebilir."
+        ),
+    },
+    {
+        "host_id": "JM109",
+        "name": "JM109",
+        "organism": "E. coli",
+        "use": "klonlama",
+        "t7_polymerase": False,
+        "laciq": True,
+        "lacz_dm15": True,
+        "recA": False,
+        "endA": False,
+        "rare_trna": False,
+        "genotype": ("endA1 recA1 gyrA96 thi hsdR17 relA1 supE44 "
+                     "Δ(lac-proAB) [F' traD36 proAB lacIqZΔM15]"),
+        "notes": (
+            "Klasik klonlama suşu. F' epizomu lacI-q taşır, yani "
+            "baskılayıcı fazladan üretilir - yüksek kopyalı plazmitte "
+            "lac promotörünü sıkı tutmak istediğinizde DH5-alfa'ya göre "
+            "avantajlıdır. Mavi/beyaz tarama çalışır. recA1 ve endA1 "
+            "olduğu için insert kararlı, plazmit DNA'sı temiz gelir."
+        ),
+    },
+    {
+        "host_id": "XL1BLUE",
+        "name": "XL1-Blue",
+        "organism": "E. coli",
+        "use": "klonlama",
+        "t7_polymerase": False,
+        "laciq": True,
+        "lacz_dm15": True,
+        "recA": False,
+        "endA": False,
+        "rare_trna": False,
+        "genotype": ("recA1 endA1 gyrA96 thi-1 hsdR17 supE44 relA1 lac "
+                     "[F' proAB lacIqZΔM15 Tn10 (TetR)]"),
+        "notes": (
+            "JM109'a çok benzer; farkı F' epizomunun tetrasiklin "
+            "direnci taşımasıdır. Bu, epizomun kaybolmadığını tetrasiklin "
+            "seçilimiyle garanti etmenizi sağlar - lacI-q ve lacZ-dM15 "
+            "o epizomda olduğu için kaybolursa hem baskılama hem "
+            "mavi/beyaz tarama gider.\n\n"
+            "Plazmitinizin markerı tetrasiklinse bu suşu kullanmayın: "
+            "suş zaten dirençlidir, seçilim yapamazsınız."
+        ),
+    },
+    {
+        "host_id": "JM110",
+        "name": "JM110 (dam⁻ dcm⁻)",
+        "organism": "E. coli",
+        "use": "klonlama",
+        "t7_polymerase": False,
+        "laciq": True,
+        "lacz_dm15": True,
+        "recA": False,
+        "endA": True,
+        "rare_trna": False,
+        "genotype": ("rpsL thr leu thi lacY galK galT ara tonA tsx dam dcm "
+                     "supE44 Δ(lac-proAB) [F' traD36 proAB lacIqZΔM15]"),
+        "notes": (
+            "Metilaz genleri (dam ve dcm) bozuktur. Normal E. coli "
+            "plazmitini metiller ve bazı restriksiyon enzimleri "
+            "metillenmiş bölgeyi kesemez - XbaI, ClaI, MboI, BclI gibi. "
+            "Enzim kesmiyorsa ve dizide bölge varsa ilk bakılacak yer "
+            "budur.\n\n"
+            "Çözüm: plazmiti bu suşta bir tur çoğaltıp metilsiz DNA "
+            "elde edin, sonra kesin. Enzimler sayfasındaki metilasyon "
+            "uyarısı hangi enzimlerin etkilendiğini söylüyor. "
+            "Dezavantajı: bu suş yavaş büyür ve plazmit verimi düşüktür."
+        ),
+    },
+    {
+        "host_id": "PIR1",
+        "name": "PIR1 / EC100D pir+",
+        "organism": "E. coli",
+        "use": "klonlama",
+        "pir": True,
+        "t7_polymerase": False,
+        "laciq": False,
+        "lacz_dm15": False,
+        "recA": True,
+        "endA": True,
+        "rare_trna": False,
+        "genotype": "pir geni kromozomda — tam genotip için üreticinin "
+                    "kataloğuna bakın",
+        "notes": (
+            "R6K orijinli plazmitler yalnızca bu tür suşlarda çoğalır: "
+            "R6K'nın replikasyonu, konağın ürettiği pi proteinine "
+            "bağlıdır ve normal E. coli bu proteini yapmaz.\n\n"
+            "Katalogdaki pSEVA x1x iskeletleri ile pKD3 ve pKD4 kalıp "
+            "plazmitleri R6K orijinlidir; onları çoğaltmak için bu suş "
+            "gerekir. Asıl kullanım mantığı şudur: plazmit hedef suşta "
+            "çoğalamadığı için ya kromozoma entegre olur ya da kaybolur - "
+            "entegrasyon ve gen değiştirme çalışmalarının temeli budur."
+        ),
+    },
+    {
+        "host_id": "MG1655",
+        "name": "MG1655 (K-12 yabanıl)",
+        "organism": "E. coli",
+        "use": "fizyoloji / referans",
+        "t7_polymerase": False,
+        "laciq": False,
+        "lacz_dm15": False,
+        "recA": True,
+        "endA": True,
+        "rare_trna": False,
+        "genotype": "F- lambda- ilvG- rfb-50 rph-1",
+        "notes": (
+            "K-12'nin referans yabanıl suşu; dizilenmiş ilk E. coli "
+            "genomu (NC_000913) buna aittir ve uygulamadaki kodon "
+            "tablosu da bu genomdan hesaplandı.\n\n"
+            "Klonlama için uygun DEĞİLDİR: recA⁺ olduğu için tekrar "
+            "taşıyan insertler rekombinasyona uğrar, endA⁺ olduğu için "
+            "plazmit saflaştırmasında nükleaz bulaşır. Metabolik "
+            "mühendislik ve fizyoloji çalışmalarında, yani hücrenin "
+            "gerçek davranışının önemli olduğu yerlerde kullanılır."
+        ),
+    },
+    # --- E. coli dışı konaklar -------------------------------------------
+    {
+        "host_id": "BSUB168",
+        "name": "Bacillus subtilis 168",
+        "organism": "Bacillus subtilis",
+        "use": "ifade / salgılama",
+        "t7_polymerase": False,
+        "laciq": False,
+        "lacz_dm15": False,
+        "recA": True,
+        "endA": True,
+        "rare_trna": False,
+        "genotype": "trpC2 (referans laboratuvar suşu)",
+        "notes": (
+            "Gram-pozitif model organizma. İki büyük üstünlüğü var: "
+            "doğal olarak yetkindir (kompetans), yani DNA'yı "
+            "elektroporasyon olmadan ortamdan alabilir; ve proteini "
+            "ortama salgılamakta çok iyidir - endüstriyel enzimlerin "
+            "büyük kısmı bu organizmada üretilir. Dış zarı olmadığı "
+            "için salgılanan protein doğrudan besiyerine çıkar, "
+            "periplazmada sıkışmaz.\n\n"
+            "Dikkat edilecekler: E. coli plazmitleri burada çoğalmaz, "
+            "ayrı bir replikon gerekir (pUB110, pC194). Promotör ve "
+            "ribozom bağlanma bölgesi de E. coli'ninkiyle aynı değildir. "
+            "Ayrıca güçlü dış proteazları vardır; salgılanan ürün "
+            "parçalanabilir, proteaz eksik türevler bunun için vardır."
+        ),
+    },
+    {
+        "host_id": "PPUTIDA",
+        "name": "Pseudomonas putida KT2440",
+        "organism": "Pseudomonas putida",
+        "use": "metabolik mühendislik",
+        "t7_polymerase": False,
+        "laciq": False,
+        "lacz_dm15": False,
+        "recA": True,
+        "endA": True,
+        "rare_trna": False,
+        "genotype": "KT2440 (TOL plazmiti giderilmiş P. putida mt-2 türevi)",
+        "notes": (
+            "Metabolik mühendisliğin gözde organizmalarından. Çözücülere "
+            "ve oksidatif strese E. coli'den çok daha dayanıklıdır, "
+            "aromatik bileşikleri parçalayabilir ve NADPH üretimi "
+            "yüksektir - zor kimyasal dönüşümler için elverişli olmasının "
+            "sebebi budur.\n\n"
+            "SEVA koleksiyonu büyük ölçüde bu organizma düşünülerek "
+            "tasarlandı: katalogdaki pSEVA iskeletlerinin geniş konaklı "
+            "orijinleri (RK2, pBBR1, RSF1010) burada çalışır. Dönüşüm "
+            "genelde elektroporasyon ya da konjugasyonla yapılır."
+        ),
+    },
+    {
+        "host_id": "LLNZ9000",
+        "name": "Lactococcus lactis NZ9000",
+        "organism": "Lactococcus lactis",
+        "use": "ifade (gıda sınıfı)",
+        "t7_polymerase": False,
+        "laciq": False,
+        "lacz_dm15": False,
+        "recA": True,
+        "endA": True,
+        "rare_trna": False,
+        "genotype": "MG1363 türevi; nisK ve nisR kromozoma yerleştirilmiş",
+        "notes": (
+            "NICE sisteminin konağı. Kromozomunda nisin algılayan iki "
+            "bileşenli sistem (nisK/nisR) vardır; pNZ8048 gibi bir "
+            "plazmitle birlikte kullanıldığında nisin eklenerek ifade "
+            "açılır.\n\n"
+            "Gıda sınıfı bir organizma (GRAS) olduğu için ürün gıda ya "
+            "da probiyotik olarak kullanılacaksa tercih edilir. "
+            "İçsel proteaz etkinliği düşüktür, bu da salgılanan ürün "
+            "için avantajdır. Besiyeri zengin olmalıdır - birçok amino "
+            "asidi kendisi sentezleyemez."
+        ),
+    },
+    {
+        "host_id": "CGLUT",
+        "name": "Corynebacterium glutamicum ATCC 13032",
+        "organism": "Corynebacterium glutamicum",
+        "use": "endüstriyel üretim",
+        "t7_polymerase": False,
+        "laciq": False,
+        "lacz_dm15": False,
+        "recA": True,
+        "endA": True,
+        "rare_trna": False,
+        "genotype": "ATCC 13032 (yabanıl referans suş)",
+        "notes": (
+            "Dünyadaki glutamat ve lizin üretiminin büyük kısmı bu "
+            "organizmayla yapılır - yılda milyon ton ölçeğinde. "
+            "Salgıladığı proteaz neredeyse yoktur ve endotoksin "
+            "üretmez; bu, ürün saflığı açısından E. coli'ye göre "
+            "belirgin bir üstünlüktür.\n\n"
+            "Hücre duvarı mikolik asit içerdiği için dönüşüm zordur: "
+            "elektroporasyon öncesi duvar zayıflatıcı işlem (glisin, "
+            "Tween) gerekir ve ısı şoku adımı eklenir. Vektörler "
+            "pCG1 replikonu üzerine kurulur."
+        ),
+    },
+]
+
+
+# Mevcut sekiz kayit E. coli'dir; alani sonradan ekledigimiz icin
+# varsayilani burada veriyoruz.
+for _h in HOSTS:
+    _h.setdefault("organism", "E. coli")
+HOSTS = HOSTS + EXTRA_HOSTS

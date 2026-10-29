@@ -101,10 +101,17 @@ REBASE'in bildirdiği çıkıntıyla birebir eşleşmesiyle sınanır
 (5' çıkıntı, 3' çıkıntı ve kör uç enzimleri dahil).
 
 ### Referans vektörler
-Gerçek plazmitlerin **tam dizileri** üzerinde çalışır: pUC19, pUC18,
-pBluescript II KS(+), pBR322, pACYC184, pACYC177, pTrc99A, pBAD24,
-pBAD18, pBAD33, pSC101 (NCBI'dan) ve pSB1C3, pSB1A3, pSB1K3, pSB4C5
-(iGEM BioBrick iskeletleri).
+Gerçek plazmitlerin **tam dizileri** üzerinde çalışır — 41 vektör, beş
+organizma grubunda. Hedef organizmaya göre süzülür.
+
+| Grup | Vektörler |
+| --- | --- |
+| E. coli klonlama / ifade | pUC19, pUC18, pBluescript II KS(+), pBR322, pACYC184, pACYC177, pTrc99A, pBAD24, pBAD18, pBAD33, pSC101 |
+| BioBrick iskeletleri | pSB1C3, pSB1A3, pSB1K3, pSB4C5 |
+| SEVA standart koleksiyonu | pSEVA111/211/311/411/511/611 ve 221/231/241/251/321/331/341/351 |
+| Geniş konak aralığı | pBBR1MCS, pBHR1, RSF1010 |
+| Genom düzenleme | pKD46, pKD4, pKD3, pE194 |
+| Gram-pozitif ve diğer | pUB110, pC194, pNZ8048, pWV01, pCG1 |
 
 Beş sekme:
 
@@ -407,6 +414,35 @@ değerleridir ve tasarımın parçalarından seçilir: `MRK_KAN` varsa
 kanamisin 50 µg/mL, `PRO_ARABAD` varsa arabinoz. Laboratuvarınızın
 kendi protokolü farklıysa onunki önceliklidir - bu sayılar başlangıç
 noktası, reçete değil.
+
+### SEVA adlandırması tahmin edilmedi
+pSEVA[marker][orijin][kargo] şeması, kayıtların kendi GenBank öznitelik
+tablolarından okundu: pSEVA111'de `bla` ve `R6K`, pSEVA211'de `neo` ve
+`R6K`, pSEVA221'de `neo` ve `trfA` görünüyor. Haneler böyle eşleşti,
+hiçbir hane ezberden yorumlanmadı.
+
+| Hane | 1 | 2 | 3 | 4 | 5 | 6 |
+| --- | --- | --- | --- | --- | --- | --- |
+| Marker | bla | neo | cat | aadA | tetA | acc3 |
+| Orijin | R6K | RK2 | pBBR1 | pRO1600/ColE1 | RSF1010 | — |
+
+Katalog anotasyonu bunu bağımsız doğruladı: pSEVA341'in dizisinde `cat`
+ve pUC orijini, pSEVA111'inkinde R6K gama orijini bulunuyor.
+
+### Konak organizması denetimi
+Konak listesinde artık 22 suş var ve beşi E. coli dışı (*B. subtilis*,
+*P. putida*, *L. lactis*, *C. glutamicum*). Bu, denetime dört yeni kural
+getirdi, çünkü bir E. coli plazmiti Bacillus'ta çoğalmaz ama haritası
+gayet doğru görünür:
+
+- **ORI-05** — R6K orijini yalnızca *pir*⁺ konakta çoğalır. Katalogdaki
+  pSEVA x1x iskeletleri ile pKD3/pKD4 bu orijini taşıdığı için kural
+  gerçekten gerekli; PIR1 suşu bu yüzden eklendi.
+- **ORG-01** — orijin konak organizmasında çalışmıyorsa hata.
+- **ORG-02** — promotör E. coli'ye özgüyse, başka organizmada sigma
+  faktörü ve ribozom bağlanma bölgesi farklı olduğu için uyarı.
+- **ORG-04** — E. coli konakta Gram-pozitif replikon varsa mekik vektör
+  önerisi.
 
 ### Kodon tablosu nereden geliyor
 `data/ecoli_codon_usage.json` ezberden yazılmadı:

@@ -92,6 +92,7 @@ def validate(
     pid = {p["part_id"] for p in vec.part_order}
     cloning_enzymes = cloning_enzymes or []
 
+    _check_host_organism(f, vec, host)
     _check_core_elements(f, vec, purpose)
     _check_promoter_host(f, vec, host, pid)
     _check_repressors(f, vec, host, pid)
@@ -797,3 +798,129 @@ def summarize(findings: list[Finding]) -> dict[str, int]:
         if f.severity in out:
             out[f.severity] += 1
     return out
+
+
+# ---------------------------------------------------------------------------
+# Konak organizması uyumu
+# ---------------------------------------------------------------------------
+# Katalogdaki orijinlerin ve promotörlerin hangi organizmada çalıştığı.
+# Bu, E. coli dışı konak seçildiğinde en sık yapılan hatayı yakalar:
+# E. coli plazmiti Bacillus'ta çoğalmaz, ama harita gayet güzel görünür.
+
+ORI_ORGANISMS: dict[str, set[str]] = {
+    "ORI_COLE1": {"E. coli"},
+    "ORI_PUC": {"E. coli"},
+    "ORI_PBR322": {"E. coli"},
+    "ORI_P15A": {"E. coli"},
+    "ORI_PSC101": {"E. coli"},
+    "ORI_R6K": {"E. coli"},          # ayrıca pir+ gerekir, bkz. ORI-05
+    "ORI_F1": {"E. coli"},           # tek zincir üretimi, replikasyon değil
+}
+
+# E. coli'nin kendi makinesine bağlı promotörler. Gram-pozitif
+# bakterilerde sigma faktörü ve ribozom bağlanma bölgesi farklıdır.
+ECOLI_ONLY_PROMOTERS = {
+    "PRO_T7", "PRO_T7LAC", "PRO_LAC", "PRO_TAC", "PRO_TRC",
+    "PRO_ARABAD", "PRO_RHABAD", "PRO_PL",
+}
+
+
+def _check_host_organism(f, vec, host):
+    """Konak organizması ile parçaların uyumu."""
+    if not host:
+        return
+    organizma = host.get("organism", "E. coli")
+    oris = vec.parts_of("ori")
+
+    # --- R6K: pir+ konak şartı (E. coli içinde de geçerli)
+    if any(o["part_id"] == "ORI_R6K" for o in oris):
+        if not host.get("pir"):
+            f.append(Finding(
+                "hata", "ORI-05", "R6K orijini pir⁺ konak ister",
+                f"Yapıda R6K orijini var ama {host['name']} pir geni "
+                f"taşımıyor. R6K replikasyonu konağın ürettiği pi "
+                f"proteinine bağlıdır; bu suşta plazmit hiç çoğalmaz ve "
+                f"transformasyondan koloni çıkmaz.",
+                "Plazmiti çoğaltmak için PIR1 gibi pir⁺ bir suş seçin. "
+                "Eğer amacınız kromozoma entegrasyonsa bu zaten istenen "
+                "durumdur: plazmit hedef suşta çoğalamaz, yalnızca "
+                "entegre olanlar ayakta kalır.",
+                "R6K gamma origin pir protein conditional replication",
+            ))
+
+    # --- Orijin organizmaya uyuyor mu
+    if organizma != "E. coli":
+        uyumsuz = [o for o in oris
+                   if organizma not in ORI_ORGANISMS.get(
+                       o["part_id"], {organizma})]
+        if uyumsuz:
+            adlar = ", ".join(o["name"].split("(")[0].strip()
+                              for o in uyumsuz)
+            f.append(Finding(
+                "hata", "ORG-01", "Orijin bu organizmada çalışmaz",
+                f"Konak {organizma}, ama yapıdaki orijin ({adlar}) "
+                f"E. coli replikasyon makinesine göre tasarlanmıştır. "
+                f"Plazmit bu konakta çoğalmaz - harita doğru görünse de "
+                f"transformasyondan sonra kaybolur.",
+                f"{organizma} için uygun bir replikon seçin. Referans "
+                f"vektörler sayfasında organizmaya göre süzebilirsiniz: "
+                f"Gram-pozitifler için pUB110 ya da pC194, Pseudomonas "
+                f"için SEVA iskeletleri, Corynebacterium için pCG1. "
+                f"Klonlamayı E. coli'de yapıp sonra aktaracaksanız iki "
+                f"orijinli bir mekik vektör kurun.",
+                f"shuttle vector replicon {organizma} plasmid host range",
+            ))
+        if not oris:
+            pass   # CORE-01 zaten yakalıyor
+
+        # --- Promotör organizmaya uyuyor mu
+        yanlis_pro = [p for p in vec.parts_of("promoter")
+                      if p["part_id"] in ECOLI_ONLY_PROMOTERS]
+        if yanlis_pro:
+            adlar = ", ".join(p["name"].split("(")[0].strip()
+                              for p in yanlis_pro)
+            f.append(Finding(
+                "uyari", "ORG-02", "Promotör bu organizmaya göre değil",
+                f"{adlar} E. coli'nin sigma faktörlerine ve düzenleyici "
+                f"proteinlerine göre tasarlanmıştır. {organizma} bu "
+                f"promotörü ya hiç okumaz ya da beklenmedik düzeyde "
+                f"okur. Ribozom bağlanma bölgesi için de aynı sorun "
+                f"geçerlidir: Shine-Dalgarno uzunluğu ve 16S rRNA "
+                f"eşleşmesi türler arasında farklıdır.",
+                f"{organizma} için tanımlanmış bir promotör kullanın. "
+                f"Bu organizmada çalıştığı gösterilmiş bir vektörden "
+                f"(Referans vektörler sayfası) promotör bölgesini "
+                f"çıkarıp katalogunuza ekleyebilirsiniz.",
+                f"{organizma} promoter ribosome binding site expression",
+            ))
+
+        # --- T7 sistemi E. coli dışında
+        if any(p["part_id"] in ("PRO_T7", "PRO_T7LAC")
+               for p in vec.parts_of("promoter")):
+            f.append(Finding(
+                "bilgi", "ORG-03", "T7 sistemi konakta kurulu olmalı",
+                f"T7 promotörü yalnızca T7 RNA polimeraz üreten konakta "
+                f"çalışır. {organizma} için bu, DE3 lizojeni gibi hazır "
+                f"bir çözüm olmayabilir; polimerazı ayrıca bir plazmitle "
+                f"ya da kromozoma yerleştirerek vermeniz gerekir.",
+                "Konakta T7 polimeraz yoksa, organizmanın kendi "
+                "polimerazıyla çalışan bir promotöre geçin.",
+                f"T7 RNA polymerase expression system {organizma}",
+            ))
+
+    # --- E. coli konak + Gram-pozitif replikon
+    else:
+        gram_poz = [o for o in oris
+                    if "E. coli" not in ORI_ORGANISMS.get(
+                        o["part_id"], {"E. coli"})]
+        if gram_poz:
+            f.append(Finding(
+                "uyari", "ORG-04", "Orijin E. coli'de çalışmayabilir",
+                "Yapıdaki orijin E. coli dışı bir organizma için "
+                "tanımlanmış. Klonlama adımlarını E. coli'de yapmak "
+                "istiyorsanız yapıya ayrıca bir E. coli orijini "
+                "ekleyin (mekik vektör).",
+                "ColE1 ya da p15A orijinini ikinci replikon olarak "
+                "ekleyin.",
+                "shuttle vector dual origin E coli Gram-positive",
+            ))

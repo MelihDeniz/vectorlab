@@ -39,6 +39,40 @@ WANTED: dict[str, tuple[str, int]] = {
     "PTRC99A":  ("U13872", 4176),
     "PBSIIKS":  ("X52327", 2961),
     "PSC101":   ("NC_002056", 9263),
+    # --- SEVA koleksiyonu (Standard European Vector Architecture) --------
+    # Adlandirma sistematiktir: pSEVA[marker][orijin][kargo]. Asagidaki
+    # set butun marker harflerini ve bes farkli orijini kapsiyor; kargo
+    # hanesi hepsinde ayni (varsayilan klonlama bolgesi) oldugu icin
+    # aradaki fark yalnizca marker ve orijindir.
+    "PSEVA111":  ("JX560321", 2094),
+    "PSEVA211":  ("JX560326", 1993),
+    "PSEVA311":  ("JX560331", 1838),
+    "PSEVA411":  ("JX560336", 2052),
+    "PSEVA511":  ("JX560341", 2330),
+    "PSEVA611":  ("JX560346", 1871),
+    "PSEVA221":  ("JX560327", 3823),
+    "PSEVA231":  ("JX560328", 3123),
+    "PSEVA241":  ("JX560329", 3570),
+    "PSEVA251":  ("JX560330", 5275),
+    "PSEVA321":  ("JX560332", 3668),
+    "PSEVA331":  ("JX560333", 2968),
+    "PSEVA341":  ("JX560334", 3415),
+    "PSEVA351":  ("JX560335", 5120),
+    # --- Genom duzenleme (lambda-Red) ------------------------------------
+    "PKD46":     ("AY048746", 6329),
+    "PKD4":      ("AY048743", 3267),
+    "PKD3":      ("AY048742", 2804),
+    # --- Genis konak arali (Gram-negatif) --------------------------------
+    "PBBR1MCS":  ("U02374", 4707),
+    "RSF1010":   ("M28829", 8684),
+    "PBHR1":     ("Y14439", 5300),
+    # --- Gram-pozitif bakteriler -----------------------------------------
+    "PUB110":    ("NC_001384", 4548),
+    "PC194":     ("NC_002013", 2910),
+    "PE194":     ("NC_005908", 3728),
+    "PNZ8048":   ("MK297322", 4332),
+    "PWV01":     ("NC_002192", 2178),
+    "PCG1":      ("AB027714", 3069),
 }
 
 KEEP_QUALIFIERS = ("gene", "product", "note", "label", "standard_name",
