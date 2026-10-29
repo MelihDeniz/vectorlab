@@ -6,7 +6,7 @@ import streamlit as st
 
 from core import (
     assembly_methods as am, db, enzymes as ez, gel, protein,
-    protocol as pr, ref_vectors as rv, report,
+    protocol as pr, ref_vectors as rv, report, troubleshoot as ts,
 )
 from core.assembly import assemble, sort_canonical
 from core.cloning import fragments, plan
@@ -112,8 +112,9 @@ if insert_seq:
 
 st.divider()
 
-tab_pro, tab_gel, tab_prot, tab_montaj, tab_rap = st.tabs(
-    ["Protokol", "Jel simülasyonu", "Protein", "Montaj yöntemleri", "Rapor"]
+tab_pro, tab_gel, tab_prot, tab_montaj, tab_sorun, tab_rap = st.tabs(
+    ["Protokol", "Jel simülasyonu", "Protein", "Montaj yöntemleri",
+     "Sorun giderme", "Rapor"]
 )
 
 # ---------------------------------------------------------------------------
@@ -435,6 +436,78 @@ with tab_montaj:
                 "sağlayan kısımdır; Tm sütunu yalnızca kalıba bağlanan "
                 "bölümün değeridir, PCR koşulunu ona göre kurun."
             )
+
+
+# ---------------------------------------------------------------------------
+# 5. Sorun giderme
+# ---------------------------------------------------------------------------
+
+with tab_sorun:
+    alt_kesim, alt_belirti = st.tabs(["Çift kesim uyumluluğu",
+                                      "Belirtiden yola çık"])
+
+    with alt_kesim:
+        st.caption(
+            "İki enzimi aynı tüpte kullanmak her zaman mümkün değildir. "
+            "Doğrulanabilir olanlar burada denetleniyor; tampon seçimi "
+            "üreticiye özgü ölçüm verisi olduğu için uydurulmuyor."
+        )
+        cift = st.multiselect(
+            "Birlikte kullanılacak enzimler", _ticari(),
+            default=(secilen or _tek_kesenler(seq))[:2],
+            key="ts_cift",
+        )
+        for c in ts.double_digest(cift):
+            {"hata": st.error, "uyari": st.warning,
+             "bilgi": st.info}.get(c.kind, st.info)(
+                f"**{c.title}** — {c.detail}")
+
+    with alt_belirti:
+        st.caption(
+            "Belirtiyi seçin: olası sebepler sıralanır. Uygulama "
+            "tasarımınıza bakarak hangi sebebin sizde gerçekten var "
+            "olduğunu işaretler - geri kalanı sizin kontrol etmeniz "
+            "gereken şeylerdir."
+        )
+        belirtiler = ts.symptoms()
+        secili_b = st.selectbox(
+            "Ne oldu?", [b.key for b in belirtiler],
+            format_func=lambda k: next(b.label for b in belirtiler
+                                       if b.key == k),
+            key="ts_belirti",
+        )
+        sonuc = ts.evaluate(
+            secili_b,
+            part_ids=[x.get("part_id", "") for x in parcalar],
+            host=db.get_host(st.session_state.get("design_host", "")),
+            enzymes=secilen,
+            purpose=st.session_state.get("design_purpose", "ifade"),
+        )
+        var = [c for c in sonuc.causes if c.applies is True]
+        yok = [c for c in sonuc.causes if c.applies is False]
+        belirsiz = [c for c in sonuc.causes if c.applies is None]
+
+        if var:
+            st.markdown("### Sizin tasarımınızda var")
+            for c in var:
+                st.error(f"**{c.title}** — {c.detail}"
+                         + (f"\n\n*Bakılacak:* {c.check}" if c.check else ""),
+                         icon=":material/error:")
+        if belirsiz:
+            st.markdown("### Kontrol etmeniz gerekenler")
+            for c in belirsiz:
+                with st.container(border=True):
+                    st.markdown(f"**{c.title}**")
+                    st.markdown(c.detail)
+                    if c.check:
+                        st.caption(f"Bakılacak: {c.check}")
+        if yok:
+            with st.expander(f"Elenen sebepler ({len(yok)})"):
+                for c in yok:
+                    st.markdown(f"- **{c.title}** — tasarımınızda bu durum "
+                                f"yok, bu sebebi eleyebilirsiniz.")
+        if not sonuc.causes:
+            st.info("Bu belirti için kayıt yok.", icon=":material/help:")
 
 
 # ---------------------------------------------------------------------------

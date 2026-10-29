@@ -164,6 +164,15 @@ Tasarımı tezgâha taşıyan sayfa. Dört sekme:
   dizilemeye kadar fark edilmez; Gibson'da örtüşmenin Tm'i ve GC'si
   tutmazsa birleşme olmaz. Sipariş edilecek primerler kuyruklarıyla
   birlikte üretilir ve CSV olarak indirilir.
+- **Sorun giderme** — iki bölüm. *Çift kesim uyumluluğu* iki enzimin
+  aynı tüpte kullanılıp kullanılamayacağını denetler: sıcaklıklar,
+  metilasyon, uç uyumu. Tampon seçimi bilinçli olarak dışarıda bırakıldı
+  - hangi enzimin hangi tamponda yüzde kaç çalıştığı üreticiye özgü
+  ölçüm verisidir, uygulama onu tahmin etmek yerine nereye bakılacağını
+  söyler. *Belirtiden yola çık* beş yaygın belirti için sebepleri
+  sıralar ve tasarımınıza bakarak hangisinin sizde gerçekten var
+  olduğunu işaretler: T7 promotörlü yapı DH5-alfa'ya konmuşsa "sizde
+  var", BL21(DE3)'e konmuşsa o sebep elenir.
 - **Rapor** — harita, parça listesi, denetim sonucu, protein özellikleri
   ve protokol tek bir HTML dosyasında. Harita ve jel dosyanın içine
   gömülür, ayrı görsel gerekmez; tarayıcıda açılıp PDF'e basılabilir.
@@ -470,6 +479,7 @@ core/
   ref_vectors.py       referans vektörler + editöryel katman
   cloning.py           restriksiyonla klonlama planı ve denetimi
   assembly_methods.py  Golden Gate, Gibson, mutagenez
+  troubleshoot.py      çift kesim denetimi, sorun giderme ağacı
   codon.py             CAI ve kodon optimizasyonu
   structure.py         mRNA saç tokası taraması
   protocol.py          tasarımdan laboratuvar protokolü
@@ -560,6 +570,9 @@ bilinçli seçimlerdir ve kullanmadan önce bilmeniz gerekir:
   çeviri sonrası değişiklikler ve gerçek çözünürlük bu sayılardan
   okunamaz; GRAVY yüksek diye protein mutlaka çöker, düşük diye mutlaka
   çözünür demek değildir.
+- Çift kesim denetimi tampon uyumluluğunu söylemez. Sıcaklık, metilasyon
+  ve uç uyumu REBASE verisinden doğrulanabilir; tampon aktivite yüzdeleri
+  üreticiye özgüdür ve uydurulmadı.
 - Klonlama planı iki tek kesen enzimde büyük parçayı iskelet sayar. MCS
   içinden kesiyorsanız bu doğrudur; uzak iki bölgeden kesiyorsanız
   hangi parçanın iskelet olduğunu haritadan doğrulayın.
