@@ -122,6 +122,24 @@ Beş sekme:
   elle verdiğiniz koordinatı) katalog parçası olarak kaydeder; kayıt
   aksesyon ve koordinatı taşır.
 
+### Kodon optimizasyonu ve mRNA yapısı
+Dizi analizi sayfasına eklenen iki sekme, ifadenin gerçekten tıkandığı
+iki noktaya bakar.
+
+**Kodon optimizasyonu.** CAI ölçer, nadir kodonları ve kümelendikleri
+yerleri gösterir, istenirse düzeltir. İki kip var: "sadece nadir
+kodonlar" yalnızca sorunlu kodonlara dokunur ve dizinin geri kalanını
+korur; "tam optimizasyon" her kodonu kısıtların izin verdiği en iyi
+seçenekle değiştirir. Seçtiğiniz enzimlerin tanıma dizileri insertin
+içinden kaldırılır - bu, klonlamada kullanacağınız enzimin inserti
+kesmesini önler.
+
+**mRNA yapısı.** Shine-Dalgarno dizisini ve başlama kodonunu bulur,
+çevrelerindeki saç tokalarını tarar. RBS'i ya da başlama kodonunu
+kapatan bir yapı varsa uyarır: promotör güçlü, kodonlar doğru olduğu
+halde protein alınamamasının en sinsi sebebi budur ve haritada
+görünmez.
+
 ### Laboratuvar
 Tasarımı tezgâha taşıyan sayfa. Dört sekme:
 
@@ -365,6 +383,37 @@ kanamisin 50 µg/mL, `PRO_ARABAD` varsa arabinoz. Laboratuvarınızın
 kendi protokolü farklıysa onunki önceliklidir - bu sayılar başlangıç
 noktası, reçete değil.
 
+### Kodon tablosu nereden geliyor
+`data/ecoli_codon_usage.json` ezberden yazılmadı:
+`tools/fetch_codon_usage.py` E. coli K-12 MG1655 genomunu (NC_000913.3)
+indirir, 4226 geçerli kodlayan diziyi okur ve kodonları sayar. CAI'nin
+ölçütü olan göreli uyarlanabilirlik (w) değerleri ise çok ifade edilen
+78 genden hesaplanır - ribozomal proteinler, uzama faktörleri, glikoliz
+enzimleri ve dış zar porinleri. Hangi genlerin ölçüt alındığı çıktının
+içine de yazılır.
+
+Bu hesap, uygulamada zaten elle yazılmış olan "nadir kodon" listesini
+bağımsız olarak doğruladı: o listedeki dokuz kodonun hepsi genomdan
+hesaplanan tabloda w < 0,05 çıkıyor. En iyi kodonlar da bilinen E. coli
+tercihleriyle örtüşüyor (Leu için CTG, Arg için CGT, Ala için GCT).
+
+### Saç tokası hesabının sınırı
+Sap bölgesinin serbest enerjisi Biopython'un RNA en yakın komşu
+tablosundan (`RNA_NN3`, Xia ve ark. 1998) gelir; ilmek için standart
+biçimde yaklaşık bir ceza eklenir.
+
+Bu **tam bir katlanma hesabı değildir.** ViennaRNA ya da mfold gibi
+programlar bütün olası yapıları birlikte değerlendirip en düşük
+enerjili katlanmayı bulur; burada yalnızca tek tek saç tokaları
+taranır. Çıkan sayı mutlak bir ΔG olarak değil, "bu bölgede güçlü bir
+yapı var mı" sorusunun göreli yanıtı olarak okunmalıdır. Arayüzde de
+böyle yazıyor.
+
+Bir ayrıntı: en yakın komşu tabloları her istifi tek bir kanonik
+biçimde tutar (`TC/AG` yok ama aynı fiziksel istif olan `GA/CT` var).
+Simetrik eşdeğer denenmezse istiflerin yarısı sessizce kaybolur ve
+yapılar olduğundan kararsız görünür - kod bunu açıkça ele alıyor.
+
 ### Denetim kuralları
 Her kural gerçek bir laboratuvar hatasına karşılık gelir ve üç seviyeye
 ayrılır: `hata` (yapı çalışmaz), `uyari` (çalışır ama kötü sonuç verir),
@@ -413,6 +462,8 @@ core/
   igem_seed.py         iGEM kayıtlarını katalog parçasına çevirir
   ref_vectors.py       referans vektörler + editöryel katman
   cloning.py           restriksiyonla klonlama planı ve denetimi
+  codon.py             CAI ve kodon optimizasyonu
+  structure.py         mRNA saç tokası taraması
   protocol.py          tasarımdan laboratuvar protokolü
   gel.py               agaroz jel simülasyonu
   protein.py           protein özellikleri ve yorumu
@@ -429,9 +480,11 @@ core/
 tools/
   fetch_reference_vectors.py   NCBI'dan vektör dizileri
   fetch_igem_parts.py          iGEM Registry'den parçalar
+  fetch_codon_usage.py         E. coli kodon kullanım tablosu
 data/
   reference_vectors/   15 vektörün dizisi ve öznitelikleri (JSON)
   igem_parts.json      iGEM parça kayıtları
+  ecoli_codon_usage.json  genomdan hesaplanan kodon tablosu
   vectorlab.db         veritabanı (ilk çalıştırmada kurulur)
 ```
 

@@ -23,3 +23,6 @@ Thumbs.db
 # Depoya giren asıl veri data/reference_vectors/*.json; ham kayda
 # ihtiyaç olursa aksesyon numarasıyla yeniden çekilir.
 data/reference_vectors/_genbank/
+
+# Cekme betiklerinin ham indirme onbellegi.
+data/_cache/
