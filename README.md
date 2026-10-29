@@ -122,6 +122,27 @@ Beş sekme:
   elle verdiğiniz koordinatı) katalog parçası olarak kaydeder; kayıt
   aksesyon ve koordinatı taşır.
 
+### Laboratuvar
+Tasarımı tezgâha taşıyan sayfa. Dört sekme:
+
+- **Protokol** — tasarımın kendisinden üretilen, sayılarla dolu bir plan:
+  hangi antibiyotik kaç µg/mL, ligasyona kaç ng insert, hangi
+  indükleyici hangi derişimde. Ligasyon kütlesi molar orandan hesaplanır
+  (`ng insert = ng vektör × insert bp / vektör bp × oran`) — eşit kütle
+  koymak ligasyonun en sık sessiz hatasıdır. Markdown olarak indirilir.
+- **Jel simülasyonu** — sindirimin agaroz jelde nasıl görüneceği.
+  Fragman listesi iki şeyi gizler: yakın boyutlar tek bant olur ve kısa
+  fragmanlar az boya bağladığı için sönük kalır. İkisi de burada
+  çizilir, agaroz yüzdesi fragmanlara göre önerilir.
+- **Protein** — insertin açık okuma çerçevesi çevrilir ve kütle, pI,
+  sönüm katsayısı, GRAVY, kararsızlık indeksi hesaplanır. Her sayının
+  pratik karşılığı yazılır: SDS-PAGE'de bandı nerede arayacağınız,
+  A280'den derişimi nasıl çevireceğiniz, inclusion body riski, tampon
+  pH'ının pI'ya göre nerede durması gerektiği.
+- **Rapor** — harita, parça listesi, denetim sonucu, protein özellikleri
+  ve protokol tek bir HTML dosyasında. Harita ve jel dosyanın içine
+  gömülür, ayrı görsel gerekmez; tarayıcıda açılıp PDF'e basılabilir.
+
 ### Parça kataloğu
 Parçalara göz atar, dizisi eksik olanları doldurur, kendi parçanızı
 ekler. Her parçaya bağlanan literatür kaynakları burada görünür.
@@ -307,6 +328,43 @@ eksik değil, parçanın içinde. Buna karşılık ayrıca promotör ya da RBS
 seçilmişse uyarı çıkar (DEV-02), çünkü montajda iki kaset üst üste
 biner.
 
+### Jel simülasyonunun modeli
+Agarozda göç mesafesi kabaca `log(boyut)` ile doğrusaldır; jel yüzdesi
+hangi aralığın ayrıştığını belirler. İki ayrıntı bilinçli olarak
+modellendi:
+
+- **Bant birleşmesi.** Boyutları birbirine %6'dan yakın fragmanlar tek
+  bant olarak çizilir, çünkü jelde de öyle görünürler. Tabloda iki
+  satır, jelde bir bant.
+- **Parlaklık kütleyle orantılı.** İnterkalan boya uzunlukla orantılı
+  bağlandığı için, eşit molde olan 100 bp'lik fragman 3000 bp'linin
+  otuzda biri kadar sinyal verir. Sönük kalacak bantlar ayrıca uyarı
+  olarak yazılır - "bu bandı doğrulama ölçütü saymayın".
+
+Agaroz yüzdesi, en çok fragmanı ayırma aralığına alan değer seçilerek
+önerilir; 50 bp'nin altındaki fragmanlar bu seçime katılmaz, çünkü
+hiçbir jelde güvenilir biçimde görünmezler.
+
+### Protein hesapları nereden geliyor
+Kütle, pI, sönüm katsayısı, GRAVY, kararsızlık indeksi ve ikincil yapı
+oranları Biopython'un `Bio.SeqUtils.ProtParam` modülünden gelir (ExPASy
+ProtParam ile aynı yöntemler). Bu değerler **tahmindir, ölçüm
+değildir**: kararsızlık indeksi diziden hesaplanan bir göstergedir,
+gerçek yarı ömür değil; SDS-PAGE'de göç kütleyle birebir orantılı
+değildir.
+
+Uygulamanın kattığı şey yorum: hangi sayı hangi deney kararını
+değiştiriyor. Örneğin triptofan ve tirozin yoksa sönüm katsayısı sıfır
+çıkar ve Nanodrop sıfıra yakın okur - bu protein olmadığı anlamına
+gelmez, A280'in o protein için kullanılamayacağı anlamına gelir.
+
+### Protokoldeki sayılar
+Antibiyotik ve indükleyici derişimleri standart E. coli çalışma
+değerleridir ve tasarımın parçalarından seçilir: `MRK_KAN` varsa
+kanamisin 50 µg/mL, `PRO_ARABAD` varsa arabinoz. Laboratuvarınızın
+kendi protokolü farklıysa onunki önceliklidir - bu sayılar başlangıç
+noktası, reçete değil.
+
 ### Denetim kuralları
 Her kural gerçek bir laboratuvar hatasına karşılık gelir ve üç seviyeye
 ayrılır: `hata` (yapı çalışmaz), `uyari` (çalışır ama kötü sonuç verir),
@@ -347,6 +405,7 @@ app_pages/
   vectors.py           referans vektörler (harita, enzim, klonlama)
   analyze.py           dizi analizi
   enzyme_lab.py        enzim kütüphanesi, kesim diyagramları
+  labwork.py           protokol, jel, protein, rapor
   parts.py             katalog yönetimi, iGEM serileri
   literature.py        literatür modülü
 core/
@@ -354,6 +413,10 @@ core/
   igem_seed.py         iGEM kayıtlarını katalog parçasına çevirir
   ref_vectors.py       referans vektörler + editöryel katman
   cloning.py           restriksiyonla klonlama planı ve denetimi
+  protocol.py          tasarımdan laboratuvar protokolü
+  gel.py               agaroz jel simülasyonu
+  protein.py           protein özellikleri ve yorumu
+  report.py            tek dosyalık HTML rapor
   enzymes.py           REBASE enzim kütüphanesi
   recommend.py         sihirbazın kural motoru
   db.py                SQLite katmanı
@@ -425,6 +488,15 @@ bilinçli seçimlerdir ve kullanmadan önce bilmeniz gerekir:
   hesaplanmış bir değerdir, ölçülmüş promotör gücü değil. İkisi aynı
   yönde gider ama birebir değildir; ölçüm değerleri Registry'nin kendi
   parça sayfalarındadır.
+- Jel simülasyonunda kesilmemiş plazmit tek bant olarak çizilir.
+  Gerçekte dairesel plazmit üç bant verir (süperkıvrımlı, açık
+  dairesel, doğrusal) ve süperkıvrımlı olan kendi boyutundan daha hızlı
+  göçer. Kesilmiş fragmanlar için model doğrudur, kesilmemiş kontrol
+  için basitleştirmedir.
+- Protein özellikleri dizi üzerinden yapılan tahminlerdir. Katlanma,
+  çeviri sonrası değişiklikler ve gerçek çözünürlük bu sayılardan
+  okunamaz; GRAVY yüksek diye protein mutlaka çöker, düşük diye mutlaka
+  çözünür demek değildir.
 - Klonlama planı iki tek kesen enzimde büyük parçayı iskelet sayar. MCS
   içinden kesiyorsanız bu doğrudur; uzak iki bölgeden kesiyorsanız
   hangi parçanın iskelet olduğunu haritadan doğrulayın.

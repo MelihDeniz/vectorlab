@@ -62,6 +62,11 @@ page = st.navigation(
             icon=":material/content_cut:",
         ),
         st.Page(
+            "app_pages/labwork.py",
+            title="Laboratuvar",
+            icon=":material/science:",
+        ),
+        st.Page(
             "app_pages/parts.py",
             title="Parça kataloğu",
             icon=":material/inventory_2:",
