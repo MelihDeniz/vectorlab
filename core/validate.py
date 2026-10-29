@@ -13,6 +13,7 @@ aramasını sağlar.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -81,6 +82,7 @@ def validate(
     vec: AssembledVector,
     host: dict[str, Any] | None = None,
     insert_seq: str = "",
+    annotation_complete: bool = True,
     cloning_enzymes: list[str] | None = None,
     purpose: str = "ifade",
 ) -> list[Finding]:
@@ -105,7 +107,39 @@ def validate(
     _check_physical(f, vec)
     _check_enzymes(f, vec, cloning_enzymes)
 
+    if not annotation_complete:
+        f = _soften_absence(f)
+
     return sorted(f, key=lambda x: (SEVERITY_ORDER.get(x.severity, 3), x.rule_id))
+
+
+# "Şu eleman yok" diyen kurallar. Parçalardan kurduğunuz bir yapıda bu
+# bilgi kesindir: koymadıysanız yoktur. Ama dışarıdan yüklenmiş bir
+# plazmitte eleman VARDIR da tanınmamış olabilir - kayıtta anotasyonu
+# yoksa ya da katalogda karşılığı yoksa göremeyiz. O yüzden yüklenen
+# yapılarda bu bulgular hataya değil uyarıya çevrilir.
+_ABSENCE_RULES = {"CORE-01", "CORE-02", "CORE-03", "CORE-04", "CORE-05"}
+
+_ABSENCE_SUFFIX = (
+    " **Not:** bu yapı dışarıdan yüklendi. Eleman gerçekten eksik "
+    "olabilir, ama kayıtta anotasyonu olmadığı ya da katalogda karşılığı "
+    "bulunmadığı için tanınmamış da olabilir. Tanınmayan bölgeleri "
+    "inceleme raporundan görebilirsiniz."
+)
+
+
+def _soften_absence(findings: list[Finding]) -> list[Finding]:
+    out = []
+    for x in findings:
+        if x.rule_id in _ABSENCE_RULES and x.severity == "hata":
+            out.append(Finding(
+                "uyari", x.rule_id, x.title + " (tanınmamış olabilir)",
+                x.detail + _ABSENCE_SUFFIX, x.fix, x.literature_query,
+                x.refs,
+            ))
+        else:
+            out.append(x)
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -324,9 +358,23 @@ def _check_repressors(f, vec, host, pid):
 # ---------------------------------------------------------------------------
 
 
+# Tek zincirli (fag) orijinler plazmitin kendi replikasyonunu
+# sürdürmez; f1/M13 orijini yalnızca tek zincirli DNA üretimi için
+# vardır ve ColE1 ile çatışmaz. Kimlikle elemek yetmiyor: aynı orijin
+# referans vektörlerden çıkarılmış bir parça olarak da gelebiliyor,
+# o yüzden ada da bakılıyor.
+_SINGLE_STRAND_ORI = re.compile(r"\b(f1|M13|fd|IKe|phage)\b", re.I)
+
+
+def _is_replicative_ori(part: dict[str, Any]) -> bool:
+    if part.get("part_id") == "ORI_F1":
+        return False
+    return not _SINGLE_STRAND_ORI.search(part.get("name", ""))
+
+
 def _check_origin(f, vec, host, pid):
     oris = vec.parts_of("ori")
-    replicative = [o for o in oris if o["part_id"] != "ORI_F1"]
+    replicative = [o for o in oris if _is_replicative_ori(o)]
 
     if len(replicative) > 1:
         names = ", ".join(o["name"] for o in replicative)

@@ -2,7 +2,7 @@
 
 import streamlit as st
 
-from core import db, enzymes as ez
+from core import db, enzymes as ez, library as lib
 from core.assembly import assemble, sort_canonical, to_fasta, to_genbank
 from core.env import SHARED_NOTICE, is_shared_deployment
 from core.parts_seed import CATEGORY_TR
@@ -182,8 +182,9 @@ with right:
         m.metric("Hata", counts["hata"], delta=None)
         m.metric("Uyarı", counts["uyari"], delta=None)
 
-        tab_map, tab_lin, tab_check, tab_seq = st.tabs(
-            ["Dairesel harita", "Doğrusal harita", "Denetim", "Dizi ve dışa aktarım"]
+        tab_map, tab_lin, tab_check, tab_lib, tab_seq = st.tabs(
+            ["Dairesel harita", "Doğrusal harita", "Denetim",
+             "Kütüphane kur", "Dizi ve dışa aktarım"]
         )
 
         single = {
@@ -224,6 +225,150 @@ with right:
                         st.caption(
                             f"Literatür sorgusu: `{f.literature_query}`"
                         )
+
+
+        with tab_lib:
+            st.caption(
+                "Gerçek laboratuvarda ifade düzeyi tek tasarımla "
+                "ayarlanmaz: promotör ve RBS değiştirilerek bir seri "
+                "kurulur, hepsi denenir, işe yarayan seçilir. Sebebi "
+                "basit — ifade düzeyini önceden hesaplayamazsınız, ama "
+                "bir aralığı tarayabilirsiniz."
+            )
+
+            degisken_kategoriler = ["promoter", "rbs", "ori", "marker",
+                                    "terminator"]
+            lk = st.container(horizontal=True, vertical_alignment="bottom")
+            hangi = lk.multiselect(
+                "Hangi kategoriler değişsin?", degisken_kategoriler,
+                default=["promoter", "rbs"],
+                format_func=lambda c: CATEGORY_TR.get(c, c),
+            )
+            lk.caption(
+                "Seçmediğiniz kategoriler soldaki tasarımdan olduğu gibi "
+                "alınır."
+            )
+
+            secenekler: dict[str, list[str]] = {}
+            for kat in hangi:
+                kat_parcalar = [p for p in all_parts
+                                if p["category"] == kat
+                                and p["seq_status"] == "full"]
+                # Varsayilan: tasarimdaki secim + ayni kategoriden gucu
+                # bilinen birkac kardes. Tek secenekle acilirsa sekme
+                # bos gorunur ve kullanici ne yapacagini anlamaz.
+                secili = [p["part_id"] for p in kat_parcalar
+                          if p["part_id"] in
+                          st.session_state.get(f"ms_{kat}", [])]
+                gucu_bilinen = [
+                    p["part_id"] for p in kat_parcalar
+                    if p["part_id"] not in secili
+                    and lib.strength_score(p)[0] is not None
+                ]
+                varsayilan = (secili + gucu_bilinen)[:4]
+                secenekler[kat] = st.multiselect(
+                    f"{CATEGORY_TR.get(kat, kat)} seçenekleri",
+                    [p["part_id"] for p in kat_parcalar],
+                    default=varsayilan,
+                    format_func=lambda i: parts_by_id[i]["name"][:52],
+                    key=f"lib_{kat}",
+                )
+
+            sabit = [pid for pid in st.session_state.design_parts
+                     if parts_by_id.get(pid, {}).get("category") not in hangi]
+            toplam = 1
+            for v in secenekler.values():
+                toplam *= max(len(v), 1)
+
+            ozet = st.container(horizontal=True)
+            ozet.metric("Sabit parça", len(sabit))
+            ozet.metric("Birleşim", toplam if hangi else 0)
+
+            if not hangi or toplam <= 1:
+                st.info(
+                    "En az bir kategoriyi değişken yapın ve o kategoriden "
+                    "birden fazla parça seçin.",
+                    icon=":material/category:")
+            else:
+                varyantlar, lib_uyari = lib.build(
+                    fixed_part_ids=sabit, variable=secenekler,
+                    host=host, purpose=st.session_state.design_purpose,
+                    insert_seq=insert,
+                    name_prefix=(st.session_state.design_name or "var"),
+                )
+                for u in lib_uyari:
+                    st.warning(u, icon=":material/warning:")
+
+                aralik = lib.span(varyantlar)
+                a = st.container(horizontal=True)
+                a.metric("Varyant", len(varyantlar))
+                a.metric("Hatasız", sum(1 for v in varyantlar if v.ok))
+                if aralik["fold"]:
+                    a.metric("Taranan aralık", f"{aralik['fold']}×")
+                a.metric("Basamak", len(aralik["tiers"]))
+
+                st.dataframe(
+                    [{"Varyant": v.name,
+                      "Beklenen ifade": v.expression,
+                      "Basamak": v.tier,
+                      "Uzunluk": v.length,
+                      "GC": v.gc,
+                      "Hata": v.errors,
+                      "Uyarı": v.warnings} for v in varyantlar],
+                    width="stretch", hide_index=True,
+                    alt="Kombinatoryal kütüphanedeki varyantlar",
+                    column_config={
+                        "Beklenen ifade": st.column_config.ProgressColumn(
+                            "Beklenen ifade", min_value=0.0, max_value=1.0,
+                            format="percent"),
+                    },
+                )
+
+                st.info(
+                    "**Beklenen ifade bir ölçüm değildir.** Üç kaynaktan "
+                    "türetilmiş sıralamadır: Anderson promotörlerinde "
+                    "sigma70 konsensüsüne uzaklık (diziden hesaplanır), "
+                    "katalogdaki güç etiketi ve iGEM başlığındaki "
+                    "strong/medium/weak nitelemesi. İfadeyle aynı yönde "
+                    "gider ama kaç kat fark edeceğini söylemez - serinin "
+                    "varlık sebebi de budur.",
+                    icon=":material/functions:")
+
+                if varyantlar and varyantlar[0].basis:
+                    with st.expander("En yüksek varyantın dayanağı"):
+                        for b in varyantlar[0].basis:
+                            st.markdown(f"- {b}")
+
+                hatali = [v for v in varyantlar if not v.ok]
+                if hatali:
+                    st.warning(
+                        f"{len(hatali)} varyant denetimden geçemedi. "
+                        "Örnek: " + "; ".join(
+                            f"{v.name.split(' · ')[0]} — "
+                            f"{', '.join(v.notes[:2])}"
+                            for v in hatali[:3]),
+                        icon=":material/warning:")
+
+                d = st.container(horizontal=True)
+                d.download_button(
+                    "Kütüphaneyi CSV olarak indir", lib.to_csv(varyantlar),
+                    file_name=f"{st.session_state.design_name}-kutuphane.csv",
+                    mime="text/csv", icon=":material/download:",
+                )
+                secili_varyant = st.selectbox(
+                    "Bir varyantı tasarımcıya yükle",
+                    [v.name for v in varyantlar],
+                )
+                if st.button("Bu varyantı yükle",
+                             icon=":material/download_for_offline:"):
+                    hedef = next(v for v in varyantlar
+                                 if v.name == secili_varyant)
+                    for cat in CATS:
+                        st.session_state[f"ms_{cat}"] = [
+                            pid for pid in hedef.part_ids
+                            if parts_by_id.get(pid, {}).get("category") == cat
+                        ]
+                    st.rerun()
 
         with tab_seq:
             c = st.container(horizontal=True)

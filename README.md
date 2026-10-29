@@ -147,6 +147,30 @@ kapatan bir yapı varsa uyarır: promotör güçlü, kodonlar doğru olduğu
 halde protein alınamamasının en sinsi sebebi budur ve haritada
 görünmez.
 
+### Plazmit denetle
+42 denetim kuralı şimdiye kadar yalnızca *parçalardan kurduğunuz*
+yapılara uygulanabiliyordu. Bu sayfa elinizdeki bir plazmiti - hocanın
+verdiği, bir kayıttan indirdiğiniz ya da daha önce kurduğunuz - aynı
+kurallardan geçirir. GenBank, FASTA ya da düz dizi kabul eder.
+
+İki kaynak birleştirilir: katalog taraması (parçalarımız dizide birebir
+ya da yakın eşleşmeyle bulunuyor mu) ve dosyanın kendi öznitelik
+tablosu. İkincisi olmazsa denetim yanıltır — katalogda karşılığı olmayan
+bir orijin taşıyan plazmit için "replikasyon orijini yok" hatası verilir
+ki bu yanlıştır.
+
+İki ayar bilinçli:
+
+- **Aynı bölgeye düşen eşleşmeler daraltılır.** Katalogda `bla` birden
+  çok kayıt olarak var ve üçü de aynı yere oturuyor; daraltılmazsa
+  "aynı plazmitte birden fazla marker" diye yanlış hata çıkıyordu.
+- **"Eleman yok" bulguları hataya değil uyarıya çevrilir.** Dışarıdan
+  yüklenmiş bir plazmitte eleman *vardır da tanınmamış* olabilir.
+  Parçalardan kurduğunuz yapıda bu bilgi kesindir, yüklenende değil.
+
+Tanınmayan bölgeler ayrıca listelenir — en büyüğünü tek tıkla Dizi
+analizine gönderip açık okuma çerçevesi arayabilirsiniz.
+
 ### Laboratuvar
 Tasarımı tezgâha taşıyan sayfa. Dört sekme:
 
@@ -460,6 +484,32 @@ eksik değil, parçanın içinde. Buna karşılık ayrıca promotör ya da RBS
 seçilmişse uyarı çıkar (DEV-02), çünkü montajda iki kaset üst üste
 biner.
 
+### Kombinatoryal kütüphane
+Tasarımcıdaki **Kütüphane kur** sekmesi, tek tasarım yerine bir seri
+üretir: sabit tuttuğunuz parçaların üstüne, değişken bıraktığınız
+kategorilerde bütün birleşimleri kurar, her birini denetimden geçirir ve
+beklenen ifade düzeyine göre sıralar.
+
+Sebebi şu: ifade düzeyini önceden hesaplayamazsınız, ama bir aralığı
+tarayabilirsiniz. Gerçek laboratuvarda da böyle yapılır.
+
+**Beklenen ifade bir ölçüm değildir** ve arayüzde de böyle yazar. Üç
+kaynaktan türetilmiş sıralamadır, her satırda hangisinden geldiği
+belirtilir:
+
+1. Anderson promotörlerinde sigma70 konsensüsüne uzaklık — diziden
+   hesaplanır, en nesnel olanı budur.
+2. Katalogdaki güç etiketi ("çok güçlü", "orta", "zayıf").
+3. iGEM Registry başlığındaki strong / medium / weak nitelemesi.
+
+Promotör ve RBS skorları çarpılır, çünkü transkripsiyon ve çeviri
+ardışık adımlardır; biri sıfıra yaklaşırsa diğeri telafi edemez.
+Mekanizmaya uygun ama yine de kaba bir yaklaşım.
+
+Beş promotör × dört RBS'lik tipik bir seri yaklaşık 11 kat aralık
+tarıyor. Seçtiğiniz varyantı tek tıkla Tasarımcıya yükleyebilir, seriyi
+CSV olarak indirebilirsiniz.
+
 ### Jel simülasyonunun modeli
 Agarozda göç mesafesi kabaca `log(boyut)` ile doğrusaldır; jel yüzdesi
 hangi aralığın ayrıştığını belirler. İki ayrıntı bilinçli olarak
@@ -597,6 +647,7 @@ app_pages/
   vectors.py           referans vektörler (harita, enzim, klonlama)
   analyze.py           dizi analizi
   enzyme_lab.py        enzim kütüphanesi, kesim diyagramları
+  inspect.py           var olan plazmiti denetle
   labwork.py           protokol, jel, protein, rapor
   parts.py             katalog yönetimi, iGEM serileri
   literature.py        literatür modülü
@@ -605,6 +656,8 @@ core/
   igem_seed.py         iGEM kayıtlarını katalog parçasına çevirir
   ref_vectors.py       referans vektörler + editöryel katman
   cloning.py           restriksiyonla klonlama planı ve denetimi
+  inspect_plasmid.py   yüklenen plazmiti denetime hazırla
+  library.py           kombinatoryal kütüphane
   assembly_methods.py  Golden Gate, Gibson, mutagenez
   troubleshoot.py      çift kesim denetimi, sorun giderme ağacı
   verification.py      dizileme planı ve okuma karşılaştırması

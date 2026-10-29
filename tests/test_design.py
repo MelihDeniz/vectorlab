@@ -407,3 +407,147 @@ def test_hizalama_gorunumu_tam_eslesmede_yildiz_yok():
     govde = "\n".join(l for l in gorunum.splitlines()
                       if l.startswith(" ") or l[:7].strip().isdigit())
     assert "*" not in govde
+
+
+# ---------------------------------------------------------------------------
+# Yüklenen plazmiti denetleme
+# ---------------------------------------------------------------------------
+
+
+def test_genbank_yuklemesi_okunur():
+    from pathlib import Path
+
+    from core import inspect_plasmid as ip
+    gb = Path("data/reference_vectors/_genbank/J01749.gb")
+    if not gb.exists():
+        pytest.skip("ham GenBank önbelleği yok")
+    d = ip.parse_upload(gb.read_bytes(), "pBR322.gb")
+    assert d["source"] == "genbank"
+    assert len(d["sequence"]) == 4361
+    assert d["circular"]
+    assert len(d["features"]) > 20
+
+
+def test_fasta_yuklemesi_okunur():
+    from core import inspect_plasmid as ip
+    d = ip.parse_upload(rv.to_fasta("PUC19").encode(), "pUC19.fasta")
+    assert d["source"] == "fasta"
+    assert len(d["sequence"]) == 2686
+
+
+def test_puc19_incelemesi_dogru_elemanlari_bulur():
+    from core import inspect_plasmid as ip
+    d = ip.parse_upload(rv.to_fasta("PUC19").encode(), "pUC19.fasta")
+    ins = ip.inspect(d, db.list_parts())
+    kategoriler = {p["category"] for p in ins.derived_parts}
+    assert {"ori", "marker", "promoter"} <= kategoriler
+    assert ins.coverage > 50
+
+
+def test_inceleme_ayni_bolgeyi_iki_kez_saymaz():
+    """Katalogda `bla` birden çok kayıt; üçü de aynı yere oturur.
+    Daraltılmazsa 'birden fazla marker/orijin' yanlış hatası çıkar."""
+    from core import inspect_plasmid as ip
+    d = ip.parse_upload(rv.to_fasta("PBR322").encode(), "pBR322.fasta")
+    ins = ip.inspect(d, db.list_parts())
+    oris = [p for p in ins.derived_parts if p["category"] == "ori"]
+    assert len(oris) == 1, [p["name"] for p in oris]
+
+
+def test_yuklenen_plazmitte_eksiklik_hataya_donmez():
+    """Anotasyon eksikliği, elemanın yokluğu demek değildir."""
+    from core import inspect_plasmid as ip
+    d = ip.parse_upload(rv.to_fasta("PSEVA231").encode(), "x.fasta")
+    ins = ip.inspect(d, db.list_parts())
+    vec = ip.to_vector(ins)
+    kati = validate(vec, host=db.get_host("DH5A"), purpose="klonlama")
+    yumusak = validate(vec, host=db.get_host("DH5A"), purpose="klonlama",
+                       annotation_complete=False)
+    assert any(x.severity == "hata" for x in kati)
+    assert not any(x.rule_id.startswith("CORE") and x.severity == "hata"
+                   for x in yumusak)
+
+
+def test_f1_orijini_coklu_orijin_hatasi_vermez():
+    """f1/M13 tek zincir orijinidir, ColE1 ile çatışmaz."""
+    from core import inspect_plasmid as ip
+    d = ip.parse_upload(rv.to_fasta("PBAD24").encode(), "pBAD24.fasta")
+    ins = ip.inspect(d, db.list_parts())
+    f = validate(ip.to_vector(ins), host=db.get_host("TOP10"),
+                 purpose="ifade", annotation_complete=False)
+    assert not any(x.rule_id == "ORI-01" for x in f)
+
+
+def test_inceleme_dizisi_yuklenen_dizinin_kendisi():
+    """Yapının dizisi parçaların birleşimi değil, yüklenen dizi olmalı."""
+    from core import inspect_plasmid as ip
+    d = ip.parse_upload(rv.to_fasta("PUC19").encode(), "x.fasta")
+    ins = ip.inspect(d, db.list_parts())
+    assert ip.to_vector(ins).sequence == rv.load("PUC19")["sequence"]
+
+
+# ---------------------------------------------------------------------------
+# Kombinatoryal kütüphane
+# ---------------------------------------------------------------------------
+
+
+def test_kutuphane_butun_birlesimleri_uretir():
+    from core import library as lib
+    v, _ = lib.build(
+        fixed_part_ids=["ORI_P15A", "MRK_CAT", "TER_B0015"],
+        variable={"promoter": ["IGEM_J23119", "IGEM_J23105"],
+                  "rbs": ["RBS_B0034", "RBS_B0031"]},
+        host=db.get_host("DH5A"), purpose="ifade")
+    assert len(v) == 4
+    assert len({x.name for x in v}) == 4
+
+
+def test_kutuphane_ifadeye_gore_sirali():
+    from core import library as lib
+    v, _ = lib.build(
+        fixed_part_ids=["ORI_P15A", "MRK_CAT"],
+        variable={"promoter": ["IGEM_J23119", "IGEM_J23113"],
+                  "rbs": ["RBS_B0034", "RBS_B0031"]},
+        host=db.get_host("DH5A"), purpose="ifade")
+    skorlar = [x.expression for x in v if x.expression is not None]
+    assert skorlar == sorted(skorlar, reverse=True)
+
+
+def test_anderson_gucu_konsensusten_hesaplanir():
+    from core import library as lib
+    guclu = db.get_part("IGEM_J23119")
+    zayif = db.get_part("IGEM_J23113")
+    s1, k1 = lib.strength_score(guclu)
+    s2, k2 = lib.strength_score(zayif)
+    assert s1 > s2
+    assert "konsensüs" in k1 and "konsensüs" in k2
+
+
+def test_katalog_etiketi_yedek_olarak_kullanilir():
+    from core import library as lib
+    skor, kaynak = lib.strength_score(db.get_part("RBS_B0031"))
+    assert skor is not None
+    assert "katalog" in kaynak
+
+
+def test_kutuphane_sinir_asilinca_uyarir():
+    from core import library as lib
+    promotorler = [p["part_id"] for p in db.list_parts("promoter")][:20]
+    rbsler = [p["part_id"] for p in db.list_parts("rbs")][:10]
+    v, uyari = lib.build(
+        fixed_part_ids=["ORI_P15A", "MRK_CAT"],
+        variable={"promoter": promotorler, "rbs": rbsler},
+        host=db.get_host("DH5A"), max_variants=25)
+    assert len(v) == 25
+    assert uyari
+
+
+def test_kutuphane_araligi_hesaplanir():
+    from core import library as lib
+    v, _ = lib.build(
+        fixed_part_ids=["ORI_P15A", "MRK_CAT"],
+        variable={"promoter": ["IGEM_J23119", "IGEM_J23113"],
+                  "rbs": ["RBS_B0034", "RBS_B0031"]},
+        host=db.get_host("DH5A"))
+    a = lib.span(v)
+    assert a["fold"] and a["fold"] > 1

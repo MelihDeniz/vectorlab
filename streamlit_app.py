@@ -52,6 +52,11 @@ page = st.navigation(
             icon=":material/album:",
         ),
         st.Page(
+            "app_pages/inspect.py",
+            title="Plazmit denetle",
+            icon=":material/fact_check:",
+        ),
+        st.Page(
             "app_pages/analyze.py",
             title="Dizi analizi",
             icon=":material/search_insights:",

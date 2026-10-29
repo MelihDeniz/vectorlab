@@ -876,3 +876,37 @@ def primer_hairpin(primer: str, threshold: int = 12) -> dict[str, Any]:
                " 3' ucu serbest, yine de bağlanma verimi düşer.")
         ),
     }
+
+
+def collapse_overlapping(
+    features: list[Feature], length: int, min_overlap: float = 0.6,
+) -> list[Feature]:
+    """Aynı bölgeye düşen eşleşmelerden en iyisini tut.
+
+    Katalogda aynı gen birden çok kayıt olarak bulunabilir - `bla` hem
+    çekirdek katalogda hem pTrc99A'dan çıkarılmış hâliyle, `pBR322 ori`
+    ile `pUC ori` arasında tek nükleotid fark var. Bunlar aynı bölgeye
+    düşer ve ayrı ayrı sayılırsa "aynı plazmitte birden fazla orijin"
+    gibi YANLIŞ denetim hataları üretir.
+
+    Aynı kategoriden, birbiriyle `min_overlap` oranında örtüşen
+    eşleşmelerden önce benzerliği yüksek, sonra uzun olan tutulur.
+    """
+    def spans(f: Feature) -> list[tuple[int, int]]:
+        if f.start <= f.end:
+            return [(f.start, f.end)]
+        return [(f.start, length), (1, f.end)]
+
+    def ortusme(a: Feature, b: Feature) -> bool:
+        ortak = 0
+        for s1, e1 in spans(a):
+            for s2, e2 in spans(b):
+                ortak += max(0, min(e1, e2) - max(s1, s2) + 1)
+        return ortak >= min_overlap * min(a.length, b.length)
+
+    tutulan: list[Feature] = []
+    for f in sorted(features, key=lambda x: (-x.identity, -x.length)):
+        if any(k.category == f.category and ortusme(k, f) for k in tutulan):
+            continue
+        tutulan.append(f)
+    return sorted(tutulan, key=lambda f: (f.start, -f.length))
