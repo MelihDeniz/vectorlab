@@ -493,3 +493,68 @@ def read_chromatogram(data: bytes, quality_cutoff: int = 20) -> Chromatogram | N
             "200 bazdan kısa güvenilir okuma, yapıyı doğrulamak için "
             "yeterli değildir. Dizilemeyi tekrarlayın."))
     return c
+
+
+def alignment_view(
+    design: str, read: str, cds_start: int | None = None,
+    width: int = 60, trim: int = 0, context: int = 0,
+) -> str:
+    """Hizalamayı okunabilir bir blok olarak çiz.
+
+    Üç satır: tasarım, eşleşme işaretleri, okuma. Farklar `*` ile
+    işaretlenir, boşluklar `-` ile gösterilir. Fark tablosunu okumak
+    yerine gözle görmek, özellikle indel'lerde çok daha hızlıdır.
+    """
+    rep = compare_read(design, read, cds_start=cds_start, trim=trim)
+    if not rep.aligned_from:
+        return "Hizalanamadı."
+
+    d = clean_seq(design)
+    r = clean_seq(read)
+    if trim:
+        r = r[trim:]
+    if rep.reversed_read:
+        r = revcomp(r)
+
+    al = _aligner()
+    best = al.align(d, r)[0]
+    hedef_bloklar, sorgu_bloklar = best.aligned
+    hedef_bloklar = [(int(a), int(b)) for a, b in hedef_bloklar]
+    sorgu_bloklar = [(int(a), int(b)) for a, b in sorgu_bloklar]
+
+    ust, orta, alt = [], [], []
+    onceki_h = onceki_s = None
+    for (hb, hs), (sb, ss) in zip(hedef_bloklar, sorgu_bloklar):
+        if onceki_h is not None:
+            if hb > onceki_h:                      # okumada eksik
+                ust.append(d[onceki_h:hb])
+                orta.append(" " * (hb - onceki_h))
+                alt.append("-" * (hb - onceki_h))
+            if sb > onceki_s:                      # okumada fazla
+                ust.append("-" * (sb - onceki_s))
+                orta.append(" " * (sb - onceki_s))
+                alt.append(r[onceki_s:sb])
+        for k in range(hs - hb):
+            a, b = d[hb + k], r[sb + k]
+            ust.append(a)
+            orta.append("|" if a == b else "*")
+            alt.append(b)
+        onceki_h, onceki_s = hs, ss
+
+    ust_s, orta_s, alt_s = "".join(ust), "".join(orta), "".join(alt)
+    satirlar = [
+        f"tasarım {rep.aligned_from}–{rep.aligned_to} · okuma "
+        f"{rep.read_length} nt · benzerlik %{rep.identity}"
+        + (" · okuma ters zincirden" if rep.reversed_read else ""),
+        "",
+    ]
+    konum = rep.aligned_from
+    for i in range(0, len(ust_s), width):
+        dilim_ust = ust_s[i:i + width]
+        satirlar.append(f"{konum:>7}  {dilim_ust}")
+        satirlar.append(f"{'':>7}  {orta_s[i:i + width]}")
+        satirlar.append(f"{'okuma':>7}  {alt_s[i:i + width]}")
+        satirlar.append("")
+        konum += len(dilim_ust.replace("-", ""))
+    satirlar.append("| eşleşme    * fark    - boşluk")
+    return "\n".join(satirlar)

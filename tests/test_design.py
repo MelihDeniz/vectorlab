@@ -392,3 +392,18 @@ def test_ters_cikinti_cifti_yakalanir():
 def test_temiz_kume_sorun_vermez():
     sorunlar = am.check_overhang_set(am.suggest_overhangs(6))
     assert all(n["kind"] == "bilgi" for n in sorunlar)
+
+
+def test_hizalama_gorunumu_farki_isaretler():
+    bozuk = list(GEN)
+    bozuk[30] = "T" if bozuk[30] != "T" else "A"
+    gorunum = vf.alignment_view(GEN, "".join(bozuk))
+    assert "*" in gorunum, "fark işaretlenmedi"
+    assert "benzerlik" in gorunum
+
+
+def test_hizalama_gorunumu_tam_eslesmede_yildiz_yok():
+    gorunum = vf.alignment_view(GEN, GEN)
+    govde = "\n".join(l for l in gorunum.splitlines()
+                      if l.startswith(" ") or l[:7].strip().isdigit())
+    assert "*" not in govde

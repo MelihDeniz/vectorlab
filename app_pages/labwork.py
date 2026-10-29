@@ -570,6 +570,13 @@ with tab_dogrula:
                  "bilgi": st.info}.get(n["kind"], st.info)(
                     f"**{n['title']}** — {n['detail']}")
 
+            with st.expander("Hizalamayı göster", expanded=bool(
+                    rap2.differences)):
+                st.code(
+                    vf.alignment_view(seq, okuma, cds_start=cds_bas,
+                                      trim=int(kirp)),
+                    language="text")
+
             if rap2.differences:
                 st.dataframe(
                     [{"Konum": f2.position,
