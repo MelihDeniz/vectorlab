@@ -334,3 +334,61 @@ def test_his_etiketi_bulunur():
 
 def test_cok_kisa_dizi_none_doner():
     assert protein.analyze("MKV") is None
+
+
+# ---------------------------------------------------------------------------
+# Kromatogram kalite kırpması
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("ad,kalite,beklenen", [
+    ("iki ucu kötü", [5] * 40 + [38] * 500 + [6] * 60, (40, 540)),
+    ("tamamı iyi", [40] * 300, (0, 300)),
+    ("tamamı kötü", [3] * 300, (0, 0)),
+    ("ortada tek kötü baz", [38] * 100 + [2] + [38] * 100, (0, 201)),
+    ("başı kötü", [4] * 80 + [36] * 400, (80, 480)),
+])
+def test_kalite_kirpmasi(ad, kalite, beklenen):
+    """Okumanın başı ve sonu neredeyse her zaman güvenilmezdir;
+    kırpma o bölgeleri atmalı ama ortadaki tek bir kötü bazda
+    okumayı ikiye bölmemeli."""
+    assert vf._mott_trim(kalite, 20) == beklenen, ad
+
+
+def test_bozuk_ab1_dosyasi_none_doner():
+    assert vf.read_chromatogram(b"bu bir ab1 dosyasi degil") is None
+
+
+# ---------------------------------------------------------------------------
+# Çıkıntı kümesi
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("n", [2, 4, 8, 12, 20])
+def test_onerilen_cikintilar_kurallara_uyar(n):
+    """Her çift arasında en az iki baz fark olmalı, hiçbiri palindromik
+    ya da bir diğerinin tersi olmamalı."""
+    kume = am.suggest_overhangs(n)
+    assert len(kume) == n
+    for i, a in enumerate(kume):
+        assert a != revcomp(a), f"{a} palindromik"
+        for b in kume[i + 1:]:
+            assert a != b
+            assert revcomp(a) != b
+            assert am._hamming(a, b) >= 2, f"{a} ile {b} tek baz farklı"
+
+
+def test_bozuk_cikinti_kumesi_yakalanir():
+    sorunlar = am.check_overhang_set(["AATG", "AATG", "GGTA"])
+    assert any(n["kind"] == "hata" for n in sorunlar)
+
+
+def test_ters_cikinti_cifti_yakalanir():
+    a = "AACA"
+    sorunlar = am.check_overhang_set([a, revcomp(a)])
+    assert any("tersi" in n["title"] for n in sorunlar)
+
+
+def test_temiz_kume_sorun_vermez():
+    sorunlar = am.check_overhang_set(am.suggest_overhangs(6))
+    assert all(n["kind"] == "bilgi" for n in sorunlar)

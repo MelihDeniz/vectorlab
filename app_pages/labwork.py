@@ -508,9 +508,39 @@ with tab_dogrula:
             "asit karşılığı da hesaplanır - sessiz mi, değiştiren mi, "
             "yoksa erken durdurma mı."
         )
+        ab1 = st.file_uploader(
+            "Kromatogram dosyası (.ab1) — isteğe bağlı",
+            type=["ab1"], key="vf_ab1",
+            help="Firmanın gönderdiği kromatogramı yüklerseniz kalite "
+                 "değerleri okunur ve güvenilmez uçlar kırpılır. Metin "
+                 "dizi kalite bilgisi taşımaz: uçlardaki bir 'fark' "
+                 "gerçek mutasyon değil, okuma hatası olabilir.",
+        )
+        krom = None
+        if ab1 is not None:
+            krom = vf.read_chromatogram(ab1.getvalue())
+            if krom is None:
+                st.error("Dosya .ab1 olarak okunamadı.",
+                         icon=":material/error:")
+            else:
+                q = st.container(horizontal=True)
+                q.metric("Okuma", f"{krom.length} baz")
+                q.metric("Güvenilir bölge",
+                         f"{krom.trim_start}–{krom.trim_end}")
+                q.metric("Ortalama kalite", f"Q{krom.mean_quality}")
+                for n in krom.notes:
+                    {"hata": st.error, "uyari": st.warning,
+                     "bilgi": st.info}.get(n["kind"], st.info)(
+                        f"**{n['title']}** — {n['detail']}")
+                st.line_chart(
+                    {"kalite": krom.qualities}, height=160,
+                    alt="Okuma boyunca baz çağırma kalitesi")
+
         okuma = st.text_area(
             "Okunan dizi (FASTA ya da düz)", height=130,
-            placeholder="Dizileme firmasından gelen diziyi yapıştırın…",
+            value=(krom.trimmed_sequence if krom else ""),
+            placeholder="Dizileme firmasından gelen diziyi yapıştırın "
+                        "ya da yukarıdan .ab1 yükleyin…",
             key="vf_okuma",
         )
         k2 = st.container(horizontal=True, vertical_alignment="bottom")

@@ -13,6 +13,7 @@ import html
 from typing import Any
 
 from core import protocol as pr
+from core import provenance
 from core.parts_seed import CATEGORY_TR
 
 _CSS = """
@@ -116,7 +117,7 @@ def build_html(
         f"<h1>{_esc(name)}</h1>",
         f"<p class='sub'>Bakteriyel vektör tasarım raporu · {bugun}"
         + (f" · {_esc(author)}" if author else "")
-        + " · VectorLab ile üretildi</p>",
+        + f" · {provenance.describe()}</p>",
     ]
 
     kartlar = [("Uzunluk", f"{length} bp"), ("GC", f"%{gc}")]

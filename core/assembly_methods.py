@@ -181,8 +181,14 @@ def golden_gate(
             + ", ".join(f"{j.index}. ({j.overhang})" for j in cakisan)
             + ". Bu durumda parçalar yanlış sırada birleşir ve ürün "
               "jelde doğru boyutta göründüğü için hata dizilemeye kadar "
-              "fark edilmez. Parça sınırlarını birkaç baz kaydırarak "
-              "farklı çıkıntılar elde edin."))
+              "fark edilmez. İki çözüm var: parça sınırlarını birkaç "
+              "baz kaydırıp doğal diziden farklı çıkıntılar elde etmek, "
+              "ya da tasarlanmış bir küme kullanmak. Bu montaj için "
+              "hesaplanmış, birbirinden en az iki bazla ayrılan küme: "
+              + ", ".join(f"`{o}`" for o in
+                          suggest_overhangs(len(plan.junctions)))
+              + ". Tasarlanmış küme kullanırsanız üründe kısa bir iz "
+                "kalır; izsiz montaj istiyorsanız sınırları kaydırın."))
 
     zayif = [j for j in plan.junctions if j.problems and j not in cakisan]
     if zayif:
@@ -441,3 +447,97 @@ def _primer_warn(core: str, tm: float | None) -> list[str]:
     if toka["risk"] != "yok":
         w.append(f"saç tokası (puan {toka['score']})")
     return w
+
+
+# ---------------------------------------------------------------------------
+# Yüksek güvenilirlikli çıkıntı kümesi
+# ---------------------------------------------------------------------------
+# Golden Gate'te parçaların doğru sırada birleşmesi, çıkıntıların
+# birbirinden AYIRT EDİLEBİLİR olmasına bağlıdır. Ligaz tek bir yanlış
+# eşleşmeyi tolere edebildiği için, yalnızca "aynı olmasınlar" yetmez;
+# aralarında en az iki baz fark olmalıdır.
+#
+# Burada yayımlanmış bir tablo kopyalanmıyor, küme HESAPLANIYOR:
+# 256 olası dört-baz çıkıntıdan, kurallara uyan en büyük ayrık küme
+# açgözlü yöntemle seçiliyor. Bu, kaynağı doğrulanamayan bir listeyi
+# ezberden yazmaktan daha güvenlidir ve seçim ölçütleri kodda açıkça
+# duruyor.
+
+
+def _overhang_candidates(length: int = 4) -> list[str]:
+    from itertools import product
+    out = []
+    for harfler in product("ACGT", repeat=length):
+        oh = "".join(harfler)
+        if oh == revcomp(oh):            # palindromik: kendine bağlanır
+            continue
+        gc = sum(1 for c in oh if c in "GC")
+        if gc == 0 or gc == length:      # hiç G/C yok ya da hepsi G/C
+            continue
+        if any(b * 3 in oh for b in "ACGT"):
+            continue
+        out.append(oh)
+    return out
+
+
+def _hamming(a: str, b: str) -> int:
+    return sum(1 for x, y in zip(a, b) if x != y)
+
+
+def suggest_overhangs(count: int, length: int = 4) -> list[str]:
+    """Birbirinden ayırt edilebilir `count` adet çıkıntı üret.
+
+    Ölçütler: palindromik değil, tamamen A/T ya da tamamen G/C değil,
+    üçlü tekrar içermiyor, hiçbiri bir diğerinin tersi değil ve her
+    çifti arasında en az iki baz fark var.
+    """
+    adaylar = _overhang_candidates(length)
+    secilen: list[str] = []
+    for oh in adaylar:
+        if len(secilen) >= count:
+            break
+        rc = revcomp(oh)
+        uygun = True
+        for s in secilen:
+            if oh == s or rc == s:
+                uygun = False
+                break
+            if _hamming(oh, s) < 2 or _hamming(rc, s) < 2:
+                uygun = False
+                break
+        if uygun:
+            secilen.append(oh)
+    return secilen
+
+
+def check_overhang_set(overhangs: list[str]) -> list[dict[str, str]]:
+    """Verilen çıkıntı kümesini denetle; sorunları sırala."""
+    out: list[dict[str, str]] = []
+    temiz = [o.upper() for o in overhangs if o]
+    for i, a in enumerate(temiz):
+        for p in _overhang_problems(a):
+            out.append(_note("uyari", f"{a}: {p}", ""))
+        for j, b in enumerate(temiz[i + 1:], start=i + 1):
+            if a == b:
+                out.append(_note(
+                    "hata", f"{a} iki kez kullanılmış",
+                    f"{i + 1}. ve {j + 1}. birleşme noktaları aynı "
+                    f"çıkıntıya sahip - parçalar yer değiştirebilir."))
+            elif revcomp(a) == b:
+                out.append(_note(
+                    "hata", f"{a} ve {b} birbirinin tersi",
+                    f"{i + 1}. ve {j + 1}. noktalar birbirine ters yönde "
+                    f"bağlanabilir."))
+            elif _hamming(a, b) < 2:
+                out.append(_note(
+                    "uyari", f"{a} ile {b} arasında tek baz fark",
+                    f"Ligaz tek yanlış eşleşmeyi tolere edebilir; bu iki "
+                    f"nokta birbirine karışabilir. Aralarında en az iki "
+                    f"baz fark olan çıkıntılar seçin."))
+    if not out:
+        out.append(_note(
+            "bilgi", "Çıkıntı kümesi temiz",
+            f"{len(temiz)} çıkıntının hepsi birbirinden en az iki bazla "
+            f"ayrılıyor, hiçbiri palindromik değil ve hiçbiri bir "
+            f"diğerinin tersi değil."))
+    return out

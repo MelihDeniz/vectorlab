@@ -7,6 +7,7 @@ import sqlite3
 from pathlib import Path
 from typing import Any
 
+from core import provenance
 from core.igem_seed import igem_parts
 from core.parts_seed import ALL_PARTS, HOSTS
 
@@ -58,6 +59,7 @@ CREATE TABLE IF NOT EXISTS constructs (
     insert_seq   TEXT NOT NULL DEFAULT '',
     insert_name  TEXT NOT NULL DEFAULT '',
     notes        TEXT NOT NULL DEFAULT '',
+    provenance   TEXT NOT NULL DEFAULT '',
     created_at   TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at   TEXT NOT NULL DEFAULT (datetime('now'))
 );
@@ -295,16 +297,18 @@ def save_construct(
     with con:
         con.execute(
             """INSERT INTO constructs (name, host_id, part_ids, insert_seq,
-                                       insert_name, notes)
-               VALUES (?, ?, ?, ?, ?, ?)
+                                       insert_name, notes, provenance)
+               VALUES (?, ?, ?, ?, ?, ?, ?)
                ON CONFLICT(name) DO UPDATE SET
                  host_id = excluded.host_id,
                  part_ids = excluded.part_ids,
                  insert_seq = excluded.insert_seq,
                  insert_name = excluded.insert_name,
                  notes = excluded.notes,
+                 provenance = excluded.provenance,
                  updated_at = datetime('now')""",
-            (name, host_id, json.dumps(part_ids), insert_seq, insert_name, notes),
+            (name, host_id, json.dumps(part_ids), insert_seq, insert_name,
+             notes, provenance.stamp()),
         )
     con.close()
 

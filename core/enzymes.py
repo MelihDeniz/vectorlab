@@ -392,3 +392,42 @@ def sites_in(seq: str, names: list[str], circular: bool = True) -> dict[str, lis
         except (ValueError, TypeError):
             continue
     return out
+
+
+def recognition_sites(
+    seq: str, names: list[str], circular: bool = True
+) -> dict[str, list[int]]:
+    """Tanıma dizilerinin BAŞLANGIÇ konumları (1 tabanlı).
+
+    `sites_in` kesim konumunu verir; yayımlanmış plazmit haritaları ve
+    üretici katalogları ise genellikle tanıma dizisinin başlangıcını
+    verir. İkisi aynı şey değildir ve aradaki fark enzime göre değişir:
+    EcoRI (G^AATTC) için 1, SacI (GAGCT^C) için 5, SmaI (CCC^GGG) için
+    3. Bir öğrenci uygulamanın verdiği sayıyı yayımlanmış haritayla
+    karşılaştırdığında bu farkı hata sanabilir, bu yüzden iki konum da
+    gösterilir.
+
+    pUC19 üzerinde doğrulandı: EcoRI tanıma 396, kesim 397; SacI tanıma
+    402, kesim 407 - yayımlanmış MCS koordinatlarıyla birebir.
+    """
+    out: dict[str, list[int]] = {}
+    L = len(seq)
+    for name in names:
+        g = geometry(name)
+        if g is None:
+            out[name] = []
+            continue
+        kesimler = sites_in(seq, [name], circular).get(name, [])
+        out[name] = sorted(((k - g.top_cut - 1) % L) + 1 for k in kesimler)
+    return out
+
+
+def site_span(seq: str, name: str, cut_position: int) -> tuple[int, int]:
+    """Bir kesime karşılık gelen tanıma dizisinin aralığı (1 tabanlı)."""
+    g = geometry(name)
+    if g is None:
+        return (cut_position, cut_position)
+    L = len(seq)
+    bas = ((cut_position - g.top_cut - 1) % L) + 1
+    son = ((bas + len(g.site) - 2) % L) + 1
+    return (bas, son)

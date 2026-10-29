@@ -203,11 +203,22 @@ with tab_enz:
 
     tek = {k: v for k, v in gruplar["tek"]}
     if tek:
+        tanimalar = ez.recognition_sites(rec["sequence"], sorted(tek))
         secili = st.selectbox(
             "Kesimi incele", sorted(tek),
-            format_func=lambda n: f"{n} — {tek[n][0]}. konum",
+            format_func=lambda n: (
+                f"{n} — tanıma {tanimalar[n][0] if tanimalar[n] else '?'}, "
+                f"kesim {tek[n][0]}"),
         )
         konum = tek[secili][0]
+        if tanimalar[secili]:
+            bas, son = ez.site_span(rec["sequence"], secili, konum)
+            st.caption(
+                f"Tanıma dizisi {bas}..{son}, üst zincirdeki kesim "
+                f"{konum}. bazdan önce. Yayımlanmış plazmit haritaları "
+                f"genellikle TANIMA başlangıcını verir, bu yüzden iki "
+                f"sayı farklıdır - ikisi de doğrudur."
+            )
         ctx = ez.cut_context(rec["sequence"], secili, konum, flank=12)
         if ctx:
             st.code(ctx["duplex"], language="text")

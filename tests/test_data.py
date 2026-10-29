@@ -99,6 +99,32 @@ def test_puc19_bilinen_tek_kesenler():
         assert len(konumlar) == 1, f"{enz}: {len(konumlar)} kesim"
 
 
+def test_puc19_mcs_tanima_konumlari_yayinla_tutar():
+    """Yayımlanmış pUC19 haritasındaki MCS koordinatları."""
+    from core import enzymes as ez
+    seq = rv.load("PUC19")["sequence"]
+    beklenen = {"EcoRI": 396, "SacI": 402, "KpnI": 408, "SmaI": 412,
+                "BamHI": 417, "XbaI": 423, "SalI": 429, "PstI": 435,
+                "SphI": 441, "HindIII": 447}
+    bulunan = ez.recognition_sites(seq, list(beklenen))
+    for enz, konum in beklenen.items():
+        assert bulunan[enz] == [konum], f"{enz}: {bulunan[enz]}"
+
+
+def test_kesim_konumu_tanima_artı_ofset():
+    """Kesim konumu = tanıma başı + üst zincir kesim ofseti.
+
+    Bu sözleşme açıkça sınanıyor çünkü yayımlanmış haritalarla
+    karşılaştırırken aradaki fark hata sanılabilir."""
+    from core import enzymes as ez
+    seq = rv.load("PUC19")["sequence"]
+    for enz in ("EcoRI", "SacI", "KpnI", "SmaI", "BamHI", "HindIII"):
+        g = ez.geometry(enz)
+        tanima = ez.recognition_sites(seq, [enz])[enz][0]
+        kesim = restriction_sites(seq, [enz])[enz][0]
+        assert kesim == tanima + g.top_cut, enz
+
+
 def test_puc19_notI_kesmez():
     seq = rv.load("PUC19")["sequence"]
     assert restriction_sites(seq, ["NotI"])["NotI"] == []
@@ -232,3 +258,37 @@ def test_her_bulgu_gerekli_alanlari_tasir():
     for x in f:
         assert x.severity in ("hata", "uyari", "bilgi")
         assert x.rule_id and x.title and x.detail
+
+
+# ---------------------------------------------------------------------------
+# Sürüm ve veri kimliği
+# ---------------------------------------------------------------------------
+
+
+def test_veri_ozetleri_tutuyor():
+    """Veri dosyaları kayıtlı özetleriyle aynı mı.
+
+    Tutmazsa ya bir dosya elle değiştirilmiştir ya da çekme betiği
+    yeniden çalıştırılıp `tools/update_checksums.py` atlanmıştır.
+    """
+    from core import provenance
+    durum = provenance.verify()
+    assert not durum["degisen"], f"değişmiş: {durum['degisen']}"
+    assert not durum["eksik"], f"eksik: {durum['eksik']}"
+    assert not durum["yeni"], f"özeti yazılmamış: {durum['yeni']}"
+
+
+def test_veri_kimligi_kararli():
+    from core import provenance
+    assert provenance.data_fingerprint() == provenance.data_fingerprint()
+    assert len(provenance.data_fingerprint()) == 12
+
+
+def test_kaydedilen_yapi_surum_izi_tasir():
+    from core import provenance
+    db.save_construct("test_surum_izi", "DH5A", ["ORI_PUC", "MRK_BLA"])
+    kayitlar = {c["name"]: c for c in db.list_constructs()}
+    assert "test_surum_izi" in kayitlar
+    iz = kayitlar["test_surum_izi"].get("provenance", "")
+    assert provenance.VERSION in iz
+    db.delete_construct("test_surum_izi")

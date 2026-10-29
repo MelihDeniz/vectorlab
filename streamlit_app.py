@@ -5,7 +5,7 @@
 
 import streamlit as st
 
-from core import db
+from core import db, provenance
 from core.env import SHARED_NOTICE, is_shared_deployment
 
 st.set_page_config(
@@ -87,3 +87,7 @@ if is_shared_deployment():
     st.info(SHARED_NOTICE, icon=":material/cloud:")
 
 page.run()
+
+# Sürüm ve veri kimliği: bir tasarımı sonradan açtığınızda aynı sonucu
+# alıp almadığınızı ancak bu ikisi aynıysa bilebilirsiniz.
+st.caption(provenance.describe())

@@ -393,3 +393,103 @@ def _interpret_read(rep: AlignReport, design: str) -> list[dict[str, str]]:
             f"{len(degisim)} baz farkı var ama hiçbiri amino asidi "
             f"değiştirmiyor. Protein tasarlandığı gibi."))
     return out
+
+
+# ---------------------------------------------------------------------------
+# Kromatogram (.ab1) okuma
+# ---------------------------------------------------------------------------
+# Dizileme firması size iki şey gönderir: metin dizi ve kromatogram.
+# Metin dizi, makinenin her konumda verdiği en iyi tahmindir ve kalite
+# bilgisini taşımaz. Oysa okumanın başı ve sonu neredeyse her zaman
+# güvenilmezdir; oradaki bir "fark" gerçek mutasyon değil, okuma
+# hatasıdır. Kalite değerleri olmadan ikisini ayırt edemezsiniz.
+
+
+@dataclass
+class Chromatogram:
+    sequence: str
+    qualities: list[int]
+    length: int
+    trim_start: int           # 1 tabanlı, güvenilir bölgenin başı
+    trim_end: int
+    mean_quality: float
+    trimmed_sequence: str
+    notes: list[dict[str, str]] = field(default_factory=list)
+
+
+def _mott_trim(qual: list[int], cutoff: int = 20) -> tuple[int, int]:
+    """Düşük kaliteli uçları kırp (Mott'un kayan toplam yöntemi).
+
+    Her baz için `kalite - cutoff` puanı toplanır: eşiğin üstündeki
+    bazlar toplamı büyütür, altındakiler küçültür. Toplam negatife
+    düşerse sıfırlanır ve başlangıç ileri kaydırılır; en yüksek toplamı
+    veren aralık güvenilir bölgedir. Sabit eşikle kesmekten daha
+    iyidir, çünkü ortadaki tek bir kötü bazın okumayı ikiye bölmesini
+    engeller.
+    """
+    if not qual:
+        return (0, 0)
+    en_iyi_toplam = toplam = 0.0
+    en_iyi = (0, 0)
+    bas = 0
+    for i, q in enumerate(qual):
+        toplam += (q - cutoff)
+        if toplam < 0:
+            toplam = 0.0
+            bas = i + 1
+        elif toplam > en_iyi_toplam:
+            en_iyi_toplam = toplam
+            en_iyi = (bas, i + 1)
+    return en_iyi
+
+
+def read_chromatogram(data: bytes, quality_cutoff: int = 20) -> Chromatogram | None:
+    """ABI (.ab1) dosyasından diziyi ve kalite değerlerini oku."""
+    from io import BytesIO
+
+    from Bio import SeqIO
+
+    try:
+        rec = SeqIO.read(BytesIO(data), "abi")
+    except Exception:
+        return None
+
+    dizi = str(rec.seq).upper()
+    qual = list(rec.letter_annotations.get("phred_quality", []))
+    if not qual:
+        qual = [0] * len(dizi)
+
+    bas, son = _mott_trim(qual, quality_cutoff)
+    kirpik = dizi[bas:son]
+    ortalama = round(sum(qual) / len(qual), 1) if qual else 0.0
+
+    c = Chromatogram(
+        sequence=dizi, qualities=qual, length=len(dizi),
+        trim_start=bas + 1, trim_end=son, mean_quality=ortalama,
+        trimmed_sequence=kirpik,
+    )
+
+    oran = round(100 * len(kirpik) / max(len(dizi), 1), 1)
+    c.notes.append(_note(
+        "bilgi" if oran > 60 else "uyari", "Güvenilir bölge",
+        f"Okuma {len(dizi)} baz; kalite eşiği Q{quality_cutoff} ile "
+        f"güvenilir bölge {bas + 1}–{son} ({len(kirpik)} baz, "
+        f"%{oran}). Ortalama kalite Q{ortalama}.\n\n"
+        "Karşılaştırmayı bu bölgeyle yapın: okumanın başındaki ve "
+        "sonundaki farklar neredeyse her zaman okuma hatasıdır, "
+        "gerçek mutasyon değil."))
+
+    if ortalama < 20:
+        c.notes.append(_note(
+            "uyari", "Okuma kalitesi düşük",
+            f"Ortalama Q{ortalama}. Q20 bir bazda %1 hata demektir; "
+            f"bunun altı dizilemenin başarısız olduğunu gösterir. "
+            f"Kalıp derişimi, primer kalitesi ya da plazmitteki saç "
+            f"tokaları sebep olabilir - aynı bölgeyi karşı zincirden "
+            f"okutun."))
+    if len(kirpik) < 200:
+        c.notes.append(_note(
+            "uyari", "Güvenilir bölge çok kısa",
+            "200 bazdan kısa güvenilir okuma, yapıyı doğrulamak için "
+            "yeterli değildir. Dizilemeyi tekrarlayın."))
+    return c

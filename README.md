@@ -209,6 +209,88 @@ parça için otomatik kaynak taraması, kaynakça üretimi (numaralı liste /
 BibTeX / Markdown), metin ve isimlendirme düzeltmesi, makale metninden
 parça adayı çıkarma.
 
+## Doğrulama
+
+Bir tasarım aracının "çalışıyor" olması yetmez, "doğru" olması gerekir.
+İkisi için iki ayrı mekanizma var.
+
+### Test paketi
+
+```bash
+python -m pytest
+```
+
+114 test, üç dosyada: dizi motoru, tasarım modülleri ve veri bütünlüğü.
+Çoğu bir *değişmezi* sınar — optimizasyon proteini değiştirmemeli,
+hizalama kendi kendine %100 benzerlik vermeli, kesim ürünlerinin
+toplamı kalıbın uzunluğuna eşit olmalı. Değişmezler beklenen değer
+yazmaktan güçlüdür, çünkü girdi değişse de geçerli kalırlar.
+
+Paket ilk çalıştırmada iki gerçek hata buldu: ürettiğimiz GenBank'ın
+LOCUS satırı sütun kaymasıyla bozuktu (Biopython "malformed locus line"
+uyarısı veriyordu) ve kromatogram kalite kırpmasında işaret tersti —
+algoritma yüksek kaliteyi değil düşüğü arıyordu. İkisi de düzeltildi.
+
+### Bağımsız doğrulama
+
+```bash
+python tools/validate_against_references.py
+```
+
+Testler kodun kendi içinde tutarlı olduğunu gösterir; bu betik ise
+hesapları **uygulamanın dışındaki** ölçütlerle karşılaştırır. 79
+kontrol, altı başlıkta:
+
+| Ne | Bağımsız ölçüt |
+| --- | --- |
+| Restriksiyon haritası | pUC19 MCS'inin yayımlanmış koordinatları ve enzim sırası |
+| Erime sıcaklığı | Üç ayrı yöntem (en yakın komşu, GC tabanlı, Wallace) 12 °C içinde uyuşmalı |
+| Protein kütlesi | ProtParam yerine Biopython'un ayrı `molecular_weight` işlevi |
+| Vektör uzunlukları | NCBI'nın kayıt başlığında bildirdiği değerler |
+| Kodon tablosu | Elle yazılmış nadir kodon listesi ve bilinen en iyi kodonlar |
+| Parça kataloğu | Parçaların gerçek vektörlerde birebir bulunması |
+
+Bu betik de bir şey yakaladı — ama uygulamada değil, karşılaştırma
+tablosunda. Aşağıya bakın.
+
+### Koordinat sözleşmesi
+
+Uygulama **kesim** konumunu verir; yayımlanmış plazmit haritaları ve
+üretici katalogları genellikle **tanıma dizisinin başlangıcını** verir.
+İkisi aynı değildir ve fark enzime göre değişir: EcoRI (G^AATTC) için
+1, SacI (GAGCT^C) için 5, SmaI (CCC^GGG) için 3.
+
+Bunu fark etmemizin yolu bağımsız doğrulama oldu: on enzimin onunda da
+sayılar tutmadı. Farklar incelenince rastgele olmadıkları, her birinin
+o enzimin kesim ofsetine eşit olduğu görüldü. Uygulama doğruydu;
+karşılaştırma tablosundaki iki sayı (PstI ve SphI) ise yanlıştı.
+
+Sonuç olarak arayüz artık **iki konumu birden** gösteriyor ve aradaki
+farkı açıklıyor. pUC19 MCS'i şöyle doğrulanıyor:
+
+| Enzim | Tanıma | Kesim | Enzim | Tanıma | Kesim |
+| --- | --- | --- | --- | --- | --- |
+| EcoRI | 396 | 397 | XbaI | 423 | 424 |
+| SacI | 402 | 407 | SalI | 429 | 430 |
+| KpnI | 408 | 413 | PstI | 435 | 440 |
+| SmaI | 412 | 415 | SphI | 441 | 446 |
+| BamHI | 417 | 418 | HindIII | 447 | 448 |
+
+### Sürüm ve veri kimliği
+
+NCBI kayıtları revize edilir, iGEM Registry güncellenir. Altı ay sonra
+aynı tasarım farklı bir sonuç verirse, sebebin kodda mı veride mi
+olduğunu bilmek gerekir. Her veri dosyasının SHA-256 özeti
+`data/CHECKSUMS.txt` içinde durur, testler tutarlılığı sınar ve
+kaydedilen her yapı hangi sürümle, hangi veri kimliğiyle üretildiğini
+taşır. Uygulamanın altında ve raporun başlığında bu kimlik yazılıdır.
+
+Veri çekme betiklerinden birini çalıştırdıktan sonra:
+
+```bash
+python tools/update_checksums.py
+```
+
 ## Veri kaynakları ve lisanslar
 
 Uygulamadaki dizilerin hiçbiri ezberden yazılmadı; hepsi açık bir
@@ -541,10 +623,17 @@ core/
   plasmid_map.py       SVG harita çizici
   literature.py        Europe PMC, kaynakça, metin düzeltme
   env.py               paylaşılan sunucu algılama
+  provenance.py        sürüm ve veri kimliği
 tools/
   fetch_reference_vectors.py   NCBI'dan vektör dizileri
   fetch_igem_parts.py          iGEM Registry'den parçalar
   fetch_codon_usage.py         E. coli kodon kullanım tablosu
+  validate_against_references.py  bağımsız doğrulama
+  update_checksums.py          veri özetlerini yenile
+tests/
+  test_sequences.py    dizi motoru
+  test_design.py       tasarım modülleri
+  test_data.py         veri bütünlüğü ve denetim kuralları
 data/
   reference_vectors/   15 vektörün dizisi ve öznitelikleri (JSON)
   igem_parts.json      iGEM parça kayıtları
@@ -595,10 +684,13 @@ bilinçli seçimlerdir ve kullanmadan önce bilmeniz gerekir:
 - Diziler çekildiği andaki NCBI sürümünü yansıtır. Kayıtlar revize
   edilebilir; erişim numarası + koordinat yazılı olduğu için
   karşılaştırma her zaman yapılabilir.
-- Golden Gate çıkıntıları parçaların birleştiği yerdeki doğal diziden
-  alınır (izsiz montaj). Standart bir çıkıntı kümesinden seçme ya da
-  MoClo düzey mantığı henüz yok; çakışma çıkarsa parça sınırını birkaç
-  baz kaydırmanız gerekiyor.
+- Golden Gate çıkıntıları varsayılan olarak parçaların birleştiği
+  yerdeki doğal diziden alınır (izsiz montaj). Çakışma çıkarsa uygulama
+  hesaplanmış bir küme önerir: 256 olası dört-baz çıkıntıdan,
+  palindromik olmayan ve birbirinden en az iki bazla ayrılan en büyük
+  ayrık küme. Yayımlanmış bir MoClo tablosu kopyalanmadı - küme
+  hesaplanıyor ve ölçütleri kodda açıkça duruyor. MoClo'nun düzey
+  mantığı (level 0/1/2 kasetleri) henüz yok.
 - pET serisi referans vektörler arasında yok: Novagen kayıtları
   GenBank'ta yayımlanmamış (arama boş dönüyor), Addgene'deki kopyalar
   ise kopyalanamaz. Katalogda pET'in parçaları (T7lac promotörü,
@@ -612,6 +704,17 @@ bilinçli seçimlerdir ve kullanmadan önce bilmeniz gerekir:
   dairesel, doğrusal) ve süperkıvrımlı olan kendi boyutundan daha hızlı
   göçer. Kesilmiş fragmanlar için model doğrudur, kesilmemiş kontrol
   için basitleştirmedir.
+- Hiçbir tasarım deneysel olarak sınanmadı. Uygulama "bu tasarımda şu
+  hata var" diyebilir, "bu tasarım şu kadar protein verir" diyemez;
+  ifade düzeyini, katlanmayı ve gerçek verimi hiçbir tasarım aracı
+  hesaplayamaz.
+- Editöryel bilgiler (kopya sayıları, suş özellikleri, protokol
+  derişimleri) kaynak gösterilmeden yazıldı. Uydurma atıf numarası
+  yazmamak bilinçli bir karardı; sonucu, bu değerlerin ders kitabı
+  düzeyinde doğru ama referanssız olmasıdır. Her kaydın `lit_query`
+  alanı, Literatür sayfasının o konuyu aramasını sağlar.
+- Metilasyon duyarlılığı listesi elle küratörlüdür (15 enzim); REBASE
+  bu alanı taşımıyor.
 - Protein özellikleri dizi üzerinden yapılan tahminlerdir. Katlanma,
   çeviri sonrası değişiklikler ve gerçek çözünürlük bu sayılardan
   okunamaz; GRAVY yüksek diye protein mutlaka çöker, düşük diye mutlaka

@@ -179,9 +179,17 @@ with tab_cut:
                             "parçalamaz."
                         )
                         continue
+                    tanima = ez.recognition_sites(seq, [enz],
+                                                  circular=dairesel)[enz]
                     st.markdown(
                         f"**{enz}** (`{d['site']}`, {d['overhang']}) — "
-                        f"{len(konumlar)} kesim: "
+                        f"{len(konumlar)} kesim"
+                    )
+                    st.caption(
+                        "Tanıma dizisi başlangıcı: "
+                        + ", ".join(str(k) for k in tanima[:12])
+                        + (" … · " if len(tanima) > 12 else " · ")
+                        + "üst zincirde kesim: "
                         + ", ".join(str(k) for k in konumlar[:12])
                         + (" …" if len(konumlar) > 12 else "")
                     )
