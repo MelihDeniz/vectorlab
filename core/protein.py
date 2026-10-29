@@ -169,8 +169,13 @@ def _interpret(r: ProteinReport, working_ph: float) -> list[dict[str, str]]:
             f"(inclusion body) olarak birikir. Karşı önlemler: indüksiyonu "
             f"düşük sıcaklıkta yapın (16-20 °C, gece boyu), indükleyici "
             f"derişimini düşürün, daha zayıf bir promotör ya da RBS seçin. "
-            f"Çözünür kısmı alamazsanız çökeltiyi üre ile çözüp yeniden "
-            f"katlamak bir seçenek, ama verim düşer."
+            f"Dördüncü bir yol daha var: proteini periplazmaya "
+            f"göndermek. Orada ortam oksitleyicidir, şaperon dağılımı "
+            f"farklıdır ve birçok hedef sitoplazmada çökerken orada "
+            f"çözünür kalır - katalogdaki sinyal peptitlerinden birini "
+            f"(pelB, OmpA, DsbA) kasetin başına ekleyin. Hiçbiri "
+            f"işe yaramazsa çökeltiyi üre ile çözüp yeniden katlamak "
+            f"son seçenektir, ama verim düşer."
         ))
     elif r.gravy < -0.4:
         out.append(_note(
@@ -219,7 +224,10 @@ def _interpret(r: ProteinReport, working_ph: float) -> list[dict[str, str]]:
             "E. coli sitoplazması indirgeyicidir, disülfit köprüleri "
             "orada düzgün kurulmaz. Protein disülfit gerektiriyorsa "
             "SHuffle gibi oksitleyici sitoplazmalı bir suş kullanın ya da "
-            "periplazmik hedefleme sinyali ekleyin. Liziz tamponuna DTT "
+            "periplazmik hedefleme sinyali ekleyin - katalogda pelB, "
+            "OmpA, PhoA, MalE ve DsbA sinyalleri var, kesim noktaları "
+            "UniProt'tan doğrulanmış. Periplazma oksitleyici bir ortamdır "
+            "ve DsbA/DsbC sistemi disülfitleri orada kurar. Liziz tamponuna DTT "
             "ya da TCEP eklerseniz köprüler açık kalır - IMAC reçinesiyle "
             "yüksek DTT'nin uyuşmadığını unutmayın (2 mM TCEP güvenlidir)."
         ))

@@ -326,6 +326,7 @@ tabidir ve kopyalanamaz.
 | --- | --- | --- | --- |
 | NCBI Nucleotide | 11 referans vektörün tam dizisi ve GenBank öznitelikleri | NCBI veritabanı içeriğine telif kısıtı koymaz | `tools/fetch_reference_vectors.py` |
 | iGEM Registry | 62 parça + 4 BioBrick iskeleti | Creative Commons Attribution 4.0 (CC BY 4.0) | `tools/fetch_igem_parts.py` |
+| UniProt | 8 sinyal peptidinin kesim noktası | CC BY 4.0 | `tools/fetch_signal_peptides.py` |
 | REBASE (Biopython ile dağıtılır) | 1088 restriksiyon enzimi, 623'ü ticari | Biopython paketiyle birlikte gelir | — |
 | Europe PMC | makale üst verisi ve kaynakça | açık API, anahtar gerekmez | çalışma anında, Literatür sayfası |
 
@@ -483,6 +484,37 @@ Denetimde iki kural buna bağlı: bileşik parça varken "promotör yok",
 eksik değil, parçanın içinde. Buna karşılık ayrıca promotör ya da RBS
 seçilmişse uyarı çıkar (DEV-02), çünkü montajda iki kaset üst üste
 biner.
+
+### Sinyal peptitleri
+Protein modülü "inclusion body riski yüksek" ya da "disülfit için
+periplazmik hedefleme gerekir" dediğinde, katalogda o öneriyi
+uygulayacak parça yoktu. Uygulama kendi açtığı döngüyü kapatamıyordu.
+
+Sekiz sinyal peptidi eklendi; her biri kendi kategorisinde
+(`signal`), çünkü afinite etiketinden işlevsel olarak farklıdır:
+N ucunda OLMAK ZORUNDADIR, taşıma sırasında kesilip atılır ve hangi
+yoldan taşınacağını belirler. Montaj sırasında etiketten de önce
+yerleşir — etiket araya girerse sinyal tanınmaz.
+
+| Yol | Sinyal | Ne zaman |
+| --- | --- | --- |
+| Sec (post-translasyonel) | pelB, OmpA, PhoA, MalE | Varsayılan periplazmik hedefleme |
+| SRP (ko-translasyonel) | DsbA | Sitoplazmada çökelen hedefler |
+| Tat (twin-arginine) | TorA | **Katlanmış** protein taşır; kofaktörlü hedefler |
+| Sec (Gram-pozitif) | SacB, AmyE | *B. subtilis*; doğrudan besiyerine salgılama |
+
+**Kesim noktası ezberden yazılmadı.** Önemli olan nerede kesildiğidir:
+bir baz fazla ya da eksik alırsanız okuma çerçevesi kayar.
+`tools/fetch_signal_peptides.py` UniProt'un `Signal` öznitelik
+aralığını okur, karşılık gelen nükleotid dizisini NCBI'dan alır ve
+**çevirisinin UniProt'un bildirdiği peptide birebir eşit olduğunu
+sınar**. Eşit değilse kayıt yazılmaz — nitekim `phoA` ilk denemede
+elendi, çünkü GTG ile başlıyor ve çevirici onu valin okuyordu;
+bakteriyel başlangıç kodonları düzeltilince geçti.
+
+Beş denetim kuralı eklendi: birden fazla sinyal (hata), Gram
+uyuşmazlığı, Tat kapasitesi, floresan muhabirlerin periplazmada
+katlanmaması ve klonlama amacında sinyalin anlamsız olması.
 
 ### Kombinatoryal kütüphane
 Tasarımcıdaki **Kütüphane kur** sekmesi, tek tasarım yerine bir seri
@@ -654,6 +686,7 @@ app_pages/
 core/
   parts_seed.py        60 bakteriyel parça + 8 konak suşu
   igem_seed.py         iGEM kayıtlarını katalog parçasına çevirir
+  signal_seed.py       sinyal peptitleri
   ref_vectors.py       referans vektörler + editöryel katman
   cloning.py           restriksiyonla klonlama planı ve denetimi
   inspect_plasmid.py   yüklenen plazmiti denetime hazırla

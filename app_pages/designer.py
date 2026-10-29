@@ -76,7 +76,8 @@ with left:
              "MRK_CAT"], "DH5A", "ifade"),
     }
     # Kategori sırası; seçim durumu bu widget'ların kendisinde tutulur.
-    CATS = ["device", "promoter", "operator", "rbs", "tag", "protease_site",
+    CATS = ["device", "promoter", "operator", "rbs", "signal", "tag",
+            "protease_site",
             "linker", "mcs", "reporter", "terminator", "ori", "marker",
             "regulator"]
 

@@ -106,6 +106,7 @@ def validate(
     _check_insert_sequence(f, vec, insert_seq, host, cloning_enzymes)
     _check_physical(f, vec)
     _check_enzymes(f, vec, cloning_enzymes)
+    _check_signal_peptide(f, vec, host, purpose)
 
     if not annotation_complete:
         f = _soften_absence(f)
@@ -972,3 +973,113 @@ def _check_host_organism(f, vec, host):
                 "ekleyin.",
                 "shuttle vector dual origin E coli Gram-positive",
             ))
+
+
+# ---------------------------------------------------------------------------
+# Sinyal peptidi
+# ---------------------------------------------------------------------------
+# Sinyal peptidi N ucunda olmak zorundadır, bir tane olmalıdır ve
+# konağın zar yapısıyla uyuşmalıdır. Üçü de sessizce bozulabilen
+# şeylerdir: harita doğru görünür, protein sitoplazmada kalır.
+
+
+def _check_signal_peptide(f, vec, host, purpose):
+    sinyaller = vec.parts_of("signal")
+    if not sinyaller:
+        return
+
+    organizma = (host or {}).get("organism", "E. coli")
+    gram_pozitif_konak = organizma in (
+        "Bacillus subtilis", "Lactococcus lactis",
+        "Corynebacterium glutamicum")
+
+    # --- Birden fazla sinyal
+    if len(sinyaller) > 1:
+        adlar = ", ".join(s["name"].split("(")[0].strip()
+                          for s in sinyaller)
+        f.append(Finding(
+            "hata", "SIG-01", "Birden fazla sinyal peptidi",
+            f"{adlar} aynı yapıda. Sinyal peptidi proteinin N ucunda "
+            f"tek başına bulunmalıdır; ikincisi olgun proteinin içinde "
+            f"kalır ve taşıma makinesi birincisini de tanımayabilir.",
+            "Tek bir sinyal peptidi bırakın.",
+            "signal peptide tandem secretion efficiency bacteria",
+        ))
+
+    for s in sinyaller:
+        rec = _part_record(s["part_id"])
+        yol = (rec.get("strength") or "")
+        sinyal_gram_pozitif = "Gram-pozitif" in yol
+
+        # --- Konak uyumu
+        if sinyal_gram_pozitif and not gram_pozitif_konak:
+            f.append(Finding(
+                "uyari", "SIG-02", "Gram-pozitif sinyal, Gram-negatif konak",
+                f"{s['name']} Bacillus gibi Gram-pozitif bakteriler için "
+                f"tanımlanmıştır, ama konak {organizma}. Sinyal "
+                f"tanınmayabilir; tanınsa bile ürün dış zarın içinde, "
+                f"periplazmada kalır - Gram-pozitifte olduğu gibi "
+                f"besiyerine çıkmaz.",
+                "E. coli için pelB, OmpA ya da DsbA sinyalini seçin.",
+                "signal peptide recognition Gram-positive Gram-negative "
+                "secretion",
+            ))
+        elif not sinyal_gram_pozitif and gram_pozitif_konak:
+            f.append(Finding(
+                "uyari", "SIG-02", "Gram-negatif sinyal, Gram-pozitif konak",
+                f"{s['name']} E. coli için tanımlanmış bir sinyaldir, "
+                f"konak ise {organizma}. Gram-pozitiflerin sinyal "
+                f"tanıma gereksinimleri farklıdır (daha uzun ve daha "
+                f"bazik N bölgesi); sinyal çalışmayabilir.",
+                "Bu konak için SacB ya da AmyE sinyalini seçin.",
+                "Bacillus signal peptide secretion requirements",
+            ))
+
+        # --- Tat yolu
+        if "Tat" in yol:
+            f.append(Finding(
+                "bilgi", "SIG-03", "Tat yolu: katlanmış protein taşınır",
+                "TorA sinyali Tat yolunu kullanır ve ötekilerden farklı "
+                "olarak KATLANMIŞ proteini taşır. Kofaktör bağlayan ya "
+                "da sitoplazmada katlanması gereken hedefler için tek "
+                "seçenek budur. Buna karşılık Tat kapasitesi Sec'e göre "
+                "çok düşüktür - yüksek verim beklemeyin ve ifadeyi "
+                "zorlamayın, taşıma tıkanırsa protein sitoplazmada "
+                "birikir.",
+                "Yüksek verim gerekiyorsa Sec yolundaki bir sinyale "
+                "(pelB, OmpA) geçmeyi değerlendirin.",
+                "twin arginine translocation Tat pathway folded protein "
+                "export capacity",
+            ))
+
+    # --- Periplazmada katlanmayan muhabirler
+    sorunlu = [p for p in vec.parts_of("reporter")
+               if re.search(r"GFP|sfGFP|YFP|CFP", p["name"], re.I)]
+    if sorunlu:
+        adlar = ", ".join(p["name"].split("(")[0].strip() for p in sorunlu)
+        f.append(Finding(
+            "uyari", "SIG-04", "Floresan muhabir sinyal peptidiyle zor çalışır",
+            f"{adlar} sinyal peptidiyle birlikte kullanılıyor. Sec yolu "
+            f"proteini AÇIK zincir hâlinde taşır; GFP ailesi "
+            f"periplazmada verimli katlanmaz ve floresan vermez. "
+            f"Sitoplazmada katlanıp öyle taşınması gerekir.",
+            "Muhabiri sitoplazmada bırakın (sinyal peptidini çıkarın) ya "
+            "da katlanmış protein taşıyan Tat yolunu (TorA) kullanın.",
+            "GFP periplasm folding Sec Tat export fluorescence",
+        ))
+
+    # --- Amaç klonlamaysa sinyalin anlamı yok
+    if purpose != "ifade":
+        f.append(Finding(
+            "bilgi", "SIG-05", "Sinyal peptidi yalnızca ifadede anlamlı",
+            "Yapıda sinyal peptidi var ama amaç klonlama olarak "
+            "seçilmiş. Sinyal peptidi protein üretilirken işe yarar; "
+            "sadece çoğaltma yapıyorsanız bir etkisi olmaz.",
+            "Amacı 'ifade' olarak değiştirin ya da sinyali çıkarın.",
+            "",
+        ))
+
+
+def _part_record(part_id: str) -> dict[str, Any]:
+    from core.db import get_part
+    return get_part(part_id) or {}

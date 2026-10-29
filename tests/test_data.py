@@ -352,3 +352,82 @@ def test_seva_suzgeci_calisir():
     for vid in kanamisin:
         assert rv.load(vid)["seva_marker"] == "2"
     assert len(rv.filter_vectors(seva_cargo="7R")) == 3
+
+
+# ---------------------------------------------------------------------------
+# Sinyal peptitleri
+# ---------------------------------------------------------------------------
+
+
+def test_sinyal_peptidi_cevirisi_uniprot_ile_tutar():
+    """Nükleotid dizisinin çevirisi, UniProt'un bildirdiği peptide
+    eşit olmalı. Bir baz kayması burada yakalanır."""
+    import json as _json
+    from core.signal_seed import signal_parts
+    yol = DATA / "signal_peptides.json"
+    assert yol.exists(), "tools/fetch_signal_peptides.py çalıştırılmamış"
+    ham = {p["part_id"]: p
+           for p in _json.loads(yol.read_text(encoding="utf-8"))["peptides"]}
+    from Bio.Data import CodonTable
+    t11 = CodonTable.unambiguous_dna_by_id[11]
+    for p in signal_parts():
+        kayit = ham[p["part_id"]]
+        dna = p["sequence"]
+        assert len(dna) == len(kayit["peptide"]) * 3
+        cevrilen = []
+        for i in range(0, len(dna), 3):
+            k = dna[i:i + 3]
+            cevrilen.append("M" if i == 0 and k in ("ATG", "GTG", "TTG")
+                            else t11.forward_table.get(k, "X"))
+        assert "".join(cevrilen) == kayit["peptide"], p["part_id"]
+
+
+def test_sinyal_peptitleri_katalogda():
+    sinyaller = db.list_parts("signal")
+    assert len(sinyaller) >= 6
+    for s in sinyaller:
+        assert s["accession"].startswith("UniProt")
+
+
+def test_sinyal_montaj_sirasinda_etiketten_once():
+    """Sinyal peptidi N ucunda olmak zorunda; etiket araya girerse
+    taşıma makinesi sinyali tanımaz."""
+    from core.assembly import CANONICAL_ORDER
+    assert CANONICAL_ORDER.index("signal") < CANONICAL_ORDER.index("tag")
+    assert CANONICAL_ORDER.index("rbs") < CANONICAL_ORDER.index("signal")
+
+
+def _sig(ids, host_id, purpose="ifade"):
+    from core.assembly import assemble, sort_canonical
+    vec = assemble("t", sort_canonical(db.get_parts(ids)))
+    return validate(vec, host=db.get_host(host_id), purpose=purpose)
+
+
+_TEMEL = ["PRO_T7LAC", "RBS_PET", "TER_T7", "ORI_COLE1", "MRK_KAN"]
+
+
+def test_iki_sinyal_hata_verir():
+    f = _sig(_TEMEL + ["SIG_PELB", "SIG_OMPA"], "BL21DE3")
+    assert any(x.rule_id == "SIG-01" and x.severity == "hata" for x in f)
+
+
+def test_gram_uyusmazligi_uyarir():
+    f = _sig(_TEMEL + ["SIG_SACB"], "BL21DE3")
+    assert any(x.rule_id == "SIG-02" for x in f)
+    f2 = _sig(_TEMEL + ["SIG_PELB"], "BSUB168")
+    assert any(x.rule_id == "SIG-02" for x in f2)
+
+
+def test_uyumlu_sinyal_uyari_vermez():
+    f = _sig(_TEMEL + ["SIG_PELB", "TAG_HIS6"], "BL21DE3")
+    assert not any(x.rule_id.startswith("SIG") for x in f)
+
+
+def test_tat_yolu_bilgilendirir():
+    f = _sig(_TEMEL + ["SIG_TORA"], "BL21DE3")
+    assert any(x.rule_id == "SIG-03" for x in f)
+
+
+def test_sinyal_ve_gfp_uyarir():
+    f = _sig(_TEMEL + ["SIG_PELB", "RPT_SFGFP"], "BL21DE3")
+    assert any(x.rule_id == "SIG-04" for x in f)

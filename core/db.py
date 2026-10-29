@@ -10,6 +10,7 @@ from typing import Any
 from core import provenance
 from core.extracted_seed import extracted_parts
 from core.igem_seed import igem_parts
+from core.signal_seed import signal_parts
 from core.parts_seed import ALL_PARTS, HOSTS
 
 DB_PATH = Path(__file__).resolve().parent.parent / "data" / "vectorlab.db"
@@ -120,7 +121,8 @@ def init_db(force_reseed: bool = False) -> None:
 
         if force_reseed:
             con.execute(
-                "DELETE FROM parts WHERE source IN ('seed','igem','vector')")
+                "DELETE FROM parts WHERE source IN "
+                "('seed','igem','vector','signal')")
             con.execute("DELETE FROM hosts")
 
         n_parts = con.execute(
@@ -149,6 +151,15 @@ def init_db(force_reseed: bool = False) -> None:
         if n_vektor != len(cikarilan):
             con.execute("DELETE FROM parts WHERE source = 'vector'")
             for part in cikarilan:
+                _insert_part(con, part)
+
+        sinyaller = signal_parts()
+        n_sinyal = con.execute(
+            "SELECT COUNT(*) FROM parts WHERE source = 'signal'"
+        ).fetchone()[0]
+        if n_sinyal != len(sinyaller):
+            con.execute("DELETE FROM parts WHERE source = 'signal'")
+            for part in sinyaller:
                 _insert_part(con, part)
 
         n_hosts = con.execute("SELECT COUNT(*) FROM hosts").fetchone()[0]

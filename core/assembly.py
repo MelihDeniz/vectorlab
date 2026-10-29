@@ -55,6 +55,10 @@ CANONICAL_ORDER = [
     "promoter",
     "operator",
     "rbs",
+    # Sinyal peptidi proteinin N ucunda OLMAK ZORUNDA: taşıma
+    # makinesi onu ilk 20-30 amino asitte arar. Etiketten de önce
+    # gelir, çünkü etiket araya girerse sinyal tanınmaz.
+    "signal",
     "tag",
     "protease_site",
     "mcs",
