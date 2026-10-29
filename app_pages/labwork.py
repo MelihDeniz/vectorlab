@@ -5,8 +5,8 @@ import base64
 import streamlit as st
 
 from core import (
-    db, enzymes as ez, gel, protein, protocol as pr,
-    ref_vectors as rv, report,
+    assembly_methods as am, db, enzymes as ez, gel, protein,
+    protocol as pr, ref_vectors as rv, report,
 )
 from core.assembly import assemble, sort_canonical
 from core.cloning import fragments, plan
@@ -112,8 +112,8 @@ if insert_seq:
 
 st.divider()
 
-tab_pro, tab_gel, tab_prot, tab_rap = st.tabs(
-    ["Protokol", "Jel simülasyonu", "Protein", "Rapor"]
+tab_pro, tab_gel, tab_prot, tab_montaj, tab_rap = st.tabs(
+    ["Protokol", "Jel simülasyonu", "Protein", "Montaj yöntemleri", "Rapor"]
 )
 
 # ---------------------------------------------------------------------------
@@ -319,7 +319,126 @@ with tab_prot:
             )
 
 # ---------------------------------------------------------------------------
-# 4. Rapor
+# 5. Montaj yöntemleri
+# ---------------------------------------------------------------------------
+
+with tab_montaj:
+    st.caption(
+        "Restriksiyon + ligasyon tek yol değil. Golden Gate birden çok "
+        "parçayı tek tüpte ve iz bırakmadan birleştirir; Gibson hiç enzim "
+        "bölgesi gerektirmez; mutagenez tek bazı değiştirir. Her birinin "
+        "kendi tuzağı var ve burada onlar denetleniyor."
+    )
+
+    yontem = st.segmented_control(
+        "Yöntem", ["Golden Gate", "Gibson", "Mutagenez"],
+        default="Golden Gate", key="mont_yontem",
+    ) or "Golden Gate"
+
+    if yontem == "Mutagenez":
+        kalip = st.text_area(
+            "Kalıp dizi", height=110,
+            value=insert_seq[:600] if insert_seq else "",
+            placeholder="Değiştireceğiniz bölgeyi kapsayan diziyi yapıştırın…",
+            key="mont_kalip",
+        )
+        k = st.container(horizontal=True, vertical_alignment="bottom")
+        konum = k.number_input("Değişecek ilk nükleotid", 1,
+                               max(len(clean_seq(kalip)), 1), 1,
+                               key="mont_konum", width=220)
+        yerine = k.text_input("Yerine gelecek baz ya da kodon",
+                              value="GAT", key="mont_yerine", width=220)
+        kanat = k.slider("Her iki yanda eşleşen baz", 10, 25, 15,
+                         key="mont_kanat", width=240)
+        plan_m = am.mutagenesis(kalip, int(konum), yerine, flank=int(kanat))
+    else:
+        st.markdown("**Birleştirilecek parçalar** — sıra montaj sırasıdır")
+        katalog = [x for x in db.list_parts() if x["seq_status"] == "full"]
+        secim = st.multiselect(
+            "Katalogdan parça seç",
+            [x["part_id"] for x in katalog],
+            default=[p for p in st.session_state.get("design_parts", [])
+                     if (db.get_part(p) or {}).get("seq_status") == "full"][:4],
+            format_func=lambda i: (db.get_part(i) or {}).get("name", i)[:46],
+            key="mont_parcalar",
+        )
+        parca_listesi = []
+        for pid in secim:
+            rec = db.get_part(pid)
+            if rec and rec["sequence"]:
+                parca_listesi.append((rec["name"].split("(")[0].strip()[:14],
+                                      rec["sequence"]))
+        if insert_seq and st.checkbox(
+                f"Inserti de ekle ({insert_ad}, {len(insert_seq)} bp)",
+                value=bool(insert_seq), key="mont_insert"):
+            parca_listesi.append((insert_ad[:14], insert_seq))
+
+        o = st.container(horizontal=True, vertical_alignment="bottom")
+        dairesel = o.toggle("Dairesel ürün", value=True, key="mont_dairesel")
+        if yontem == "Golden Gate":
+            enz = o.selectbox("Tip IIS enzim", am.TYPE_IIS_COMMON,
+                              key="mont_enz", width=200)
+            plan_m = am.golden_gate(parca_listesi, enz, circular=dairesel)
+        else:
+            ort = o.slider("Örtüşme uzunluğu (bp)", 15, 45, 25,
+                           key="mont_ort", width=260)
+            plan_m = am.gibson(parca_listesi, overlap=int(ort),
+                               circular=dairesel)
+
+    if not plan_m.parts and yontem != "Mutagenez":
+        st.info("Önce parça seçin.", icon=":material/category:")
+    else:
+        mm = st.container(horizontal=True)
+        mm.metric("Yöntem", plan_m.method)
+        mm.metric("Parça", len(plan_m.parts))
+        mm.metric("Ürün", f"{plan_m.product_length} bp")
+        mm.metric("Birleşme", len(plan_m.junctions))
+        mm.metric("Durum", "geçti" if plan_m.ok else "sorunlu")
+
+        for n in plan_m.notes:
+            {"hata": st.error, "uyari": st.warning,
+             "bilgi": st.info}.get(n["kind"], st.info)(
+                f"**{n['title']}** — {n['detail']}")
+
+        if plan_m.junctions:
+            st.markdown("**Birleşme noktaları**")
+            st.dataframe(
+                [{"#": j.index, "Sol": j.left_part, "Sağ": j.right_part,
+                  ("Çıkıntı" if yontem == "Golden Gate" else "Örtüşme"):
+                      j.overhang,
+                  "Sorun": "; ".join(j.problems) if j.problems else "—"}
+                 for j in plan_m.junctions],
+                width="stretch", hide_index=True,
+                alt="Montaj birleşme noktaları ve sorunları",
+            )
+
+        if plan_m.primers:
+            st.markdown("**Sipariş edilecek primerler**")
+            st.dataframe(
+                [{"Ad": p2.name, "Dizi": p2.sequence, "Uzunluk": p2.length,
+                  "Bağlanma Tm": p2.tm_anneal,
+                  "Uyarı": "; ".join(p2.warnings) if p2.warnings else "—"}
+                 for p2 in plan_m.primers],
+                width="stretch", hide_index=True,
+                alt="Montaj için tasarlanan primerler",
+            )
+            st.download_button(
+                "Primerleri CSV olarak indir",
+                "ad,dizi,uzunluk,tm\n" + "\n".join(
+                    f"{p2.name},{p2.sequence},{p2.length},{p2.tm_anneal}"
+                    for p2 in plan_m.primers),
+                file_name=f"{ad}-primerler.csv", mime="text/csv",
+                icon=":material/download:",
+            )
+            st.caption(
+                "Primerlerin 5' ucundaki kuyruk, montajın kendisini "
+                "sağlayan kısımdır; Tm sütunu yalnızca kalıba bağlanan "
+                "bölümün değeridir, PCR koşulunu ona göre kurun."
+            )
+
+
+# ---------------------------------------------------------------------------
+# 6. Rapor
 # ---------------------------------------------------------------------------
 
 with tab_rap:

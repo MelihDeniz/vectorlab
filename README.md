@@ -157,6 +157,13 @@ Tasarımı tezgâha taşıyan sayfa. Dört sekme:
   pratik karşılığı yazılır: SDS-PAGE'de bandı nerede arayacağınız,
   A280'den derişimi nasıl çevireceğiniz, inclusion body riski, tampon
   pH'ının pI'ya göre nerede durması gerektiği.
+- **Montaj yöntemleri** — Golden Gate, Gibson ve bölge-yönelimli
+  mutagenez. Her yöntemin kendi tuzağı denetlenir: Golden Gate'te iki
+  birleşme noktası aynı (ya da birbirinin tersi) çıkıntı alırsa parçalar
+  yanlış sırada bağlanır ve ürün jelde doğru boyutta göründüğü için hata
+  dizilemeye kadar fark edilmez; Gibson'da örtüşmenin Tm'i ve GC'si
+  tutmazsa birleşme olmaz. Sipariş edilecek primerler kuyruklarıyla
+  birlikte üretilir ve CSV olarak indirilir.
 - **Rapor** — harita, parça listesi, denetim sonucu, protein özellikleri
   ve protokol tek bir HTML dosyasında. Harita ve jel dosyanın içine
   gömülür, ayrı görsel gerekmez; tarayıcıda açılıp PDF'e basılabilir.
@@ -462,6 +469,7 @@ core/
   igem_seed.py         iGEM kayıtlarını katalog parçasına çevirir
   ref_vectors.py       referans vektörler + editöryel katman
   cloning.py           restriksiyonla klonlama planı ve denetimi
+  assembly_methods.py  Golden Gate, Gibson, mutagenez
   codon.py             CAI ve kodon optimizasyonu
   structure.py         mRNA saç tokası taraması
   protocol.py          tasarımdan laboratuvar protokolü
@@ -531,8 +539,10 @@ bilinçli seçimlerdir ve kullanmadan önce bilmeniz gerekir:
 - Diziler çekildiği andaki NCBI sürümünü yansıtır. Kayıtlar revize
   edilebilir; erişim numarası + koordinat yazılı olduğu için
   karşılaştırma her zaman yapılabilir.
-- Golden Gate ve Gibson montajı için enzim listesi vardır, ancak
-  birleştirme simülasyonu henüz uçtan uca yapılmıyor.
+- Golden Gate çıkıntıları parçaların birleştiği yerdeki doğal diziden
+  alınır (izsiz montaj). Standart bir çıkıntı kümesinden seçme ya da
+  MoClo düzey mantığı henüz yok; çakışma çıkarsa parça sınırını birkaç
+  baz kaydırmanız gerekiyor.
 - pET serisi referans vektörler arasında yok: Novagen kayıtları
   GenBank'ta yayımlanmamış (arama boş dönüyor), Addgene'deki kopyalar
   ise kopyalanamaz. Katalogda pET'in parçaları (T7lac promotörü,
