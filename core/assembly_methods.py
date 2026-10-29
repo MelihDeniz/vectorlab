@@ -24,7 +24,10 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from core import enzymes as ez
-from core.seq_utils import clean_seq, gc_percent, revcomp, tm_nn
+from core.seq_utils import (
+    clean_seq, gc_percent, primer_dimer, primer_hairpin,
+    revcomp, tm_nn,
+)
 
 # Golden Gate'te sık kullanılan Tip IIS enzimleri.
 TYPE_IIS_COMMON = ["BsaI", "BsmBI", "BbsI", "SapI", "AarI", "PaqCI"]
@@ -431,4 +434,10 @@ def _primer_warn(core: str, tm: float | None) -> list[str]:
         if b * 5 in core:
             w.append(f"{b*5} tekrarı var")
             break
+    kendi = primer_dimer(core)
+    if kendi["risk"] != "yok":
+        w.append(f"kendi dimeri (puan {kendi['score']})")
+    toka = primer_hairpin(core)
+    if toka["risk"] != "yok":
+        w.append(f"saç tokası (puan {toka['score']})")
     return w

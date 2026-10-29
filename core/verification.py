@@ -21,7 +21,10 @@ from dataclasses import dataclass, field
 from Bio import Align
 from Bio.Data import CodonTable
 
-from core.seq_utils import clean_seq, gc_percent, revcomp, tm_nn
+from core.seq_utils import (
+    clean_seq, gc_percent, primer_dimer, primer_hairpin,
+    revcomp, tm_nn,
+)
 
 _T11 = CodonTable.unambiguous_dna_by_id[11]
 
@@ -155,6 +158,12 @@ def sequencing_plan(
             uyari.append(f"Tm {tm:.1f} °C - 55-65 aralığı dışında")
         if s.count(dizi[-15:]) > 1:
             uyari.append("kalıpta birden çok yere bağlanıyor")
+        toka = primer_hairpin(dizi)
+        if toka["risk"] != "yok":
+            uyari.append(f"saç tokası (puan {toka['score']})")
+        kendi = primer_dimer(dizi)
+        if kendi["risk"] != "yok":
+            uyari.append(f"kendi dimeri (puan {kendi['score']})")
         plan.primers.append(SeqPrimer(
             name=f"seq_F{i}", sequence=dizi, position=bas, strand=1,
             tm=tm, gc=gc_percent(dizi),

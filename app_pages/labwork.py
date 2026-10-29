@@ -220,7 +220,7 @@ with tab_gel:
         )
         kulvar = gel.build_lane(
             " + ".join(jel_enz)[:16], boyutlar, yuzde, float(yukleme))
-        kesilmemis = gel.build_lane("kesilmemiş", [uzunluk], yuzde,
+        kesilmemis = gel.uncut_lane("kesilmemiş", uzunluk, yuzde,
                                     float(yukleme))
         render_svg(gel.render_gel(
             [gel.ladder_lane(merdiven), kesilmemis, kulvar], yuzde,
@@ -241,11 +241,12 @@ with tab_gel:
         for n in gel.lane_notes(kulvar, yuzde):
             st.warning(n, icon=":material/info:")
         st.caption(
-            "Kesilmemiş plazmit karşılaştırma için çizildi. Gerçek jelde "
-            "kesilmemiş dairesel plazmit üç bant verir (süperkıvrımlı, "
-            "açık dairesel, doğrusal) ve süperkıvrımlı olan kendi "
-            "boyutundan daha hızlı göçer - buradaki tek bant bu yüzden "
-            "basitleştirmedir."
+            "Kesilmemiş plazmit karşılaştırma kulvarı üç bant olarak "
+            "çizildi: süperkıvrımlı, doğrusal ve açık dairesel. "
+            "Süperkıvrımlı biçim sıkı paketlendiği için kendi boyutundan "
+            "hızlı göçer, bu yüzden o banttan merdivene bakarak boyut "
+            "okuyamazsınız. Kesiminizin tam olup olmadığını anlamanın "
+            "yolu, bu üçlünün kesilmiş kulvarda KAYBOLMUŞ olmasıdır."
         )
 
 # ---------------------------------------------------------------------------

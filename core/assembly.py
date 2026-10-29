@@ -170,8 +170,12 @@ def to_genbank(vec: AssembledVector, organism: str = "Escherichia coli") -> str:
     topology = "circular" if vec.circular else "linear"
     today = date.today().strftime("%d-%b-%Y").upper()
     lines = [
-        f"LOCUS       {vec.name[:16]:<16} {vec.length} bp    DNA     "
-        f"{topology} SYN {today}",
+        # GenBank LOCUS satiri sutun duyarlidir: ad 13-28, uzunluk
+        # 30-40 arasinda saga dayali, "bp" 42-43, molekul tipi 48,
+        # topoloji 56. Kaydirirsaniz Biopython "malformed locus line"
+        # uyarisi verir ve alanlari yanlis okur.
+        f"LOCUS       {vec.name[:16]:<16} {vec.length:>11} bp    DNA     "
+        f"{topology:<8} SYN {today}",
         f"DEFINITION  {vec.name} - VectorLab ile tasarlandi.",
         "SOURCE      synthetic DNA construct",
         f"  ORGANISM  {organism}",

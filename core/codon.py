@@ -70,6 +70,11 @@ class OptimizeResult:
     gc_after: float = 0.0
     sites_removed: dict[str, int] = field(default_factory=dict)
     sites_remaining: dict[str, int] = field(default_factory=dict)
+    repeats: list[dict[str, Any]] = field(default_factory=list)
+    repeats_before: int = 0
+    structure_before: float = 0.0   # engelleyici yapı dG, 0 = engel yok
+    structure_after: float = 0.0
+    structure_fixed: bool = False
     notes: list[str] = field(default_factory=list)
 
     @property
@@ -92,6 +97,26 @@ def table() -> dict[str, Any]:
 @functools.lru_cache(maxsize=1)
 def weights() -> dict[str, float]:
     return {c: d["w"] for c, d in table().get("codons", {}).items()}
+
+
+@functools.lru_cache(maxsize=1)
+def reference_fractions() -> dict[str, float]:
+    """Çok ifade edilen genlerde her kodonun kendi amino asidi içindeki payı.
+
+    w değeri `sayım / o amino asidin en sık kodonunun sayımı` olduğundan,
+    payı w'leri normalize ederek geri alabiliyoruz. Optimizasyonun hedefi
+    budur: geni bu dağılıma oturtmak.
+    """
+    w = weights()
+    out: dict[str, float] = {}
+    by_aa: dict[str, list[str]] = {}
+    for codon, aa in _T11.forward_table.items():
+        by_aa.setdefault(aa, []).append(codon)
+    for aa, codons in by_aa.items():
+        toplam = sum(w.get(c, 0.0) for c in codons) or 1.0
+        for c in codons:
+            out[c] = w.get(c, 0.0) / toplam
+    return out
 
 
 @functools.lru_cache(maxsize=1)
@@ -250,19 +275,34 @@ def optimize(
     max_homopolymer: int = 4,
     gc_bounds: tuple[float, float] = (30.0, 70.0),
     rare_threshold: float = RARE_W,
+    min_w_full: float = 0.5,
+    upstream: str = "",
+    relieve_structure: bool = True,
 ) -> OptimizeResult:
     """Kodonları E. coli'ye uyarla.
 
     mode="nadir"  yalnızca nadir kodonları değiştirir. Dizinin geri
                   kalanı olduğu gibi kalır; doğal mRNA yapısı ve
                   varsa düzenleyici öğeler korunur. Varsayılan budur.
-    mode="tam"    her kodonu kısıtların izin verdiği en iyi seçenekle
-                  değiştirir. CAI'yi en yükseğe çıkarır ama diziyi
-                  baştan yazar.
+    mode="tam"    her kodonu yeniden seçer, ama "her zaman en iyi
+                  kodon" KURALINI UYGULAMAZ - sebebi aşağıda.
+
+    **Neden hedef CAI 1.0 değil.** Her amino asit için hep aynı (en sık)
+    kodonu kullanmak CAI'yi 1.0'a çıkarır, ama bu doğada görülen bir
+    şey değildir: bu tablonun hesaplandığı genomda `rpsA` 0,79 ve
+    `tufA` 0,82 CAI'ye sahiptir, yani en çok ifade edilen genler bile
+    0,8 civarındadır. Tek kodona yüklenmek o izoalıcı tRNA havuzunu
+    tüketir ve dizide tekrar eden bloklar yaratır. Bu yüzden "tam"
+    kipinde seçim, w değeri `min_w_full` eşiğinin üstündeki kodonlar
+    arasından yapılır ve aynı amino asit için en son kullanılan kodon
+    geri plana atılır - sonuç tipik olarak 0,75-0,85 aralığına oturur.
 
     Kısıtlar her adımda kontrol edilir: yasaklı restriksiyon bölgesi
     oluşturan, uzun tek-baz dizisi yapan ya da yerel GC'yi sınırların
-    dışına iten kodon seçilmez.
+    dışına iten kodon seçilmez. Optimizasyondan SONRA iki denetim daha
+    yapılır: uzun doğrudan tekrarlar ve başlama bölgesindeki mRNA
+    yapısı. `upstream` verilirse (RBS'i içeren 5' bölge) yapı denetimi
+    gerçek bağlamda yapılır.
     """
     s = clean_seq(cds)
     s = s[: len(s) - len(s) % 3]
@@ -290,6 +330,8 @@ def optimize(
     son = len(kodonlar) - 1 if kodonlar[-1] in STOPS else len(kodonlar)
 
     yeni = list(kodonlar)
+    hedef_pay = reference_fractions()
+    aa_sayac: dict[str, dict[str, int]] = {}
     for i in range(ilk, son):
         mevcut = kodonlar[i]
         aa = _T11.forward_table.get(mevcut)
@@ -302,11 +344,33 @@ def optimize(
         if mode == "nadir" and mevcut_w >= rare_threshold:
             continue
 
+        # "tam" kipinde eşiğin üstündeki kodonlar arasından, aynı amino
+        # asit için en son kullanılandan farklı olanı tercih ediyoruz.
+        # "nadir" kipinde ise yalnızca daha iyisine geçilir.
+        if mode == "tam":
+            # Hedef dağılıma göre en çok "borçlu" kodonu seç. Böylece
+            # gen boyunca her amino asidin kodon payları, çok ifade
+            # edilen genlerdeki paylara yaklaşır; hep aynı kodona
+            # yüklenmek yerine doğadaki dengeyi kurarız.
+            kullanilan = aa_sayac.setdefault(aa, {})
+            n_aa = sum(kullanilan.values())
+            uygun = [c for c in adaylar if w.get(c, 0.0) >= min_w_full]                 or adaylar[:1]
+            sirali = sorted(
+                uygun,
+                key=lambda c: -(hedef_pay.get(c, 0.0) * (n_aa + 1)
+                                - kullanilan.get(c, 0)),
+            )
+        else:
+            sirali = adaylar
+
         secildi = None
-        for aday in adaylar:
-            if aday == mevcut:
-                break   # mevcut zaten en iyilerden, dokunma
-            if w.get(aday, 0.0) <= mevcut_w:
+        for aday in sirali:
+            if mode != "tam":
+                if aday == mevcut:
+                    break   # mevcut zaten en iyilerden, dokunma
+                if w.get(aday, 0.0) <= mevcut_w:
+                    break
+            elif aday == mevcut:
                 break
             # Pencereyi komşu kodonlarla birlikte sına: bölge sınırları
             # kodon sınırını tanımaz.
@@ -326,6 +390,9 @@ def optimize(
             secildi = aday
             break
 
+        if mode == "tam":
+            kesin = secildi or mevcut
+            aa_sayac.setdefault(aa, {})[kesin] =                 aa_sayac[aa].get(kesin, 0) + 1
         if secildi and secildi != mevcut:
             yeni[i] = secildi
             res.changes.append(CodonChange(
@@ -349,9 +416,25 @@ def optimize(
             changes=res.changes,
         )
 
+    # --- Üçüncü geçiş: başlama bölgesindeki mRNA yapısını aç.
+    # Kodon optimizasyonu diziyi değiştirir ve bu, başlama kodonunun
+    # üstünde YENİ bir saç tokası yaratabilir - yani optimizasyon,
+    # çözmeye çalıştığı sorunun bir başkasını doğurabilir. Bu yüzden
+    # optimizasyondan sonra bölge yeniden taranır ve gerekirse ilk
+    # kodonlar eşanlamlılarıyla değiştirilerek yapı açılır.
+    if relieve_structure:
+        yeni, yapi_once, yapi_sonra = _relieve_structure(
+            yeni, upstream, w, syn, patterns, max_homopolymer, avoid,
+            gc_bounds)
+        res.structure_before = round(yapi_once, 2)
+        res.structure_after = round(yapi_sonra, 2)
+        res.structure_fixed = yapi_sonra > yapi_once + 0.2
+
     yeni_seq = "".join(yeni)
     res.sequence = yeni_seq
     res.cai_after = cai(yeni_seq) or 0.0
+    res.repeats_before = len(find_repeats(s))
+    res.repeats = find_repeats(yeni_seq)
     res.rare_after = len(rare_positions(yeni_seq, rare_threshold))
     res.gc_after = gc_percent(yeni_seq)
 
@@ -462,6 +545,117 @@ def _strip_sites(
     return kodonlar
 
 
+# ---------------------------------------------------------------------------
+# Optimizasyon sonrası denetimler
+# ---------------------------------------------------------------------------
+
+
+def find_repeats(seq: str, min_len: int = 20) -> list[dict[str, Any]]:
+    """Birden çok kez geçen uzun doğrudan tekrarları bul.
+
+    Kodon optimizasyonunun sessiz yan etkisi budur: aynı amino asit
+    dizisi için hep aynı kodonlar seçilince dizide birebir tekrar eden
+    bloklar oluşur. Uzun doğrudan tekrarlar recA⁺ konakta birbirine
+    rekombine olur ve aradaki bölge silinir - yapı haritada doğru
+    görünürken hücrede parçalanır.
+    """
+    s = clean_seq(seq)
+    n = len(s)
+    if n < min_len * 2:
+        return []
+    gorulen: dict[str, list[int]] = {}
+    for i in range(n - min_len + 1):
+        gorulen.setdefault(s[i:i + min_len], []).append(i + 1)
+    out = []
+    for parca, konumlar in gorulen.items():
+        if len(konumlar) < 2:
+            continue
+        # Örtüşen pencereleri tek tekrar say
+        ayrik = [konumlar[0]]
+        for k in konumlar[1:]:
+            if k - ayrik[-1] >= min_len:
+                ayrik.append(k)
+        if len(ayrik) >= 2:
+            out.append({"sequence": parca, "length": min_len,
+                        "positions": ayrik, "count": len(ayrik)})
+    # En uzun/çok tekrarlayandan başla, iç içe geçenleri ele
+    out.sort(key=lambda r: (-r["count"], r["positions"][0]))
+    secili: list[dict[str, Any]] = []
+    kapsanan: set[int] = set()
+    for r in out:
+        if any(p in kapsanan for p in r["positions"]):
+            continue
+        secili.append(r)
+        for p in r["positions"]:
+            kapsanan.update(range(p, p + min_len))
+    return secili[:12]
+
+
+def _structure_penalty(upstream: str, cds: str) -> float:
+    """Başlama bölgesindeki en kararlı engelleyici yapının enerjisi.
+
+    Yalnızca RBS'i ya da başlama kodonunu KAPATAN yapılar sayılır;
+    başka yerdeki saç tokası çeviriyi engellemez. Engel yoksa 0.
+    """
+    from core import structure as _stx
+    tam = clean_seq(upstream) + clean_seq(cds)
+    if not tam:
+        return 0.0
+    pos = len(clean_seq(upstream)) + 1
+    rap = _stx.analyze_start_region(tam, pos)
+    engeller = [h for h in (rap.blocking_rbs, rap.blocking_start) if h]
+    return min((h.dg for h in engeller), default=0.0)
+
+
+def _relieve_structure(
+    kodonlar: list[str], upstream: str, w: dict[str, float],
+    syn: dict[str, list[str]], patterns, max_homopolymer: int,
+    avoid: list[str], gc_bounds: tuple[float, float],
+    window_codons: int = 15, min_w: float = 0.2,
+) -> tuple[list[str], float, float]:
+    """Başlama bölgesindeki engelleyici yapıyı eşanlamlı kodonlarla aç.
+
+    Yalnızca ilk `window_codons` kodona dokunulur: saç tokasının
+    ribozomu engelleyen kısmı orasıdır ve kodon değiştirmek proteini
+    bozmaz. Her adımda en çok iyileştiren tek değişiklik uygulanır,
+    engel kalkana ya da iyileşme durana kadar sürer.
+    """
+    kodonlar = list(kodonlar)
+    once = _structure_penalty(upstream, "".join(kodonlar))
+    if once >= -3.0:
+        return kodonlar, once, once        # kayda değer engel yok
+
+    simdi = once
+    for _ in range(12):
+        en_iyi = None
+        for i in range(1, min(window_codons + 1, len(kodonlar) - 1)):
+            aa = _T11.forward_table.get(kodonlar[i])
+            if not aa:
+                continue
+            for aday in syn.get(aa, []):
+                if aday == kodonlar[i] or w.get(aday, 0.0) < min_w:
+                    continue
+                deneme = list(kodonlar)
+                deneme[i] = aday
+                pencere = "".join(deneme[max(0, i - 3):i + 4])
+                if _creates_problem(pencere, patterns, max_homopolymer,
+                                    avoid):
+                    continue
+                gc_p = "".join(deneme[max(0, i - 10):i + 11])
+                if not (gc_bounds[0] <= gc_percent(gc_p) <= gc_bounds[1]):
+                    continue
+                skor = _structure_penalty(upstream, "".join(deneme))
+                if en_iyi is None or skor > en_iyi[0]:
+                    en_iyi = (skor, i, aday)
+        if en_iyi is None or en_iyi[0] <= simdi + 0.2:
+            break
+        simdi, i, aday = en_iyi
+        kodonlar[i] = aday
+        if simdi >= -3.0:
+            break
+    return kodonlar, once, simdi
+
+
 def _translate(cds: str) -> str:
     out = []
     for c in _codons(cds):
@@ -470,6 +664,11 @@ def _translate(cds: str) -> str:
         else:
             out.append(_T11.forward_table.get(c, "X"))
     return "".join(out)
+
+
+# Kendi tablomuzla hesaplanmış referans değerler - "iyi bir CAI kaçtır"
+# sorusunun cevabı uydurma bir eşik değil, gerçek genlerin değeridir.
+REF_CAI = {"rpsA": 0.787, "tufA": 0.824}
 
 
 def interpret(res: OptimizeResult) -> list[dict[str, str]]:
@@ -482,10 +681,18 @@ def interpret(res: OptimizeResult) -> list[dict[str, str]]:
             "detail": (
                 f"{res.cai_before} → {res.cai_after} "
                 f"({'+' if fark >= 0 else ''}{round(fark, 4)}). "
-                "CAI 0,8'in üstü E. coli için rahat sayılır; 0,5'in altı "
-                "kodon kullanımının belirgin biçimde uyumsuz olduğunu "
-                "gösterir. Yine de CAI tek başına ifade düzeyini "
-                "öngörmez - mRNA yapısı ve promotör gücü de belirleyicidir."
+                f"**Ölçek için:** bu tablonun hesaplandığı genomda "
+                f"`rpsA` {REF_CAI['rpsA']} ve `tufA` {REF_CAI['tufA']} "
+                f"CAI'ye sahip - yani E. coli'nin en çok ifade edilen "
+                f"genleri bile 0,8 civarındadır. 1,0'a çıkmak doğada "
+                f"karşılığı olan bir hedef değildir ve bu yüzden "
+                f"optimizasyon oraya gitmez: her amino asit için kodon "
+                f"payları, çok ifade edilen genlerdeki paylara "
+                f"yaklaştırılır. Sonuç tipik olarak 0,85-0,92 aralığına "
+                f"oturur; doğal 0,8'in biraz üstünde kalmasının sebebi, "
+                f"nadir kodonların bilerek dışarıda bırakılmasıdır. "
+                "CAI tek başına ifade düzeyini öngörmez: mRNA yapısı, "
+                "promotör gücü ve protein katlanması da belirleyicidir."
             )})
     if res.rare_before:
         out.append({
@@ -514,6 +721,51 @@ def interpret(res: OptimizeResult) -> list[dict[str, str]]:
                                 for k, v in res.sites_removed.items())
             + ". Bu bölgeler artık insertin içinde kesmiyor, klonlamada "
               "kullanılabilirler."})
+    if res.repeats:
+        ornek = res.repeats[0]
+        out.append({
+            "kind": "uyari", "title": "Uzun doğrudan tekrar oluştu",
+            "detail": (
+                f"{len(res.repeats)} tekrar bulundu (optimizasyon öncesi "
+                f"{res.repeats_before}). Örnek: `{ornek['sequence']}` "
+                f"{ornek['count']} kez, "
+                f"{', '.join(str(p) for p in ornek['positions'][:4])}. "
+                f"konumlarda. "
+                "Kodon optimizasyonunun bilinen yan etkisi budur: aynı "
+                "amino asit dizisi için hep aynı kodonlar seçilince "
+                "birebir tekrar eden bloklar çıkar. Uzun doğrudan "
+                "tekrarlar recA⁺ konakta rekombine olur ve aradaki bölge "
+                "silinir - yapı haritada doğru görünürken hücrede "
+                "parçalanır. Klonlamayı recA1 taşıyan bir suşta yapın "
+                "(DH5-alfa, TOP10)."
+            )})
+
+    if res.structure_before < -3.0:
+        if res.structure_fixed:
+            out.append({
+                "kind": "bilgi", "title": "Başlama bölgesindeki yapı açıldı",
+                "detail": (
+                    f"Optimizasyon sonrası başlama bölgesinde "
+                    f"{res.structure_before} kcal/mol'lük engelleyici bir "
+                    f"saç tokası vardı; ilk kodonlar eşanlamlılarıyla "
+                    f"değiştirilerek {res.structure_after} kcal/mol'e "
+                    f"indirildi. Protein değişmedi. "
+                    "Bu adım olmasaydı optimizasyon, çözmeye çalıştığı "
+                    "sorunun bir başkasını doğurabilirdi: kodonlar "
+                    "düzelir, ribozom yine bağlanamaz."
+                )})
+        else:
+            out.append({
+                "kind": "uyari", "title": "Başlama bölgesinde yapı kaldı",
+                "detail": (
+                    f"Başlama bölgesinde {res.structure_after} kcal/mol'lük "
+                    f"engelleyici bir saç tokası var ve eşanlamlı kodon "
+                    f"değişiklikleriyle açılamadı. Farklı bir RBS seçmeyi "
+                    f"ya da RBS ile başlama kodonu arasındaki aralığı "
+                    f"değiştirmeyi deneyin; mRNA yapısı sekmesi bölgeyi "
+                    f"ayrıntılı gösteriyor."
+                )})
+
     if res.changed > len(_codons(res.sequence)) * 0.5:
         out.append({
             "kind": "uyari", "title": "Dizinin yarısından fazlası değişti",

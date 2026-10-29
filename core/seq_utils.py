@@ -553,6 +553,19 @@ def design_primers(
             "yönde de girer."
         )
 
+    # Dimer ve sac tokasi: Tm/GC kadar belirleyici, cunku primerler
+    # birbirini kalip olarak kullanirsa urun hic cikmaz.
+    for primer, etiket in ((fwd, "İleri"), (rev, "Geri")):
+        kendi = primer_dimer(primer.sequence)
+        if kendi["risk"] != "yok":
+            primer.warnings.append(f"{etiket} primer {kendi['note']}")
+        toka = primer_hairpin(primer.sequence)
+        if toka["risk"] != "yok":
+            primer.warnings.append(f"{etiket} primer: {toka['note']}")
+    capraz = primer_dimer(fwd.sequence, rev.sequence)
+    if capraz["risk"] != "yok":
+        pair_warnings.append(capraz["note"])
+
     anneal_tm = min(t for t in (fwd.tm, rev.tm) if t) - 5 if (fwd.tm and rev.tm) else None
     return {
         "forward": fwd,
@@ -560,6 +573,7 @@ def design_primers(
         "product_length": len(s),
         "annealing_temp": round(anneal_tm, 1) if anneal_tm else None,
         "pair_warnings": pair_warnings,
+        "dimer": capraz,
     }
 
 
@@ -716,3 +730,149 @@ def annotate_similar(
                         part_id=p["part_id"], identity=identity,
                     )
     return sorted(best.values(), key=lambda f: (f.start, -f.length))
+
+
+# ---------------------------------------------------------------------------
+# Primer dimer ve saç tokası denetimi
+# ---------------------------------------------------------------------------
+# Tm, GC ve 3' ucu bakmak yetmez: iki primer birbirine ya da kendine
+# yapışırsa polimeraz kalıp yerine onları uzatır. Ürün yerine jelde
+# 40-80 bp'lik bulanık bir bant görürsünüz. 3' ucundaki eşleşme
+# özellikle tehlikelidir, çünkü uzama oradan başlar.
+
+_COMPLEMENT = {"A": "T", "T": "A", "G": "C", "C": "G", "N": "N"}
+
+
+def _pair_score(a: str, b: str) -> int:
+    """Karşılıklı dizilen iki bölgenin bağ puanı (G/C 2, A/T 1)."""
+    skor = 0
+    for x, y in zip(a, b):
+        if _COMPLEMENT.get(x) == y:
+            skor += 2 if x in "GC" else 1
+    return skor
+
+
+def _best_duplex(a: str, b: str) -> tuple[int, int, str]:
+    """İki primer arasındaki en güçlü hizalanmayı bul.
+
+    `b` ters çevrilerek `a` üzerinde kaydırılır; her kaymada eşleşen
+    baz çiftlerinin puanı toplanır. En yüksek puanlı kayma döner.
+    Dönen üçlü: (puan, 3' ucundaki ardışık eşleşme, görsel).
+    """
+    b_rev = b[::-1]
+    en_iyi = (0, 0, "")
+    for kaydir in range(-(len(b) - 1), len(a)):
+        ust_parca, alt_parca = [], []
+        for i in range(len(a)):
+            j = i - kaydir
+            if 0 <= j < len(b_rev):
+                ust_parca.append(a[i])
+                alt_parca.append(b_rev[j])
+        if len(ust_parca) < 3:
+            continue
+        ust, alt = "".join(ust_parca), "".join(alt_parca)
+        skor = _pair_score(ust, alt)
+        if skor < 8:
+            continue
+        # 3' ucundaki ardışık eşleşme: a'nın son bazından geriye doğru
+        uc = 0
+        if kaydir + len(b) - 1 >= len(a) - 1:
+            for x, y in zip(reversed(ust), reversed(alt)):
+                if _COMPLEMENT.get(x) == y:
+                    uc += 1
+                else:
+                    break
+        if skor > en_iyi[0]:
+            cizim = "\n".join([
+                f"5'-{ust}-3'",
+                "   " + "".join("|" if _COMPLEMENT.get(x) == y else " "
+                                for x, y in zip(ust, alt)),
+                f"3'-{alt}-5'",
+            ])
+            en_iyi = (skor, uc, cizim)
+    return en_iyi
+
+
+def primer_dimer(
+    primer_a: str, primer_b: str | None = None, threshold: int = 14,
+    end_threshold: int = 3,
+) -> dict[str, Any]:
+    """Primer dimerini (ya da kendi dimerini) ölç ve yorumla.
+
+    `threshold` toplam bağ puanı, `end_threshold` ise 3' ucundaki
+    ardışık eşleşme sayısı için sınırdır. 3' ucu eşleşmesi daha azıyla
+    bile sorun çıkarır, çünkü polimeraz oradan uzatmaya başlar.
+    """
+    a = clean_seq(primer_a)
+    b = clean_seq(primer_b) if primer_b else a
+    kendi = primer_b is None
+    if len(a) < 6 or len(b) < 6:
+        return {"score": 0, "end_match": 0, "risk": "yok", "diagram": "",
+                "note": ""}
+
+    skor, uc, cizim = _best_duplex(a, b)
+    tur = "kendi dimeri" if kendi else "çapraz dimer"
+
+    if uc >= end_threshold:
+        risk = "yüksek"
+        note = (
+            f"{tur}: 3' ucunda {uc} ardışık baz eşleşiyor (bağ puanı "
+            f"{skor}). Polimeraz uzamayı 3' ucundan başlattığı için bu "
+            f"en kötü durumdur - primerler birbirini kalıp olarak "
+            f"kullanır ve jelde ürün yerine 40-80 bp'lik bulanık bir "
+            f"bant çıkar. Primerin 3' ucundaki birkaç bazı değiştirin "
+            f"ya da bağlanma bölgesini birkaç baz kaydırın."
+        )
+    elif skor >= threshold:
+        risk = "orta"
+        note = (
+            f"{tur}: bağ puanı {skor}, ama eşleşme 3' ucunda değil. "
+            f"İç bölgedeki eşleşme uzamayı doğrudan başlatmaz; yine de "
+            f"primerin bir kısmını bağlar ve etkin derişimi düşürür. "
+            f"PCR zayıf çalışırsa bakılacak yerlerden biridir."
+        )
+    else:
+        risk = "yok"
+        note = ""
+    return {"score": skor, "end_match": uc, "risk": risk,
+            "diagram": cizim if risk != "yok" else "", "note": note,
+            "kind": tur}
+
+
+def primer_hairpin(primer: str, threshold: int = 12) -> dict[str, Any]:
+    """Primerin kendi üzerine katlanıp katlanmadığına bak.
+
+    Saç tokası yapan primer kalıba bağlanamaz; özellikle 3' ucu
+    yapının içinde kalıyorsa uzama hiç başlamaz.
+    """
+    s = clean_seq(primer)
+    n = len(s)
+    en_iyi = (0, "", 0)
+    for i in range(n):
+        for j in range(i + 4, n):
+            uzunluk = 0
+            while (i - uzunluk >= 0 and j + uzunluk < n
+                   and _COMPLEMENT.get(s[i - uzunluk]) == s[j + uzunluk]):
+                uzunluk += 1
+            if uzunluk < 3:
+                continue
+            sap_a = s[i - uzunluk + 1:i + 1]
+            sap_b = s[j:j + uzunluk][::-1]
+            skor = _pair_score(sap_a, sap_b)
+            if skor > en_iyi[0]:
+                uc_icinde = (j + uzunluk - 1) >= n - 3
+                en_iyi = (skor, f"{sap_a} / {sap_b}", uc_icinde)
+    skor, cizim, uc_icinde = en_iyi
+    if skor < threshold:
+        return {"score": skor, "risk": "yok", "note": ""}
+    return {
+        "score": skor,
+        "risk": "yüksek" if uc_icinde else "orta",
+        "note": (
+            f"Primer kendi üzerine katlanıyor (bağ puanı {skor}, sap "
+            f"{cizim})."
+            + (" 3' ucu yapının içinde kalıyor: uzama hiç başlamayabilir."
+               if uc_icinde else
+               " 3' ucu serbest, yine de bağlanma verimi düşer.")
+        ),
+    }

@@ -135,6 +135,39 @@ def build_lane(
     return Lane(name=name, bands=bands)
 
 
+# Kesilmemiş dairesel plazmitin üç biçimi ve göç davranışı. Süperkıvrımlı
+# biçim sıkı paketlendiği için jel gözeneklerinden kendi boyutundan daha
+# hızlı geçer; açık dairesel (tek zincir kırığı) en yavaş biçimdir.
+# Katsayılar görünen boyutu ifade eder, gerçek boyutu değil.
+UNCUT_FORMS = [
+    ("süperkıvrımlı", 0.62, 0.70),
+    ("doğrusal", 1.00, 0.15),
+    ("açık dairesel", 1.35, 0.15),
+]
+
+
+def uncut_lane(name: str, length: int, agarose: float = 1.0,
+               total_ng: float = 500.0) -> Lane:
+    """Kesilmemiş dairesel plazmitin jeldeki üç bandı.
+
+    Kesilmiş fragmanlar tek bant verir, ama kesilmemiş plazmit vermez:
+    aynı molekül üç farklı topolojide bulunur ve üçü farklı hızda göçer.
+    Bunu tek bant olarak çizmek, kesimin tam olup olmadığını jelden
+    okumayı öğrenen birini yanıltır - bu yüzden ayrı ayrı çiziliyor.
+    """
+    bands: list[Band] = []
+    for etiket, katsayi, pay in UNCUT_FORMS:
+        gorunen = max(int(length * katsayi), 1)
+        kutle = total_ng * pay
+        yogunluk = max(0.0, min(1.0,
+                                math.log10(max(kutle, 0.5) / 2.0) / 1.6))
+        bands.append(Band(
+            size=gorunen, intensity=round(yogunluk, 3),
+            label=f"{etiket} (~{gorunen} bp gibi göçer)",
+        ))
+    return Lane(name=name, bands=sorted(bands, key=lambda b: -b.size))
+
+
 def ladder_lane(key: str = "1 kb") -> Lane:
     sizes = LADDERS.get(key, LADDERS["1 kb"])
     bold = LADDER_BOLD.get(key, set())
@@ -221,7 +254,7 @@ def render_gel(
 
     p: list[str] = [
         f"<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 {total_w} "
-        f"{gel_bottom + 54}' width='100%' role='img' "
+        f"{gel_bottom + 66}' width='100%' role='img' "
         f"aria-label='Agaroz jel simülasyonu'>",
         "<style>"
         ".gl{font:11px ui-sans-serif,system-ui,sans-serif;fill:" + _TEXT + "}"
@@ -272,5 +305,10 @@ def render_gel(
     p.append(f"<text x='{pad_l}' y='{gel_bottom + 42}' class='gl'>"
              f"Bant parlaklığı o bantdaki DNA kütlesiyle orantılı çizildi; "
              f"kısa fragmanlar eşit molde bile sönük görünür.</text>")
+    if any("göçer" in b.label for ln in lanes for b in ln.bands):
+        p.append(f"<text x='{pad_l}' y='{gel_bottom + 54}' class='gl'>"
+                 f"Kesilmemiş plazmit üç topolojide bulunur; "
+                 f"süperkıvrımlı biçim kendi boyutundan hızlı göçer, "
+                 f"bu yüzden merdivenden boyut okunamaz.</text>")
     p.append("</svg>")
     return "".join(p)
