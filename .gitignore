@@ -26,3 +26,6 @@ data/reference_vectors/_genbank/
 
 # Cekme betiklerinin ham indirme onbellegi.
 data/_cache/
+
+# Masaustu sarmalayicisinin calisma gunlugu.
+data/desktop.log

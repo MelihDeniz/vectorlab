@@ -80,3 +80,12 @@ dataframeBorderColor = "#27272A"
 
 [server]
 fileWatcherType = "poll"
+
+# Masaustu penceresinde "Deploy" dugmesi ve gelistirici menusu
+# anlamsiz; minimal mod yalnizca gerekli olani birakir.
+[client]
+toolbarMode = "minimal"
+showErrorDetails = true
+
+[server]
+headless = true

@@ -1,3 +1,4 @@
 biopython>=1.85
 streamlit>=1.57
 requests>=2.31
+pywebview>=5.0
