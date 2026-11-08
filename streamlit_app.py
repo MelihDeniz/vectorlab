@@ -47,6 +47,16 @@ page = st.navigation(
             icon=":material/construction:",
         ),
         st.Page(
+            "app_pages/disease.py",
+            title="Hastalık vektörü",
+            icon=":material/medication:",
+        ),
+        st.Page(
+            "app_pages/refbuild.py",
+            title="Referanstan kes-yapıştır",
+            icon=":material/content_paste:",
+        ),
+        st.Page(
             "app_pages/vectors.py",
             title="Referans vektörler",
             icon=":material/album:",

@@ -86,6 +86,3 @@ fileWatcherType = "poll"
 [client]
 toolbarMode = "minimal"
 showErrorDetails = true
-
-[server]
-headless = true

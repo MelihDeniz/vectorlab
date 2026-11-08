@@ -107,6 +107,7 @@ def validate(
     _check_physical(f, vec)
     _check_enzymes(f, vec, cloning_enzymes)
     _check_signal_peptide(f, vec, host, purpose)
+    _check_therapeutic(f, vec, host, pid)
 
     if not annotation_complete:
         f = _soften_absence(f)
@@ -235,9 +236,27 @@ def _check_core_elements(f, vec, purpose):
 # ---------------------------------------------------------------------------
 
 
+def _promoters_share_cassette(vec) -> bool:
+    """İki promotör arasında terminatör yoksa aynı kasettedirler.
+
+    Terminatörle ayrılmış iki kaset (örneğin terapötik operon + toksin-
+    antitoksin operonu) birbirini engellemez; PRO-01 yalnızca ayrılmamış
+    promotörler için geçerlidir.
+    """
+    gordu = False
+    for p in vec.part_order:
+        if p["category"] == "promoter":
+            if gordu:
+                return True
+            gordu = True
+        elif p["category"] == "terminator":
+            gordu = False
+    return False
+
+
 def _check_promoter_host(f, vec, host, pid):
     promoters = vec.parts_of("promoter")
-    if len(promoters) > 1:
+    if len(promoters) > 1 and _promoters_share_cassette(vec):
         names = ", ".join(p["name"] for p in promoters)
         f.append(Finding(
             "uyari", "PRO-01", "Birden fazla promotör",
@@ -491,7 +510,9 @@ def _check_markers(f, vec, host, pid):
                 "dual plasmid selection chloramphenicol pLysS Rosetta",
             ))
 
-    if "MRK_CCDB" in pid:
+    # ccdB tek başına öldürücüdür; yanında antitoksin (ccdA) varsa bir
+    # idame sistemidir ve TA-xx kuralları devreye girer.
+    if "MRK_CCDB" in pid and "MRK_CCDA" not in pid:
         host_ok = bool(host and "ccdB" in host.get("notes", ""))
         if not host_ok:
             f.append(Finding(
@@ -1078,6 +1099,195 @@ def _check_signal_peptide(f, vec, host, purpose):
             "Amacı 'ifade' olarak değiştirin ya da sinyali çıkarın.",
             "",
         ))
+
+
+# ---------------------------------------------------------------------------
+# Terapötik canlı bakteri vektörleri (PKU örneği)
+# ---------------------------------------------------------------------------
+# Hastalığı tedavi etmek için hastaya verilen bakteride iki soru ortaya
+# çıkar ki ifade vektörlerinde çıkmaz: terapötik gen yalnızca doğru
+# ortamda mı çalışıyor, ve bakteri vücutta kontrolsüz çoğalabilir mi?
+# Aşağıdaki kurallar ikisini de sessiz kalmayacak şekilde yakalar.
+
+_ANAEROBIC_PROMOTERS = {"PRO_FNRS"}
+_PAL_PARTS = {"CDS_STLA"}
+
+
+def _is_dap_auxotroph(host: dict[str, Any] | None) -> bool:
+    """Konak dapA'sı silinmiş (DAP bağımlı) mı? Genotipten okunur."""
+    g = ((host or {}).get("genotype") or "").replace("Δ", "D").lower()
+    return "ddapa" in g or "dapa::" in g
+
+
+def _check_therapeutic(f, vec, host, pid):
+    # --- Terapötik çift: enzim + taşıyıcı
+    if "CDS_PHEP" in pid and not (pid & _PAL_PARTS):
+        f.append(Finding(
+            "uyari", "THR-01", "Taşıyıcı var, onu kullanan enzim yok",
+            "pheP fenilalanini hücreye alır ama hücre içinde onu "
+            "dönüştüren bir enzim (PAL/stlA) yok. Phe hücrede birikir, "
+            "kandaki fenilalanin düzeyine bir etkisi olmaz.",
+            "stlA (PAL) ekleyin.",
+            "phenylalanine ammonia lyase PheP transporter engineered "
+            "bacteria phenylketonuria",
+        ))
+    if (pid & _PAL_PARTS) and "CDS_PHEP" not in pid:
+        f.append(Finding(
+            "bilgi", "THR-02", "PAL var, Phe taşıyıcısı (pheP) yok",
+            "Makaledeki suş PAL ile birlikte yüksek afiniteli bir Phe "
+            "taşıyıcısı (pheP) ifade eder: enzim ne kadar iyi olursa "
+            "olsun Phe hücreye yeterince girmezse hız sınırlayıcı adım "
+            "taşımadır. Taşıyıcısız tasarım çalışabilir ama daha düşük "
+            "verim beklenir.",
+            "pheP eklemeyi değerlendirin.",
+            "Isabella 2018 SYNB1618 PheP PAL phenylalanine uptake",
+        ))
+
+    # --- Anaerobik promotör
+    if pid & _ANAEROBIC_PROMOTERS:
+        f.append(Finding(
+            "bilgi", "ANA-01", "İfade yalnızca oksijensiz ortamda açılır",
+            "PfnrS, oksijen yokken aktifleşen FNR proteinine bağlıdır. "
+            "Çalkalamalı, havalandırılmış bir şişe kültüründe terapötik "
+            "genler büyük ölçüde KAPALI kalır; bu hata değil, tasarımın "
+            "amacıdır (gen yalnızca bağırsakta çalışsın). Ama aktiviteyi "
+            "ölçerken aerobik ortamda 'çalışmıyor' sonucuna varmayın.",
+            "Aktiviteyi aerobik ve anaerobik (kapalı tüp ya da anaerobik "
+            "kabin) koşullarda yan yana ölçün; bu karşılaştırma tasarımın "
+            "çalıştığının kanıtıdır.",
+            "FNR dependent promoter PfnrS anaerobic induction E coli "
+            "Nissle",
+        ))
+
+    # --- dapA tamamlama / DAP bağımlılığı
+    dap_konak = _is_dap_auxotroph(host)
+    if "MRK_DAPA" in pid and host and not dap_konak:
+        f.append(Finding(
+            "hata", "SEL-01", "dapA markeri bu konakta seçilim sağlamaz",
+            f"Plazmitte dapA var ama {host['name']} kendi dapA'sını "
+            "taşıyor. Plazmitsiz hücre de DAP üretip büyür; plazmit "
+            "kaybedildiğinde hiçbir şey seçilmez, idame sağlanmaz.",
+            "dapA'sı silinmiş bir konak seçin (örn. Nissle ΔdapA) ya da "
+            "başka bir seçilim yöntemi kullanın.",
+            "dapA complementation auxotrophy plasmid maintenance "
+            "antibiotic free",
+        ))
+    if "MRK_DAPA" in pid and dap_konak:
+        f.append(Finding(
+            "uyari", "BIO-01",
+            "dapA plazmitte: DAP bağımlılığı (biyolojik içerme) kalkıyor",
+            "Konağın dapA delesyonu, bakterinin DAP bulunmayan ortamda "
+            "(örneğin bağırsakta) çoğalamamasını sağlayan güvenlik "
+            "katmanıdır. Plazmit dapA'yı geri verdiği için plazmiti "
+            "taşıyan hücre DAP'sız da büyür: antibiyotiksiz idame "
+            "kazanılır, ama makaledeki içerme mekanizması kaybedilir. "
+            "Plazmitsiz hücreler hâlâ ölür; yani bu tasarım plazmit "
+            "kaybına karşı korur, bakterinin kontrolsüz çoğalmasına "
+            "karşı korumaz.",
+            "Sunumda bu bedeli açıkça söyleyin. İçermeyi korumak "
+            "istiyorsanız idameyi dapA ile değil, dapA'dan bağımsız bir "
+            "yöntemle sağlayın: ccdA + ccdB toksin-antitoksin çifti (ccdA "
+            "önce) bu katalogda vardır. Ya da ayrı bir öldürme anahtarı "
+            "ekleyin.",
+            "biocontainment auxotrophy plasmid addiction toxin antitoxin "
+            "live biotherapeutic",
+        ))
+    if dap_konak and "MRK_DAPA" not in pid:
+        f.append(Finding(
+            "bilgi", "SEL-02", "Konak DAP bağımlı: besiyerine DAP eklenmeli",
+            f"{host['name']} dapA'sı silinmiş bir suş; plazmitte dapA "
+            "olmadığı için DAP verilmedikçe büyümez. Bu, makaledeki "
+            "içerme mekanizmasıyla uyumludur. Plazmit idamesi ise dapA "
+            "ile değil, antibiyotik ya da başka bir yöntemle "
+            "sağlanmalıdır.",
+            "Üretim besiyerine DAP ekleyin; plazmit idamesi için "
+            "ayrıca bir seçilim yöntemi belirleyin.",
+            "diaminopimelic acid auxotroph dapA deletion culture "
+            "supplementation",
+        ))
+
+    # --- Toksin-antitoksin (ccdAB) ile antibiyotiksiz plazmit idamesi
+    if "MRK_CCDA" in pid and "MRK_CCDB" not in pid:
+        f.append(Finding(
+            "uyari", "TA-01", "Antitoksin var, toksin yok: idame sağlanmaz",
+            "ccdA yalnızca antitoksindir; yanında ccdB olmadığı için "
+            "plazmiti kaybeden hücreyi öldüren bir şey yoktur. Plazmit "
+            "idamesi sağlanmaz.",
+            "ccdA'nın yanına ccdB'yi ekleyin (ccdA önce gelmeli).",
+            "ccdAB toxin antitoxin plasmid addiction post-segregational "
+            "killing",
+        ))
+    if "MRK_CCDA" in pid and "MRK_CCDB" in pid:
+        sira = {p["part_id"]: i for i, p in enumerate(vec.part_order)}
+        if sira["MRK_CCDB"] < sira["MRK_CCDA"]:
+            f.append(Finding(
+                "uyari", "TA-02", "ccdB, ccdA'dan önce geliyor",
+                "Doğal ccdAB operonunda antitoksin (ccdA) toksinden "
+                "(ccdB) önce gelir. Sıra tersine çevrilirse antitoksin "
+                "operonun sonunda kalır ve toksine göre az üretilebilir; "
+                "plazmitli hücre bile zarar görür.",
+                "Sırayı promotör, ccdA, ccdB olarak düzenleyin.",
+                "ccdAB operon organization antitoxin toxin ratio",
+            ))
+        if host and "ccdB" in (host.get("notes") or ""):
+            f.append(Finding(
+                "hata", "TA-03", "Konak ccdB'ye dirençli: idame çalışmaz",
+                f"{host['name']} ccdB'ye dirençli bir suş (gyrA "
+                "mutantı). Toksin bu hücrede öldürücü olmadığı için "
+                "plazmitsiz hücre de yaşar ve plazmit kaybı seçilmez.",
+                "Yabanıl gyrA taşıyan bir konak seçin (örn. Nissle, "
+                "DH5-alfa).",
+                "ccdB resistant gyrA462 strain DB3.1 plasmid addiction",
+            ))
+        f.append(Finding(
+            "bilgi", "TA-04", "Toksin-antitoksin idamesi: nasıl çalışır",
+            "Plazmitli hücre antitoksini sürekli üretir ve toksin "
+            "etkisiz kalır. Plazmit kaybolunca kararsız olan antitoksin "
+            "hızla yıkılır, kararlı olan toksin kalır ve hücre ölür "
+            "(post-segregasyonel öldürme). Antibiyotik gerekmez, besinsel "
+            "bağımlılık da yaratmaz: konağın DAP bağımlılığı gibi başka "
+            "içerme katmanları korunur. Denge önemlidir: ccdAB'nin kendi "
+            "promotörü oto-regülasyonla oranı korur; yerine sentetik bir "
+            "promotör koymak oranı bozabilir.",
+            "Plazmit tutulumunu antibiyotiksiz pasajlar sonrası sayarak "
+            "deneyle doğrulayın.",
+            "ccdAB autoregulation plasmid stabilization copy number "
+            "engineered probiotic",
+        ))
+
+    # --- Klinik kullanım: antibiyotik direnci
+    if host and host.get("use") == "terapötik":
+        ab = [m for m in vec.parts_of("marker")
+              if m["part_id"] in _MARKER_ANTIBIOTIC]
+        if ab:
+            adlar = ", ".join(m["name"].split("(")[0].strip() for m in ab)
+            f.append(Finding(
+                "uyari", "BIO-02",
+                "Terapötik bakteride antibiyotik direnç geni",
+                f"{adlar} hastaya verilecek bir bakteride direnç geni "
+                "taşıyor. Direnç genleri bağırsak mikrobiyotasındaki "
+                "diğer bakterilere yatay gen aktarımıyla geçebilir; bu "
+                "yüzden canlı terapötiklerde kabul görmez. Laboratuvar "
+                "prototipinde sorun değildir.",
+                "Klinik hedefli tasarımda antibiyotiksiz idame kullanın "
+                "(besinsel seçilim, toksin-antitoksin) ya da geni "
+                "kromozoma yerleştirin.",
+                "antibiotic resistance gene horizontal transfer live "
+                "biotherapeutic probiotic",
+            ))
+
+        if host.get("host_id", "").startswith("ECN") and vec.parts_of("ori"):
+            f.append(Finding(
+                "bilgi", "BIO-03", "Nissle'ın kriptik plazmitleri",
+                "E. coli Nissle 1917 yabanıl kriptik plazmitler "
+                "taşıdığı bildirilen bir suştur. Seçtiğiniz orijin bu "
+                "plazmitlerle aynı uyumsuzluk grubundaysa biri kaybolabilir. "
+                "Katalog bunu orijin bazında denetleyemez.",
+                "Plazmit kararlılığını konak içinde deneyle doğrulayın "
+                "(antibiyotiksiz pasajlar sonrası plazmit tutulumu).",
+                "E coli Nissle 1917 cryptic plasmids pMUT1 pMUT2 "
+                "compatibility",
+            ))
 
 
 def _part_record(part_id: str) -> dict[str, Any]:

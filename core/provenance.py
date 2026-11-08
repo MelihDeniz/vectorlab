@@ -27,8 +27,13 @@ CHECKSUM_FILE = DATA / "CHECKSUMS.txt"
 
 # Özeti alınan dosyalar: uygulamanın davranışını belirleyen veriler.
 # Veritabanı dahil değildir, o her açılışta bunlardan yeniden kurulur.
-TRACKED = ["igem_parts.json", "ecoli_codon_usage.json"]
-TRACKED_DIRS = ["reference_vectors"]
+#
+# data/ içindeki bütün .json dosyaları taranır; elle liste tutulmaz.
+# Elle tutulan listede yeni bir veri dosyası eklemeyi unutmak kolaydı
+# ve unutulan dosya sessizce izlenmemiş kalıyordu - sinyal peptitleri
+# ve hastalık genleri tam olarak böyle gözden kaçtı. Taramak bunu
+# yapısal olarak imkânsız kılar.
+TRACKED_DIRS = ["", "reference_vectors"]
 
 
 def _sha256(path: Path) -> str:
@@ -41,12 +46,8 @@ def _sha256(path: Path) -> str:
 
 def tracked_files() -> list[Path]:
     out: list[Path] = []
-    for ad in TRACKED:
-        p = DATA / ad
-        if p.exists():
-            out.append(p)
     for d in TRACKED_DIRS:
-        klasor = DATA / d
+        klasor = DATA / d if d else DATA
         if klasor.exists():
             out.extend(sorted(klasor.glob("*.json")))
     return out

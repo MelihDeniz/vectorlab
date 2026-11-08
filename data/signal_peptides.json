@@ -1,6 +1,6 @@
 {
  "source": "UniProt (sinyal peptidi aralığı) + NCBI (nükleotid)",
- "generated": "2026-10-30",
+ "generated": "2026-11-07",
  "note": "Her kaydın nükleotid dizisi çevrilip UniProt'un bildirdiği peptide eşit olduğu doğrulandı; eşit olmayan kayıt yazılmadı.",
  "peptides": [
   {
@@ -107,6 +107,21 @@
    "uniprot_entry": "LSC_BACSU",
    "nucleotide": "M14202 / AAA22725.1",
    "note": "B. subtilis levansukraz sinyali. Gram-pozitiflerde dış zar olmadığı için protein periplazmada sıkışmaz, doğrudan besiyerine salgılanır."
+  },
+  {
+   "part_id": "SIG_USP45",
+   "name": "Usp45 sinyal peptidi",
+   "peptide": "MKKKIISAILMSTVILSAAAPLSGVYA",
+   "sequence": "ATGAAAAAAAAGATTATCTCAGCTATTTTAATGTCTACAGTGATACTTTCTGCTGCAGCCCCGTTGTCAGGTGTTTACGCT",
+   "length": 81,
+   "length_aa": 27,
+   "pathway": "Sec (Gram-pozitif)",
+   "organism": "Lactococcus lactis",
+   "gene": "usp45",
+   "uniprot": "P22865",
+   "uniprot_entry": "USP45_LACLM",
+   "nucleotide": "M60178 / AAA25230.1",
+   "note": "Laktik asit bakterilerinde en çok kullanılan salgılama sinyali. Steidler ve ark.'nın IL-10 salgılayan L. lactis suşu da bu sinyali kullanır; gıda sınıfı bir organizmada terapötik protein salgılamanın standart yolu budur."
   },
   {
    "part_id": "SIG_AMYE",

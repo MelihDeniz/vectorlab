@@ -9,9 +9,11 @@ from typing import Any
 
 from core import provenance
 from core.extracted_seed import extracted_parts
+from core.disease_seed import disease_parts
 from core.igem_seed import igem_parts
 from core.signal_seed import signal_parts
 from core.parts_seed import ALL_PARTS, HOSTS
+from core.pku_seed import PKU_HOSTS, pku_parts
 
 DB_PATH = Path(__file__).resolve().parent.parent / "data" / "vectorlab.db"
 
@@ -122,7 +124,7 @@ def init_db(force_reseed: bool = False) -> None:
         if force_reseed:
             con.execute(
                 "DELETE FROM parts WHERE source IN "
-                "('seed','igem','vector','signal')")
+                "('seed','igem','vector','signal','pku','disease')")
             con.execute("DELETE FROM hosts")
 
         n_parts = con.execute(
@@ -162,6 +164,35 @@ def init_db(force_reseed: bool = False) -> None:
             for part in sinyaller:
                 _insert_part(con, part)
 
+        # PKU (terapötik canlı bakteri) parçaları. Dizisi sonradan
+        # çekilen parçalar stub'dan full'a döneceği için sayıya değil
+        # (durum, uzunluk, erişim) üçlüsüne bakılır.
+        pku = pku_parts()
+        var = {r[0]: (r[1], r[2], r[3]) for r in con.execute(
+            "SELECT part_id, seq_status, length, accession FROM parts "
+            "WHERE source = 'pku'")}
+        istenen = {p["part_id"]: (p["seq_status"], p["length"],
+                                  p["accession"]) for p in pku}
+        if var != istenen:
+            con.execute("DELETE FROM parts WHERE source = 'pku'")
+            for part in pku:
+                _insert_part(con, part)
+
+        # Hastalık vektörlerinin terapötik genleri. Burada da sayıya
+        # değil üçlüye bakılır: veri dosyası yenilendiğinde gen sayısı
+        # aynı kalıp dizi değişebilir (yeni bir UniProt sürümü, başka
+        # bir suşun alleli) ve sayıya bakan kontrol bunu kaçırır.
+        terapotik = disease_parts()
+        var_h = {r[0]: (r[1], r[2], r[3]) for r in con.execute(
+            "SELECT part_id, seq_status, length, accession FROM parts "
+            "WHERE source = 'disease'")}
+        istenen_h = {p["part_id"]: (p["seq_status"], p["length"],
+                                    p["accession"]) for p in terapotik}
+        if var_h != istenen_h:
+            con.execute("DELETE FROM parts WHERE source = 'disease'")
+            for part in terapotik:
+                _insert_part(con, part)
+
         n_hosts = con.execute("SELECT COUNT(*) FROM hosts").fetchone()[0]
         if n_hosts == 0:
             for host in HOSTS:
@@ -177,6 +208,22 @@ def init_db(force_reseed: bool = False) -> None:
                         ("t7_polymerase", "laciq", "lacz_dm15",
                          "recA", "endA", "rare_trna", "pir")}},
                 )
+
+        # Konak tablosu yalnızca boşken dolduruluyordu; mevcut bir
+        # veritabanına sonradan eklenen konaklar bu yüzden eksik kalırdı.
+        for host in PKU_HOSTS:
+            con.execute(
+                """INSERT OR IGNORE INTO hosts (host_id, name, organism, use,
+                       t7_polymerase, laciq, lacz_dm15, recA, endA,
+                       rare_trna, pir, genotype, notes)
+                   VALUES (:host_id, :name, :organism, :use,
+                       :t7_polymerase, :laciq, :lacz_dm15, :recA, :endA,
+                       :rare_trna, :pir, :genotype, :notes)""",
+                {"pir": 0, **host,
+                 **{k: int(host.get(k, False)) for k in
+                    ("t7_polymerase", "laciq", "lacz_dm15",
+                     "recA", "endA", "rare_trna")}},
+            )
     con.close()
 
 

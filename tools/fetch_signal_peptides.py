@@ -67,6 +67,12 @@ WANTED = [
      "B. subtilis levansukraz sinyali. Gram-pozitiflerde dış zar "
      "olmadığı için protein periplazmada sıkışmaz, doğrudan "
      "besiyerine salgılanır."),
+    ("usp45", "Lactococcus lactis", "Usp45",
+     "Sec (Gram-pozitif)",
+     "Laktik asit bakterilerinde en çok kullanılan salgılama "
+     "sinyali. Steidler ve ark.'nın IL-10 salgılayan L. lactis "
+     "suşu da bu sinyali kullanır; gıda sınıfı bir organizmada "
+     "terapötik protein salgılamanın standart yolu budur."),
     ("amyE", "Bacillus subtilis", "AmyE",
      "Sec (Gram-pozitif)",
      "B. subtilis alfa-amilaz sinyali; endüstriyel enzim üretiminde "

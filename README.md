@@ -5,7 +5,46 @@ ikilisinin ders düzeyinde yerine geçecek, tek dosyalık veritabanıyla
 çalışan yerel bir uygulama.
 
 **Kapsam bilinçli olarak sadece bakteriyel sistemlerdir** (ağırlıklı
-*E. coli*). Memeli, bitki, böcek, maya elemanları yoktur.
+*E. coli*). Memeli, bitki, böcek, maya **vektör elemanı** — orijin,
+promotör, marker, iskelet — yoktur ve eklenmeyecektir.
+
+Tek istisna kargodadır, elemanda değil: Hastalık vektörü sayfasındaki
+IBD tasarımı insan IL-10 genini taşır, çünkü bakterinin *salgıladığı*
+terapötik protein insan proteinidir ve kaynak makale de bunu kullanır
+(Steidler 2000). Yani bakteri bir insan proteini üretir; vektörün
+kendisi baştan sona bakteriyeldir.
+
+## Masaüstü uygulaması olarak çalıştırma
+
+Masaüstündeki **VectorLab** kısayolu uygulamayı kendi penceresinde
+açar: adres çubuğu yok, sekme yok, tarayıcı menüsü yok. Tarayıcı
+açılmaz.
+
+```bash
+pythonw desktop.py
+```
+
+Pencere Windows'un **WebView2** bileşeni üzerine kuruludur. Bu, Edge
+tarayıcısının kendisi değil; uygulamaların içine gömülen görüntüleme
+motorudur (Teams ve VS Code da aynısını kullanır) ve Windows 11'de
+hazır gelir. Doğrulandı: uygulama açıldığında `msedge.exe` ve
+`chrome.exe` pencere sayısı değişmiyor, açılan pencerenin sınıfı
+`WindowsForms10.Window` (tarayıcı olsaydı `Chrome_WidgetWin_1`
+olurdu).
+
+Üç ayrıntı bilinçli:
+
+- **Port dinamik alınıyor.** Sabit 8501 kullanılsaydı uygulama ikinci
+  kez açıldığında ya da başka bir Streamlit çalışırken çakışır ve
+  pencere boş gelirdi.
+- **Kapanış iki yönlü.** Pencereyi kapatınca sunucu süreç ağacıyla
+  birlikte kapanır; sunucu önce çökerse pencere de kapanır, boş ekranla
+  kalmazsınız.
+- **Konsol hiç açılmaz.** `pythonw` kullanıldığı için pencere
+  parlaması olmaz; sorun çıkarsa yerel bir hata kutusu belirir ve
+  ayrıntı `data/desktop.log` içine yazılır.
+
+Hata ayıklarken `baslat-konsollu.bat` günlüğü konsolda da gösterir.
 
 ## Kurulum ve çalıştırma
 
@@ -217,6 +256,134 @@ Tasarımı tezgâha taşıyan sayfa. Dört sekme:
   ve protokol tek bir HTML dosyasında. Harita ve jel dosyanın içine
   gömülür, ayrı görsel gerekmez; tarayıcıda açılıp PDF'e basılabilir.
 
+### Hastalık vektörü
+Literatürden bir terapötik canlı bakteri vektörünü alıp revize etmek ve
+hastalığa göre işe yarayıp yaramayacağını denetlemek için ayrı bir
+sayfa. Katalogda **beş hastalık ve 16 strateji** var; her hastalık
+farklı bir tasarım desenini gösterir, yani liste uzunluk olsun diye
+uzun değil:
+
+| Hastalık | Tasarım deseni | Kaynak |
+|---|---|---|
+| Fenilketonüri (PKU) | Substratı tüketen enzim (PAL) + taşıyıcı (PheP) | Isabella 2018, *Nat Biotechnol* 36:857, PMID 30102294 |
+| Hiperammonemi | Azotu biyosenteze çeken yol (argA<sup>fbr</sup>) | Kurtz 2019, *Sci Transl Med* 11:eaau7975, PMID 30651324 |
+| Hiperoksalüri | İki enzimli döngü (oxc + frc), kofaktör geri dönüşümü | Lubkowicz 2022, *Mol Syst Biol* 18:e10539, PMID 35253995 |
+| İnflamatuar bağırsak hastalığı | Salgılanan protein terapötiği (IL-10) | Steidler 2000, *Science* 289:1352, PMID 10958782 |
+| *P. aeruginosa* enfeksiyonu | Algılayıcı-öldürücü devre (LasR → pyocin S5) | Saeidi 2011, *Mol Syst Biol* 7:521, PMID 21847113 |
+
+Yedi atfın hepsi Europe PMC'den PMID ve DOI'siyle **doğrulanmıştır**;
+hiçbiri hafızadan yazılmadı. Testler bunu sınar: PMID'si ya da DOI'si
+olmayan bir atıf eklenirse `test_atiflarda_pmid_ve_doi_var` düşer.
+
+Sayfa her hastalık için aynı akışı yürütür: makaledeki vektör ile bizim
+revizyonumuzu yan yana koyar, her satırı **Literatür** (makaleden) ya da
+**Öneri** (bizim kararımız) diye etiketler, hastalık mekanizmasını ve
+metabolik yolu çizer, sonra idame/içerme stratejilerini aynı denetimden
+geçirir. Operon sırası elle kurulur, çünkü Tasarımcı parçaları
+kategoriye göre sıralar ve iki genli bir operonu bozar.
+
+**Terapötik genler.** Sekiz gen UniProt + NCBI'dan çekilmiştir ve her
+birinin nükleotid dizisi çevrilip UniProt'un bildirdiği proteine
+**birebir eşit olduğu doğrulanmıştır** — eşit olmayan kayıt dosyaya
+yazılmaz (`tools/fetch_disease_parts.py`):
+
+| Parça | Gen | Organizma | UniProt | Uzunluk |
+|---|---|---|---|---|
+| CDS_ARGA | argA | *E. coli* | P0A6C5 | 1332 bp |
+| CDS_OXC | oxc | *O. formigenes* | P40149 | 1707 bp |
+| CDS_FRC | frc | *O. formigenes* | O06644 | 1287 bp |
+| CDS_MDEA | mdeA | *P. putida* | P13254 | 1197 bp |
+| CDS_IL10 | IL10 | *H. sapiens* | P22301 | 537 bp |
+| MRK_THYA_LL | thyA | *L. lactis* | Q02Y43 | 840 bp |
+| CDS_LASR | lasR | *P. aeruginosa* | P25084 | 720 bp |
+| CDS_PYOS5 | pyoS5 | *P. aeruginosa* | Q9I4Y4 | 1497 bp |
+
+IL-10 insan geni olduğu için katalogdaki tek memeli dizidir; uygulama
+bakteri vektörleri içindir ama *salgılanan* terapötik protein insan
+proteinidir ve kaynak makale de bunu kullanır. Pyocin S5 kaydı
+**TrEMBL** durumundadır, yani otomatik üretilmiş ve elle
+incelenmemiştir; bu fark gizlenmez, parçanın notuna yazılır ve
+`test_incelenmemis_kayitlar_isaretli` notun orada durduğunu sınar.
+
+Denetim kuralları:
+
+| Kural | Yakaladığı hata |
+|---|---|
+| THR-01 | Phe taşıyıcısı (pheP) var ama onu kullanan enzim (PAL) yok |
+| THR-02 | PAL var, taşıyıcı yok (verim düşük kalabilir) |
+| ANA-01 | Anaerobik promotör: aerobik şişede "çalışmıyor" sonucuna varmayın |
+| SEL-01 | dapA markeri, kendi dapA'sı olan konakta seçilim sağlamaz |
+| SEL-02 | DAP bağımlı konak: besiyerine DAP eklenmeli |
+| BIO-01 | dapA'yı plazmite koymak biyolojik içermeyi kaldırır |
+| BIO-02 | Terapötik bakteride antibiyotik direnç geni |
+| BIO-03 | Nissle'ın kriptik plazmitleri, orijin uyumu doğrulanmalı |
+
+**Bilinen açık, kapatılmadan yazılır.** IBD tasarımının A ve B
+stratejilerinde replikasyon orijini yoktur: konak *Lactococcus lactis*
+ve katalogda bu bakteride çoğalan bir replikon henüz yok. Denetim bunu
+CORE-01 hatasıyla bildirir ve sayfa "bilinen açık" diye yazar. Test
+paketi bu açığı **koruma altına alır**: `test_orijinsiz_yapi_denetimde_yakalaniyor`
+orijini olmayan her yapının hata almasını, `test_acigi_olan_hastalik_bunu_yaziyor`
+ise hata veren her hastalığın açığını yazmasını şart koşar. "Her yapıda
+orijin var" diye bir sınav kurulmadı, çünkü böyle bir sınav açığı
+kapatmak yerine testi gevşetmeye iter. Aşağıdaki pNZ8048 tarifi tam
+olarak bu açığı kapatmak için vardır.
+
+Konak listesine iki *E. coli* Nissle 1917 suşu ile *L. lactis* ve
+*P. aeruginosa* algılama devresinin konakları eklendi.
+
+### Referanstan kes-yapıştır
+Vektör sıfırdan kurulmaz: gerçek bir klonlama vektörü alınır, iki farklı
+restriksiyon enzimiyle kesilir, araya terapötik kaset yapıştırılır.
+Sayfada **beş tarif** var ve her biri ayrı bir şey öğretir:
+
+| Tarif | Vektör | Enzimler | Sonuç | Öğrettiği |
+|---|---|---|---|---|
+| pACYC184 → PKU | pACYC184 (4245 bp) | HindIII/SalI, sonra NcoI/EcoRI | 7368 bp | İki aşamalı kurulum; ikinci aşamanın enzimi *birinci aşamanın ürününde* seçilir |
+| pUC19 → hiperammonemi | pUC19 (2686 bp) | EcoRI/BamHI | 4244 bp | Mavi/beyaz tarama: kaset lacZ-α'yı bozar, doğru klon **beyaz** koloni verir |
+| pBR322 → hiperoksalüri | pBR322 (4361 bp) | EcoRI/BamHI | 7238 bp | İnsersiyonel inaktivasyon: kaset tetA'nın içine girer, doğru klon Amp<sup>R</sup> / Tet<sup>S</sup> olur |
+| pSEVA231 → *P. aeruginosa* | pSEVA231 (3123 bp) | EcoRI/SpeI | 5630 bp | Modüler iskelet; kargonun iki yanındaki T0/T1 devreyi iskeletten yalıtır |
+| pNZ8048 → IBD | pNZ8048 türevi (4332 bp) | EcoRI/HindIII | 5271 bp | Konak iskeleti belirler: aynı kaset *L. lactis* replikonuna takılmalı |
+
+Her tarif için sayfa altı şeyi gösterir: referans vektörün haritası ve
+neden o vektör seçildiği, enzim tablosu (tanıma dizisi, bıraktığı uç, o
+aşamada kaç yerden kestiği, Dam metilasyonuna duyarlı mı), aşama aşama
+ne çıktı ne girdi, orijinal ile ürünün haritaları yan yana, beklenen jel
+deseni ve sınırlılıklar.
+
+**Orijinal bölgelere ne oldu?** Bu tablonun sayıları diziden ölçülür,
+elle yazılmaz. Her bölge adım adım koordinat eşlemesinden geçirilir ve
+ürün üzerinde ne kadarının kaldığına bakılır: pUC19 tarifinde lacZ-α
+324 bp'den 256 bp'ye düşer (mavi/beyaz taramanın çalışma sebebi tam
+olarak bu), pBR322'de tetA 1191 bp'den 902 bp'ye iner, pACYC184
+tarifinde cat 660 bp'den 219 bp'ye. **Kesilen gen bozulmuş gendir**:
+kalan parça çerçeve içinde bile olsa tam protein vermez.
+
+Bunu doğru göstermek ayrı bir işlev gerektirdi. `map_position` tek bir
+konumu taşır; bir *bölgenin* iki ucunu ayrı ayrı taşımak, kesim
+bölgesini içine alan geni sapasağlam ve insertin üstüne binmiş halde
+gösteriyordu — yani lacZ'yi bozmak üzerine kurulu bir tarifte lacZ
+haritada bütün görünüyordu. `map_feature` bölgeyi bütün olarak taşır ve
+üç sonuç döndürür: `tam`, `kesildi` (yalnızca kalan en büyük parça) ya
+da `None` (tamamen atıldı). Dizinin başını saran genleri de (pACYC184'te
+cat, 3805..219) doğru taşır. Testler bunu **dizinin kendisiyle** sınar:
+taşınan her bölge, ürün üzerinde gerçekten o diziyi göstermek zorundadır.
+
+**Gerçek dizi, N bloğundan farklı davranır.** Bu tarif ilk kurulduğunda
+ikinci aşama BclI kullanıyordu ve her şey yolundaydı — çünkü PKU
+kasetinin dizisi henüz çekilmemişti ve kaset haritada N bloğu olarak
+duruyordu. Dizi gerçekleşince BclI'nın birinci aşamanın ürününde **dört
+yerden** kestiği görüldü: kasetin içinde üç tanıma yeri daha varmış.
+Yerine NcoI geldi (6559'da, cat geninin içinde, EcoRI ile birlikte cat'i
+bozuyor) ve bu sefer Dam duyarlılığı da ortadan kalktı. Ders şu: bir
+enzim vektörde tek kesiyor diye *ürününde* de tek keseceği varsayılamaz.
+Uygulama bunu her aşamada yeniden hesaplar ve tek kesmeyen enzimi
+reddeder; `test_tarif_enzimleri_tek_kesiyor` beş tarifin hepsi için bunu
+şart koşar.
+
+Ürün FASTA olarak indirilebilir ya da tek tuşla **Plazmit denetle**
+sayfasına aktarılıp 42 kuralın tamamından geçirilebilir.
+
 ### Parça kataloğu
 Parçalara göz atar, dizisi eksik olanları doldurur, kendi parçanızı
 ekler. Her parçaya bağlanan literatür kaynakları burada görünür.
@@ -244,16 +411,27 @@ Bir tasarım aracının "çalışıyor" olması yetmez, "doğru" olması gerekir
 python -m pytest
 ```
 
-114 test, üç dosyada: dizi motoru, tasarım modülleri ve veri bütünlüğü.
-Çoğu bir *değişmezi* sınar — optimizasyon proteini değiştirmemeli,
-hizalama kendi kendine %100 benzerlik vermeli, kesim ürünlerinin
-toplamı kalıbın uzunluğuna eşit olmalı. Değişmezler beklenen değer
-yazmaktan güçlüdür, çünkü girdi değişse de geçerli kalırlar.
+210 test, yedi dosyada: dizi motoru, tasarım modülleri, veri
+bütünlüğü, PKU tasarımı ve simülasyonu, hastalık kayıt defteri ve
+referanstan kes-yapıştır. Çoğu bir *değişmezi* sınar — optimizasyon
+proteini değiştirmemeli, hizalama kendi kendine %100 benzerlik
+vermeli, kesim ürünlerinin toplamı kalıbın uzunluğuna eşit olmalı.
+Değişmezler beklenen değer yazmaktan güçlüdür, çünkü girdi değişse de
+geçerli kalırlar.
 
-Paket ilk çalıştırmada iki gerçek hata buldu: ürettiğimiz GenBank'ın
-LOCUS satırı sütun kaymasıyla bozuktu (Biopython "malformed locus line"
-uyarısı veriyordu) ve kromatogram kalite kırpmasında işaret tersti —
-algoritma yüksek kaliteyi değil düşüğü arıyordu. İkisi de düzeltildi.
+Paket yazıldığından beri dört gerçek hata buldu:
+
+1. Ürettiğimiz GenBank'ın LOCUS satırı sütun kaymasıyla bozuktu
+   (Biopython "malformed locus line" uyarısı veriyordu).
+2. Kromatogram kalite kırpmasında işaret tersti — algoritma yüksek
+   kaliteyi değil düşüğü arıyordu.
+3. Kesim bölgesini içine alan gen, haritada bütün ve insertin üstüne
+   binmiş görünüyordu; `map_feature` buna karşılık yazıldı. Bu, lacZ'yi
+   bozmak üzerine kurulu bir tarifte lacZ'yi sağlam göstermek demekti.
+4. pACYC184 tarifinde BclI, gerçek PKU dizisi gelince ürünü dört
+   yerden kesiyordu; N bloğuyla sınandığı sürece görünmüyordu.
+
+Dördü de düzeltildi ve dördünün de testi duruyor.
 
 ### Bağımsız doğrulama
 
@@ -680,11 +858,17 @@ app_pages/
   analyze.py           dizi analizi
   enzyme_lab.py        enzim kütüphanesi, kesim diyagramları
   inspect.py           var olan plazmiti denetle
+  disease.py           hastalık vektörü: 5 hastalık, revizyon, denetim
+  refbuild.py          referanstan kes-yapıştır: 5 tarif
   labwork.py           protokol, jel, protein, rapor
   parts.py             katalog yönetimi, iGEM serileri
   literature.py        literatür modülü
 core/
   parts_seed.py        60 bakteriyel parça + 8 konak suşu
+  pku_seed.py          PKU vektörü parçaları ve Nissle konakları
+  pku_sim.py           PKU tasarımının davranış simülasyonu
+  disease_seed.py      hastalık kayıt defteri (5 hastalık, 16 strateji)
+  refbuild.py          restriksiyonla kes-yapıştır hesabı ve tarifler
   igem_seed.py         iGEM kayıtlarını katalog parçasına çevirir
   signal_seed.py       sinyal peptitleri
   ref_vectors.py       referans vektörler + editöryel katman
@@ -714,16 +898,29 @@ tools/
   fetch_reference_vectors.py   NCBI'dan vektör dizileri
   fetch_igem_parts.py          iGEM Registry'den parçalar
   fetch_codon_usage.py         E. coli kodon kullanım tablosu
+  fetch_pku_parts.py           stlA, PfnrS, ccdAB dizileri (NCBI)
+  fetch_signal_peptides.py     9 sinyal peptidi (UniProt)
+  fetch_disease_parts.py       8 terapötik gen (UniProt + NCBI)
+  extract_parts_from_vectors.py  vektörlerden parça çıkarma
   validate_against_references.py  bağımsız doğrulama
   update_checksums.py          veri özetlerini yenile
 tests/
   test_sequences.py    dizi motoru
   test_design.py       tasarım modülleri
   test_data.py         veri bütünlüğü ve denetim kuralları
+  test_pku.py          PKU parçaları, konakları ve kuralları
+  test_pku_sim.py      PKU simülasyonu
+  test_disease.py      hastalık kayıt defteri ve terapötik genler
+  test_refbuild.py     kes-yapıştır hesabı, map_feature, tarifler
 data/
-  reference_vectors/   15 vektörün dizisi ve öznitelikleri (JSON)
+  reference_vectors/   126 vektörün dizisi ve öznitelikleri (JSON)
   igem_parts.json      iGEM parça kayıtları
+  extracted_parts.json vektörlerden çıkarılmış parçalar
+  signal_peptides.json 9 sinyal peptidi (UniProt)
+  pku_parts.json       PKU genlerinin çekilmiş dizileri
+  disease_parts.json   8 terapötik gen (UniProt + NCBI)
   ecoli_codon_usage.json  genomdan hesaplanan kodon tablosu
+  CHECKSUMS.txt        izlenen veri dosyalarının SHA-256 özetleri
   vectorlab.db         veritabanı (ilk çalıştırmada kurulur)
 ```
 

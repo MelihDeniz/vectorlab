@@ -376,7 +376,17 @@ def build(
             "ve doğrulama sindirimi adımları yok. Tasarımcı ya da Referans "
             "vektörler sayfasından enzim seçerseniz protokol tamamlanır."
         )
-    if not ab:
+    if not ab and "MRK_DAPA" in part_ids:
+        p.warnings.append(
+            "Seçilim antibiyotikle değil dapA tamamlamasıyla yapılıyor. "
+            "Konak dapA'sı silinmiş (DAP bağımlı) olmalı; plazmitsiz "
+            "hücreler, besiyerine DAP eklenmediği sürece büyüyemez. "
+            "Protokoldeki antibiyotik adımları bu yüzden yok: "
+            "transformasyon sonrası hücreleri DAP içermeyen besiyerine "
+            "ekin (DAP derişimi ve hazırlığı için laboratuvar "
+            "protokolünüze bakın)."
+        )
+    elif not ab:
         p.warnings.append(
             "Yapıda tanınan bir seçilim markerı yok. Marker olmadan "
             "transformasyon sonrası plazmit alan hücreleri ayıramazsınız - "
