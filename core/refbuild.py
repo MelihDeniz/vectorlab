@@ -123,6 +123,18 @@ def cut_and_paste(seq: str, left: str, right: str, insert: str,
         segments=segs,
     )
     st.notes.append(order)
+    # Uçlar aynıysa insert ters de girebilir. Farklı enzim kullanmak
+    # yönü garanti etmeye YETMEZ: farklı tanıma dizileri aynı çıkıntıyı
+    # bırakabilir (SalI/XhoI → 5' TCGA, XbaI/SpeI → 5' CTAG,
+    # BamHI/BclI → 5' GATC). Bu, yönlü klonlamada en sinsi hatadır,
+    # çünkü tasarım kağıt üzerinde doğru görünür.
+    if ENZYMES[left]["ovh"] == ENZYMES[right]["ovh"]:
+        st.notes.append(
+            f"UYARI: {left} ve {right} AYNI çıkıntıyı bırakıyor "
+            f"({ENZYMES[left]['ovh']}). Enzimler farklı olsa da uçlar "
+            f"uyumlu olduğu için insert ters yönde de girebilir; "
+            f"klonlardan yarısı yanlış yönde olur. Yönü garanti etmek "
+            f"için çıkıntıları farklı olan bir çift seçin.")
     # Kontroller: sonuçta iki enzim de yalnızca bir kez kesmeli.
     for e in (left, right):
         n = len(find_sites(new, e))
@@ -308,9 +320,12 @@ RECIPES: list[Recipe] = [
             "ürününde de tek keseceği varsayılamaz; uygulama bunu her "
             "aşamada yeniden hesaplar."),
         steps=[
-            RecipeStep("HindIII", "SalI", PKU_KASET,
+            RecipeStep("BamHI", "SalI", PKU_KASET,
                        "1. aşama: PKU kasetini ekle",
-                       "Tetrasiklin direncinin bir bölümü çıkar."),
+                       "Tetrasiklin direncinin bir bölümü çıkar. "
+                       "Sol enzim HindIII değil BamHI: PKU kasetinin "
+                       "İÇİNDE bir HindIII yeri var, o enzimle "
+                       "kesilse insert ortadan bölünürdü."),
             RecipeStep("NcoI", "EcoRI", CCD_MODUL,
                        "2. aşama: cat'i boz, ccdAB ekle",
                        "cat geninin 660 bp'sinden 219 bp'si yerinde kalır "
@@ -380,7 +395,7 @@ RECIPES: list[Recipe] = [
             "konuşmasını keser - algılayıcı devrelerde bu şarttır, yoksa "
             "iskeletten gelen okuma arka plan sinyali yaratır."),
         steps=[
-            RecipeStep("EcoRI", "SpeI",
+            RecipeStep("HindIII", "SpeI",
                        ["PRO_J23105", "RBS_B0032", "CDS_LASR", "TER_B0015",
                         "IGEM_R0062", "RBS_B0034", "CDS_PYOS5",
                         "IGEM_B0015"],
@@ -405,11 +420,250 @@ RECIPES: list[Recipe] = [
             "takılmalıdır. Denetim, E. coli orijinli bir yapıyı "
             "L. lactis konağıyla eşleştirirseniz ORG-01 ile uyarır."),
         steps=[
-            RecipeStep("EcoRI", "HindIII",
+            RecipeStep("XhoI", "BclI",
                        ["REF_NATIVE_LACTOBACILLUS_R_200", "RBS_B0034",
                         "SIG_USP45", "CDS_IL10", "TER_B0015"],
                        "IL-10 salgılama kasetini tak",
-                       "Usp45 sinyali proteini besiyerine çıkarır."),
+                       "Usp45 sinyali proteini besiyerine çıkarır. "
+                       "Dokuz enzimimizden yalnızca BclI ve XhoI bu "
+                       "kasetin dışında kalıyor: L. reuteri EF-Tu "
+                       "promotörü hem EcoRI hem HindIII yeri taşıyor, "
+                       "kalanlar da vektörde tek kesmiyor. Seçenek "
+                       "tek çift kaldığında vektör seçimi bir "
+                       "tercih değil zorunluluk olur."),
+        ],
+    ),
+]
+
+
+# Hastalık kasetleri. `core/disease_seed.py` ile aynı parçalar; burada
+# ayrıca duruyorlar çünkü bu modül veritabanına ve kayıt defterine
+# bağlı değildir - tek başına sınanabilmesi bilinçli bir karardır.
+HCU_KASET = ["PRO_FNRS", "RBS_B0034", "CDS_MDEA", "TER_B0015"]
+KOLERA_KASET = ["PRO_ARABAD", "RBS_B0034", "CDS_CQSA", "TER_B0015"]
+LAKTOZ_KASET = ["RBS_B0034", "CDS_LACZ_LD", "TER_RRNB"]
+MRSA_KASET = ["PRO_J23105", "RBS_B0034", "SIG_USP45", "CDS_LSS",
+              "TER_B0015"]
+AI2_KASET = ["RBS_B0034", "CDS_LSRK", "IGEM_B0015"]
+CDIFF_KASET = ["PRO_J23100", "RBS_B0034", "SIG_AMYE", "CDS_BLAC_BL",
+               "TER_B0015"]
+GLP1_KASET = ["PRO_J23105", "RBS_B0034", "SIG_DSBA", "CDS_GLP1",
+              "TER_B0015"]
+
+RECIPES += [
+    Recipe(
+        key="pbsii_hcu",
+        title="pBluescript II KS(+) → homosistinüri (uyumlu uç tuzağı)",
+        vector_id="PBSIIKS", disease="homosistinuri",
+        why_vector=(
+            "Klonlama bölgesinde dokuz enzimimizden yedisi tek yerden "
+            "kesiyor: seçenek bolluğu bu tarifi uç uyumluluğunu "
+            "göstermek için en uygun yer yapıyor. f1 orijini de "
+            "taşır, yani tek zincirli DNA üretebilir - dizileme ve "
+            "mutagenez için tarihsel olarak önemliydi."),
+        source="Short ve ark. 1988, Nucleic Acids Res 16:7583 (pBluescript)",
+        teaches=(
+            "**Uçların uyumluluğu, enzimlerin farklı olmasıyla aynı şey "
+            "değildir.** Bu iskelette SalI ve XhoI'in ikisi de 5' TCGA "
+            "bırakır; XbaI ile SpeI'in ikisi de 5' CTAG. Böyle bir "
+            "çiftle keserseniz insert ters de girer ve klonlarınızın "
+            "yarısı yanlış olur - tasarım kağıt üzerinde kusursuz "
+            "göründüğü için bu hata en sinsi olanıdır. Tarif bu yüzden "
+            "EcoRI (5' AATT) + XhoI (5' TCGA) kullanır: çıkıntılar "
+            "farklı, yön garanti. Enzim tablosundaki 'Bıraktığı uç' "
+            "sütununu karşılaştırarak kendiniz görebilirsiniz."),
+        steps=[
+            RecipeStep("EcoRI", "XhoI", HCU_KASET,
+                       "MGL kasetini MCS'e tak",
+                       "lacZ-alfa'nın klonlama bölgesi bozulur: "
+                       "mavi/beyaz tarama burada da çalışır."),
+        ],
+    ),
+    Recipe(
+        key="ptrc_laktoz",
+        title="pTrc99A → laktoz intoleransı (enzim seçimini insert belirler)",
+        vector_id="PTRC99A", disease="laktoz",
+        why_vector=(
+            "Kendi lacI<sup>q</sup> genini taşır, yani konakta lacI "
+            "olmasını beklemez: IPTG ile açılıp kapanan ifade her "
+            "suşta çalışır. trc promotörü lac ve trp promotörlerinin "
+            "melezidir ve ikisinden de güçlüdür."),
+        source="Amann ve ark. 1988, Gene 69:301 (pTrc99A)",
+        teaches=(
+            "**Enzimi vektör değil insert seçer.** Bu tarifte NcoI "
+            "kullanmak isterdik: tanıma dizisi CCATGG bir ATG İÇERİR, "
+            "yani pTrc99A'nın NcoI bölgesi ribozom bağlanma bölgesine "
+            "doğru mesafede duran hazır bir başlangıç kodonudur ve "
+            "geni oraya takmak RBS aralığı hesabını gereksiz kılar.\n\n"
+            "Ama **beta-galaktosidazın kendi içinde NcoI yeri var** "
+            "(1007 amino asitlik bir gende bu şaşırtıcı değil): o "
+            "enzimle keserseniz inserti ortadan ikiye bölersiniz, yani "
+            "inserti hazırlayamazsınız. Aynı sorun HindIII, EcoRI ve "
+            "SpeI'de de var. Geriye BamHI, SalI, BclI ve XbaI kalıyor; "
+            "tarif BamHI + SalI kullanır. Uygulama bu elemeyi kendisi "
+            "yapar: Enzimler sayfasında kasetin dizisini kesip hangi "
+            "enzimin kaç yerden kestiğini görebilirsiniz."),
+        steps=[
+            RecipeStep("BamHI", "SalI", LAKTOZ_KASET,
+                       "Beta-galaktosidazı trc promotörünün altına tak",
+                       "Promotör ve RBS vektörden gelir; kaset "
+                       "yalnızca geni ve terminatörü taşır."),
+        ],
+    ),
+    Recipe(
+        key="pbad24_kolera",
+        title="pBAD24 → kolera (arabinozla ayarlanabilir ifade)",
+        vector_id="PBAD24", disease="kolera",
+        why_vector=(
+            "araC düzenleyicisini ve araBAD promotörünü birlikte "
+            "taşır. araBAD'ın üstünlüğü açık/kapalı olmaması: "
+            "arabinoz derişimini değiştirerek ifade düzeyini "
+            "kademeli ayarlayabilirsiniz.\n\n"
+            "Aynı seride p15A orijinli pBAD33 de var ve düşük kopyalı "
+            "olduğu için sızıntısı daha azdır; burada pBAD24 seçildi "
+            "çünkü cqsA'nın içindeki tanıma yerleri pBAD33'te "
+            "kullanılabilir tek bir enzim çifti bırakmıyordu. Vektör "
+            "seçiminin inserte bağlı olması bu sayfanın tekrar eden "
+            "dersidir."),
+        source="Guzman ve ark. 1995, J Bacteriol 177:4121 (pBAD)",
+        teaches=(
+            "**Ayarlanabilir ifade neden önemli:** CAI-1 sinyali az "
+            "olursa patojen kalabalığı algılamaz, çok olursa konak "
+            "bakteri gereksiz metabolik yük taşır. Doğru dozu "
+            "deneyle bulmak gerekir ve bunun için açık/kapalı bir "
+            "promotör değil, kademeli bir promotör lazımdır. "
+            "araBAD'ın bilinen sınırı da burada görülür: arabinoz "
+            "bağırsakta da bulunur, yani 'kapalı' durum hastada "
+            "garanti değildir."),
+        steps=[
+            RecipeStep("EcoRI", "SalI", KOLERA_KASET,
+                       "cqsA kasetini araBAD'ın arkasına tak",
+                       "Kaset kendi araBAD promotörünü de taşır: "
+                       "vektörünkine güvenmek yerine kopyasını "
+                       "getirir, böylece kaset başka iskelete de "
+                       "taşınabilir."),
+        ],
+    ),
+    Recipe(
+        key="psb1c3_ai2",
+        title="pSB1C3 → AI-2 söndürme (iGEM BioBrick standardı)",
+        vector_id="PSB1C3", disease="ai2",
+        why_vector=(
+            "iGEM'in taşıyıcı vektörü. Klonlama bölgesi rastgele "
+            "değildir: RFC10 standardının ön eki (EcoRI-XbaI) ve son "
+            "eki (SpeI-PstI) her parçada aynı yerde durur, bu yüzden "
+            "binlerce parça birbirine aynı iki enzimle takılabilir."),
+        source=("Shetty ve ark. 2008, J Biol Eng 2:5 (BioBrick "
+                "standardı, RFC10)"),
+        teaches=(
+            "**Standart, parça sayısıyla çarpılan bir kazançtır.** "
+            "Her parça aynı ön ek ve son eki taşıdığı için bir "
+            "parçayı ötekinin arkasına takmak hep aynı iki enzimle "
+            "yapılır; katalogdaki iGEM parçalarının tamamı bu yüzden "
+            "birbirine uyar. Bedeli **skar**dır: XbaI ve SpeI uçları "
+            "birleşince araya sekiz bazlık bir iz (TACTAGAG) kalır ve "
+            "bu iz protein füzyonlarında çerçeveyi bozar. RFC25 gibi "
+            "sonraki standartlar tam olarak bu sorunu çözmek için "
+            "çıktı."),
+        steps=[
+            RecipeStep("EcoRI", "SpeI", AI2_KASET,
+                       "lsrK parçasını BioBrick ön/son eki arasına tak",
+                       "Kesim yerleri standardın kendi sınırlarıdır: "
+                       "EcoRI ön ekte, SpeI son ekte."),
+        ],
+    ),
+    Recipe(
+        key="pbbr1_mrsa",
+        title="pBBR1MCS → MRSA (geniş konak aralıklı replikon)",
+        vector_id="PBBR1MCS", disease="mrsa",
+        why_vector=(
+            "pBBR1 replikonu Gram-negatif bakterilerin çoğunda "
+            "çoğalır: E. coli, Pseudomonas, Rhizobium, Bordetella. "
+            "ColE1 ya da p15A gibi dar konaklı orijinlerle bunu "
+            "yapamazsınız - tasarımı başka bir bakteride denemek "
+            "istiyorsanız iskeleti baştan seçmeniz gerekir."),
+        source="Antoine & Locht 1992, Mol Microbiol 6:1785 (pBBR1)",
+        teaches=(
+            "**Replikonun konak aralığı tasarımın sınırını çizer.** "
+            "Aynı kaset, replikon dar konaklıysa yalnızca E. coli'de "
+            "denenebilir; geniş konaklıysa onlarca bakteride. "
+            "Lizostafin örneğinde bu doğrudan işe yarar: enzimi "
+            "hangi cilt bakterisinin salgılayacağı henüz belli "
+            "değilse, iskeleti şimdiden geniş konaklı seçmek "
+            "tasarımı yeniden kurmaktan kurtarır. Sınırı da açıktır: "
+            "pBBR1 Gram-negatiflerde çalışır, Gram-pozitiflerde "
+            "çalışmaz - L. lactis için pNZ8048 tarifine bakın."),
+        steps=[
+            RecipeStep("HindIII", "SalI", MRSA_KASET,
+                       "Lizostafin salgı kasetini tak",
+                       "Usp45 sinyali kasette taşınır, iskeletten "
+                       "gelmez."),
+        ],
+    ),
+    Recipe(
+        key="pub110_cdiff",
+        title="pUB110 → C. difficile riski (Gram-pozitif, B. subtilis)",
+        vector_id="PUB110", disease="cdiff",
+        why_vector=(
+            "Staphylococcus aureus plazmitidir ve Bacillus "
+            "subtilis'te de çoğalır: Gram-pozitif salgılama "
+            "konaklarının klasik iskeleti. Yuvarlanan halka (rolling "
+            "circle) ile çoğalır, yani kopyalanma mekanizması "
+            "E. coli plazmitlerinden tamamen farklıdır. Aynı aileden "
+            "pC194 de katalogda var ama dokuz enzimimizden yalnızca "
+            "üçü onda tek kesiyor ve hiçbir çift bu kaseti "
+            "yerleştirmeye yetmiyor."),
+        source="McKenzie ve ark. 1986, Plasmid 15:93 (pUB110 dizisi)",
+        teaches=(
+            "**Yuvarlanan halka replikasyonunun bedeli:** bu "
+            "plazmitler tek zincirli bir ara ürün üzerinden çoğalır "
+            "ve büyük insertlerle kararsızlaşır, parçalanır ya da "
+            "çoklu formlar oluşturur. E. coli'de 10 kb'lık bir insert "
+            "sorun değilken burada olabilir. Katalogdaki Gram-pozitif "
+            "orijin açığının sebebi de budur: bu plazmitlerin "
+            "çoğalma başlangıcı (dso) kayıtlarda ayrı bir öznitelik "
+            "olarak işaretlenmez, rep geninin içinde durur - "
+            "uygulamanın parça kataloğuna sınırı uydurulmadan "
+            "eklenemez ve bu açık kapatılmadan yazılıdır."),
+        steps=[
+            RecipeStep("XbaI", "BamHI", CDIFF_KASET,
+                       "Beta-laktamaz salgı kasetini tak",
+                       "AmyE sinyali B. subtilis'in kendi salgı "
+                       "yolunu kullanır."),
+        ],
+    ),
+    Recipe(
+        key="pkd46_diyabet",
+        title="pKD46 → diyabet (sıcaklığa duyarlı replikon)",
+        vector_id="PKD46", disease="diyabet",
+        why_vector=(
+            "repA101ts orijini 30 °C'de çoğalır, 37 °C'de çoğalmaz. "
+            "Lambda Red rekombineering için tasarlanmıştır ve asıl "
+            "amacı plazmitin işi bitince KOLAYCA ATILMASIDIR: "
+            "kültürü 37 °C'ye alırsınız, plazmit kendiliğinden "
+            "kaybolur."),
+        source=("Datsenko & Wanner 2000, PNAS 97:6640 (pKD46 ve lambda "
+                "Red)"),
+        teaches=(
+            "**Plazmiti kaybettirmek de bir tasarım aracıdır.** "
+            "Sayfanın geri kalanı plazmiti TUTMAK üzerine kurulu "
+            "(ccdAB, dapA, thyA); burası tersi: sıcaklığa duyarlı "
+            "replikon, istediğiniz anda bırakmanızı sağlar. Terapötik "
+            "bağlamda bu doğal bir güvenlik anahtarıdır - 37 °C insan "
+            "vücut sıcaklığıdır, yani böyle bir plazmit hastada "
+            "kendiliğinden seyrelir.\n\n"
+            "Ama aynı özellik tedaviyi de bitirir: GLP-1 üretimi "
+            "plazmitle birlikte kaybolur. İçerme ile etkinlik "
+            "arasındaki gerilimin en çıplak hali budur ve tasarımcı "
+            "bu ikisi arasında seçim yapmak zorundadır."),
+        steps=[
+            RecipeStep("SalI", "BclI", GLP1_KASET,
+                       "GLP-1 salgı kasetini tak",
+                       "Enzim SIRASI burada belirleyici: bölge sol "
+                       "enzimden sağ enzime doğru saat yönünde "
+                       "alınır, bu yüzden BclI+SalI yazmak "
+                       "plazmitin neredeyse tamamını atar, "
+                       "SalI+BclI ise yalnızca 10 bp'yi."),
         ],
     ),
 ]

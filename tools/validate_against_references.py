@@ -182,6 +182,85 @@ def main() -> int:
 
     # ---------------------------------------------------------------
     print(f"\n{'=' * 60}")
+    # ----------------------------------------------------------------
+    bolum("7. Terapotik genler — Biopython'un kendi cevirisiyle")
+    # Olcut uygulamanin kendi translate()'i DEGIL: Biopython'un
+    # Seq.translate(cds=True) islevi. O islev baslangic kodonunu, stop
+    # kodonunu, ucun uca bolunurlugunu ve cerceve ici stop olmamasini
+    # kendisi denetler ve uymazsa hata firlatir. Yani buradaki kontrol
+    # bizim cevirimize hic guvenmez.
+    from Bio.Seq import Seq                                  # noqa: PLC0415
+    from core import disease_seed as ds                       # noqa: PLC0415
+
+    ham = ds._raw().get("parts", [])
+    kontrol("hastalik geni sayisi", len(ham) >= 15,
+            f"{len(ham)} gen okundu")
+    for g in ham:
+        try:
+            prot = str(Seq(g["sequence"]).translate(table=11, cds=True))
+            ok = len(prot) == g["length_aa"]
+            ayrinti = (f"{len(prot)} aa — kayitta {g['length_aa']} aa"
+                       if not ok else f"{len(prot)} aa, Biopython cds=True")
+        except Exception as exc:
+            ok, ayrinti = False, f"Biopython reddetti: {exc}"
+        kontrol(f"{g['part_id']} gecerli bir CDS", ok, ayrinti)
+
+    # Bolgesi kesilmis genlerde UniProt'un bildirdigi bolge uzunlugu ile
+    # yazilan dizinin uzunlugu tutmali. Bolge sinirlari kayittan gelir.
+    for g in ham:
+        if not g.get("region"):
+            continue
+        alan = g["region"].split()[1].split("(")[0]
+        lo, hi = (int(x) for x in alan.split("-"))
+        bekle = (hi - lo + 1) + (1 if g.get("start_codon_added") else 0)
+        kontrol(f"{g['part_id']} bolge uzunlugu ({g['region'].split(chr(32))[0]} "
+                f"{alan})",
+                g["length_aa"] == bekle,
+                f"{g['length_aa']} aa — UniProt bolgesinden beklenen {bekle}")
+
+    # ----------------------------------------------------------------
+    bolum("8. Tarifler — kesim hesabi ile dizinin kendisi")
+    # Olcut: urunun uzunlugu ve icerigi. build_recipe'in hesabina degil,
+    # cikan dizinin KENDISINE bakilir.
+    from core import refbuild as rb                           # noqa: PLC0415
+    from core.assembly import assemble                        # noqa: PLC0415
+
+    kontrol("tarif sayisi", len(rb.RECIPES) >= 12,
+            f"{len(rb.RECIPES)} tarif")
+    for t in rb.RECIPES:
+        rec = rv.load(t.vector_id)
+        if not rec:
+            kontrol(f"{t.key} vektoru", False, f"{t.vector_id} kaydi yok")
+            continue
+        kasetler = [assemble("k", db.get_parts(a.insert_parts))
+                    for a in t.steps]
+        res = rb.build_recipe(
+            rec["sequence"],
+            [(a.left, a.right, k.sequence, a.title)
+             for a, k in zip(t.steps, kasetler)])
+
+        # 1) Uzunluk bagimsiz olarak yeniden hesaplanabiliyor mu?
+        bekle = rec["length"]
+        for a, k, basamak in zip(t.steps, kasetler, res.steps):
+            bekle = bekle - basamak.removed + k.length
+        kontrol(f"{t.key} urun uzunlugu",
+                res.final_length == bekle,
+                f"{res.final_length} bp — atilan/eklenenden beklenen {bekle}")
+
+        # 2) Son kasetin dizisi urunde birebir duruyor mu?
+        son = kasetler[-1].sequence
+        kontrol(f"{t.key} kaset urunde birebir",
+                son in res.final + res.final[:len(son)],
+                f"{len(son)} bp kaset arandi")
+
+        # 3) Insert, kullanilan enzimlerle hazirlanabilir mi?
+        ice = [e for a, k in zip(t.steps, kasetler)
+               for e in (a.left, a.right)
+               if rb.find_sites(k.sequence, e)]
+        kontrol(f"{t.key} insert hazirlanabilir", not ice,
+                "kasetin icinde kesen enzim yok" if not ice
+                else f"kasetin icinde kesiyor: {ice}")
+
     print(f"{gecen} kontrol gecti, {len(kalan)} kaldi.")
     if kalan:
         print("\nKALAN KONTROLLER:")

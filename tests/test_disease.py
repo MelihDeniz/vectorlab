@@ -223,3 +223,80 @@ def test_yukleyici_kaynagi_parcaya_tasiyor():
         assert "UniProt" in p["accession"], p["part_id"]
         assert "doğrulandı" in p["notes"], p["part_id"]
         assert len(p["sequence"]) == p["length"], p["part_id"]
+
+
+
+# ---------------------------------------------------------------------------
+# Kayıt defterinin genişliği ve bölge kesilmiş genler
+# ---------------------------------------------------------------------------
+
+
+def test_kayit_defteri_genisligi():
+    """Sunumda gösterilecek kadar çeşitlilik var mı?"""
+    assert len(ds.DISEASES) >= 12
+    assert sum(len(h.strategies) for h in ds.DISEASES) >= 40
+    assert sum(len(h.papers) for h in ds.DISEASES) >= 15
+
+
+def test_hastaliklarin_konaklari_cesitli():
+    """Hepsi aynı konakta olmasın: tasarım konağa bağlıdır."""
+    konaklar = {s.host for h in ds.DISEASES for s in h.strategies}
+    assert len(konaklar) >= 4, konaklar
+
+
+def test_her_hastalik_farkli_gen_kullaniyor():
+    """İki hastalık aynı terapötik kaseti kullanmamalı."""
+    kasetler = [tuple(h.cassette) for h in ds.DISEASES]
+    assert len(kasetler) == len(set(kasetler))
+
+
+def test_strateji_anahtarlari_hastalik_icinde_tekil():
+    for h in ds.DISEASES:
+        anahtarlar = [s.key for s in h.strategies]
+        assert len(anahtarlar) == len(set(anahtarlar)), h.key
+
+
+def test_bolge_kesilmis_genler_isaretli(ham):
+    """Proteinin bir bölgesi kesilmişse bu gizlenmemeli."""
+    bolgeli = [g for g in ham if g.get("region")]
+    assert len(bolgeli) >= 3, "bölge kesilmiş gen yok"
+    yuklu = {p["part_id"]: p for p in ds.disease_parts()}
+    for g in bolgeli:
+        assert g["region_full_aa"] > g["length_aa"], g["part_id"]
+        not_ = yuklu[g["part_id"]]["notes"]
+        assert "TAMAMI değil" in not_, g["part_id"]
+        assert g["region"] in not_, g["part_id"]
+        if g.get("start_codon_added"):
+            assert "bizim eklediğimizdir" in not_, g["part_id"]
+
+
+def test_bolge_kesilmis_genler_cerceve_ici(ham):
+    """Kesilen bölge kodon sınırından kesilmiş olmalı."""
+    for g in ham:
+        if not g.get("region"):
+            continue
+        beklenen = g["length_aa"] + 1          # + stop kodonu
+        assert len(g["sequence"]) == beklenen * 3, g["part_id"]
+
+
+def test_beklenen_denetim_hatalari_aciklanmis():
+    """Denetimden hata alan her strateji bunu açıklamalı.
+
+    Bu sayfada iki hata türü bilinçlidir: Gram-pozitif replikon açığı
+    (CORE-01) ve "idame yok" karşılaştırma basamağı (CORE-02). Hata
+    veren bir strateji bunu kendi metninde söylemiyorsa, kullanıcı
+    aracın bozuk olduğunu düşünür - o yüzden açıklama zorunludur.
+    """
+    from core.validate import validate
+
+    for h in ds.DISEASES:
+        for s in h.strategies:
+            vec = assemble("x", db.get_parts(s.parts))
+            bulgular = validate(vec, host=db.get_host(s.host),
+                                purpose=h.purpose)
+            hatalar = {b.rule_id for b in bulgular if b.severity == "hata"}
+            if not hatalar:
+                continue
+            assert hatalar <= {"CORE-01", "CORE-02"},                 f"{h.key}/{s.key}: beklenmeyen hata {hatalar}"
+            for rid in hatalar:
+                assert rid in s.summary,                     f"{h.key}/{s.key}: {rid} hatası veriyor ama "                     f"stratejinin açıklamasında geçmiyor"

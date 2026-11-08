@@ -2,7 +2,7 @@
 # Yenilemek icin: python tools/update_checksums.py
 # surum: 1.0.0
 
-052c9ce9228140446ea3f3b3aae5b6a4ba989dd0b071cb42868fb9015c43d416  data/disease_parts.json
+02eb0a6ad2eae209ea9b8df75e51ce6974713fdf6b69e19b952e515b3b7d148a  data/disease_parts.json
 038f0f62e4b119dafd9dd5cefa47d2267443770b8ab30ee1981fef4a8044c2d2  data/ecoli_codon_usage.json
 05c2b4156143bb7e1cd092fc22e43cab481f70083a9d656e8c3a8ff72ec3e6b1  data/extracted_parts.json
 a597b0a55d947596b62b604e0939fe1c87b85587c4f7301ac2f5605e550e9e53  data/igem_parts.json

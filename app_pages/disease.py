@@ -29,12 +29,23 @@ parts_by_id = {p["part_id"]: p for p in db.list_parts()}
 # Hastalık seçimi
 # ---------------------------------------------------------------------------
 
+_strateji_sayisi = sum(len(h.strategies) for h in ds.DISEASES)
+_atif_sayisi = sum(len(h.papers) for h in ds.DISEASES)
+
 st.caption(
-    f"Katalogda {len(ds.DISEASES)} hastalık var ve her biri farklı bir "
-    "tasarım desenini gösterir: substrat yıkan enzim, azot çeken "
-    "biyosentez yolu, iki enzimli döngü, salgılanan protein terapötiği "
-    "ve algılayıcı-öldürücü devre. Atıfların hepsi Europe PMC'den PMID "
-    "ve DOI'siyle doğrulandı."
+    f"Katalogda **{len(ds.DISEASES)} hastalık** ve **{_strateji_sayisi} "
+    f"strateji** var; {_atif_sayisi} atfın hepsi Europe PMC'den PMID ve "
+    "DOI'siyle doğrulandı. Liste uzunluk olsun diye uzun değil: her "
+    "hastalık farklı bir tasarım desenini gösteriyor — substratı yıkan "
+    "enzim, azot çeken biyosentez yolu, iki enzimli döngü, salgılanan "
+    "protein terapötiği, algılayıcı-öldürücü devre, sinyal taklidi, "
+    "sinyal söndürme, hücre duvarını kesen enzim ve bağırsakta "
+    "antibiyotik parçalayan enzim.\n\n"
+    "Bazı stratejiler denetimden **bilerek** hata alır: katalogda "
+    "Gram-pozitif replikon olmadığı için (CORE-01) ve idamesiz "
+    "karşılaştırma basamağında marker bulunmadığı için (CORE-02). "
+    "İkisi de stratejinin kendi açıklamasında yazılıdır - aracın "
+    "bozukluğu değil, tasarımın bilinen sınırıdır."
 )
 
 secim = st.selectbox(

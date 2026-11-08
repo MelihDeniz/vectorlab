@@ -88,9 +88,18 @@ for i, (adim, basamak) in enumerate(zip(tarif.steps, res.steps), start=1):
 st.dataframe(satirlar, width="stretch", hide_index=True,
              alt="Kullanılan restriksiyon enzimleri tablosu")
 st.caption(
-    "Her aşamada iki FARKLI enzim kullanılır. Uçlar uyumsuz olduğu için "
-    "eklenen parça yalnızca doğru yönde girer; aynı enzim iki uçta "
-    "kullanılsaydı insert ters de girerdi."
+    "Her aşamada iki FARKLI enzim kullanılır, ama **farklı olmaları "
+    "yetmez**: ne bıraktıklarına bakın. SalI ile XhoI ikisi de "
+    "5' TCGA, XbaI ile SpeI ikisi de 5' CTAG, BamHI ile BclI ikisi "
+    "de 5' GATC bırakır - böyle bir çiftle keserseniz uçlar "
+    "birbirine uyar ve insert ters de girer, klonlarınızın yarısı "
+    "yanlış olur. 'Bıraktığı uç' sütunu bu yüzden tabloda duruyor; "
+    "uygulama her aşamada kendisi de denetler ve uyumlu bir çift "
+    "görürse uyarır.\n\n"
+    "İkinci kontrol: kullanılan enzim **eklenecek kasetin içinde** "
+    "kesmemeli. Kesiyorsa inserti o enzimlerle hazırlayamazsınız ve "
+    "tarif kağıt üzerinde kalır. On iki tarifin hepsi bu iki "
+    "sınavdan geçiyor (`tests/test_refbuild.py`)."
 )
 if any(refbuild.ENZYMES[e].get("dam")
        for a in tarif.steps for e in (a.left, a.right)):

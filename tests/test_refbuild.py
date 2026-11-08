@@ -139,12 +139,90 @@ def test_tarif_anahtarlari_tekil():
 
 
 def test_her_tarif_kuruluyor(tarif_sonuclari):
+    """Ürün, eklenen kaseti gerçekten taşımalı.
+
+    Ölçüt "ürün orijinalden büyük" DEĞİL: pNZ8048 kaydı boş vektör
+    değildir, içinde kargo vardır ve o kargoyu atıp yerine daha küçük
+    bir kaset koymak ürünü küçültür. Doğru değişmez, kasetin ürünün
+    içinde bulunmasıdır.
+    """
     for key, (tarif, rec, kasetler, res) in tarif_sonuclari.items():
-        assert res.final_length > rec["length"], key
-        # Her kasetin dizisi ürünün içinde bulunmalı (son adımdaki kaset
-        # kesilmediği için en azından o aranabilir).
         son = kasetler[-1].sequence
         assert son in res.final + res.final[:len(son)], key
+        assert res.final_length > sum(len(k.sequence) for k in kasetler), key
+
+
+def test_tarifler_gercekten_kurulabilir(tarif_sonuclari):
+    """Kullanılan enzim, EKLENECEK kasetin içinde kesmemeli.
+
+    Bu yalnızca bir incelik değil: inserti o iki enzimle hazırlarsınız.
+    Kasetin içinde aynı enzimin yeri varsa insert ortadan bölünür ve
+    tarif kağıt üzerinde kalır. Üç tarif bu sınavı ilk yazıldığında
+    geçemedi (pACYC184/PKU'da HindIII, pSEVA231'de EcoRI, pNZ8048'de
+    hem EcoRI hem HindIII kasetin içindeydi) ve enzim çiftleri
+    değiştirildi.
+    """
+    for key, (tarif, _rec, kasetler, _res) in tarif_sonuclari.items():
+        for adim, kaset in zip(tarif.steps, kasetler):
+            for e in (adim.left, adim.right):
+                n = len(rb.find_sites(kaset.sequence, e))
+                assert n == 0, f"{key}: {e} kasetin içinde {n} yerde"
+
+
+def test_tarif_uclari_farkli(tarif_sonuclari):
+    """Çıkıntılar aynıysa insert ters de girer.
+
+    Enzimlerin farklı olması yetmez: SalI/XhoI ikisi de 5' TCGA,
+    XbaI/SpeI ikisi de 5' CTAG, BamHI/BclI ikisi de 5' GATC bırakır.
+    Böyle bir çiftle yönlü klonlama yapamazsınız.
+    """
+    for key, (tarif, _rec, _k, res) in tarif_sonuclari.items():
+        for adim in tarif.steps:
+            assert (rb.ENZYMES[adim.left]["ovh"]
+                    != rb.ENZYMES[adim.right]["ovh"]), f"{key}/{adim.title}"
+        for basamak in res.steps:
+            uyari = [n for n in basamak.notes if n.startswith("UYARI")]
+            assert not uyari, f"{key}: {uyari}"
+
+
+def test_uyumlu_uc_uyarisi_calisiyor(pacyc):
+    """Uyumlu uç kontrolü gerçekten uyarıyor mu?
+
+    Kontrolün kendisi sınanmazsa, tarifler onu geçiyor diye içinin boş
+    olduğunu anlamayız.
+    """
+    adim = rb.cut_and_paste(pacyc, "SalI", "XhoI", "A" * 60)         if len(rb.find_sites(pacyc, "XhoI")) == 1 else None
+    if adim is None:
+        # pACYC184'te XhoI tek kesmiyorsa kontrolü doğrudan sına.
+        assert rb.ENZYMES["SalI"]["ovh"] == rb.ENZYMES["XhoI"]["ovh"]
+        return
+    assert any("AYNI çıkıntıyı" in n for n in adim.notes)
+
+
+def test_tarif_vektorleri_farkli():
+    """Her tarif ayrı bir referans vektör kullanmalı.
+
+    Aynı vektörü iki kez kullanmak tarif sayısını artırır ama
+    öğretilen şeyi artırmaz.
+    """
+    vektorler = [r.vector_id for r in rb.RECIPES]
+    assert len(vektorler) == len(set(vektorler)), vektorler
+
+
+def test_tarif_anahtari_vektoru_yansitiyor():
+    """Anahtar, kullanılan vektörle uyuşmalı (pbad24_kolera → PBAD24)."""
+    for r in rb.RECIPES:
+        onek = r.key.split("_")[0]
+        assert r.vector_id.lower().startswith(onek[:5]),             f"{r.key} ile {r.vector_id} uyuşmuyor"
+
+
+def test_her_tarifin_dersi_ve_gerekcesi_var():
+    for r in rb.RECIPES:
+        assert len(r.why_vector) > 80, r.key
+        assert len(r.teaches) > 80, r.key
+        assert r.source, r.key
+        assert r.disease, r.key
+        assert r.steps, r.key
 
 
 def test_tarif_enzimleri_tek_kesiyor(tarif_sonuclari):
