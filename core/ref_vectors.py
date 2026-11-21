@@ -563,6 +563,176 @@ CURATED.update({
         ),
         "lit_query": "pBBR1MCS broad host range cloning vector Kovach",
     },
+    "PBBR1MCS2": {
+        "name": "pBBR1MCS-2",
+        "ozet": "pBBR1MCS'in kanamisin markerli türevi.",
+        "kullanim": "klonlama",
+        "kopya": "orta",
+        "inc_group": "pBBR1",
+        "markerlar": ["KmR (nptII)"],
+        "promotor": "lac (mavi/beyaz tarama ile)",
+        "mcs": "pBluescript tipi MCS, lacZ-alfa içinde",
+        "organizma": "geniş (Gram-negatif)",
+        "notlar": (
+            "pBBR1MCS ailesinin dört türevi (-2, -3, -4, -5) AYNI "
+            "replikonu ve aynı çoklu klonlama bölgesini taşır; "
+            "aralarındaki tek fark direnç genidir. Bu, marker seçimini "
+            "anlatmak için elverişli bir settir: iskelet sabit kalırken "
+            "yalnızca seçilim değişir.\n\n"
+            "Kanamisin, konağın kendi dirençleriyle en az çakışan "
+            "seçimlerden biridir ve Pseudomonas çalışmalarında yaygın "
+            "kullanılır."
+        ),
+        "lit_query": "pBBR1MCS-2 broad host range kanamycin Kovach 1995",
+    },
+    "PBBR1MCS3": {
+        "name": "pBBR1MCS-3",
+        "ozet": "pBBR1MCS'in tetrasiklin markerli türevi.",
+        "kullanim": "klonlama",
+        "kopya": "orta",
+        "inc_group": "pBBR1",
+        "markerlar": ["TcR (tet)"],
+        "promotor": "lac (mavi/beyaz tarama ile)",
+        "mcs": "pBluescript tipi MCS, lacZ-alfa içinde",
+        "organizma": "geniş (Gram-negatif)",
+        "notlar": (
+            "Tetrasiklin markeri, ampisilin ve kanamisin kullanılan bir "
+            "deneyde üçüncü plazmit için yer açar. Tetrasiklin ışıkta "
+            "bozunur ve besiyerinde magnezyumla şelat yapar; plak "
+            "hazırlarken bunlara dikkat edilmezse seçilim zayıflar."
+        ),
+        "lit_query": "pBBR1MCS-3 broad host range tetracycline Kovach 1995",
+    },
+    "PBBR1MCS4": {
+        "name": "pBBR1MCS-4",
+        "ozet": "pBBR1MCS'in ampisilin markerli türevi.",
+        "kullanim": "klonlama",
+        "kopya": "orta",
+        "inc_group": "pBBR1",
+        "markerlar": ["ApR (bla)"],
+        "promotor": "lac (mavi/beyaz tarama ile)",
+        "mcs": "pBluescript tipi MCS, lacZ-alfa içinde",
+        "organizma": "geniş (Gram-negatif)",
+        "notlar": (
+            "Ampisilin seçilimi uzun kültürde zayıflar: beta-laktamaz "
+            "ortama salgılanır, antibiyotiği parçalar ve plazmitsiz "
+            "hücreler de üreyebilir hale gelir (satellit koloniler). "
+            "Uzun inkübasyonda kanamisinli türevi tercih edilir."
+        ),
+        "lit_query": "pBBR1MCS-4 broad host range ampicillin Kovach 1995",
+    },
+    "PBBR1MCS5": {
+        "name": "pBBR1MCS-5",
+        "ozet": "pBBR1MCS'in gentamisin markerli türevi.",
+        "kullanim": "klonlama",
+        "kopya": "orta",
+        "inc_group": "pBBR1",
+        "markerlar": ["GmR (aacC1)"],
+        "promotor": "lac (mavi/beyaz tarama ile)",
+        "mcs": "pBluescript tipi MCS, lacZ-alfa içinde",
+        "organizma": "geniş (Gram-negatif)",
+        "notlar": (
+            "Gentamisin, Pseudomonas çalışmalarında en güvenilir "
+            "seçilimlerden biridir: bu organizmaların birçoğu doğal "
+            "olarak ampisiline dirençlidir ve beta-laktam markeri "
+            "orada hiç iş görmez. Konağın doğal direnç profiline "
+            "bakmadan marker seçmek, seçilimsiz çalışmak demektir."
+        ),
+        "lit_query": "pBBR1MCS-5 broad host range gentamicin Kovach 1995",
+    },
+    "PK18MOBSACB": {
+        "name": "pK18mobsacB",
+        "ozet": "sacB karşı-seçilimiyle kromozoma gen yerleştirme vektörü.",
+        "kullanim": "allelik değişim",
+        "kopya": "orta",
+        "inc_group": "pMB1 (pUC türevi)",
+        "markerlar": ["KmR (nptII)", "sacB (karşı-seçilim)"],
+        "promotor": "lac",
+        "mcs": "pUC18 MCS, lacZ-alfa içinde",
+        "organizma": "E. coli (mobilize edilerek Corynebacterium, "
+                     "Pseudomonas ve diğerleri)",
+        "notlar": (
+            "Bu vektör çoğalmak için değil, KAYBOLMAK için tasarlanmış. "
+            "Hedef organizmada replikonu çalışmaz; hücrede kalabilmesi "
+            "için kromozoma homolog rekombinasyonla girmesi gerekir. "
+            "Kanamisinle birinci geçiş (integrasyon) seçilir.\n\n"
+            "İkinci geçiş sacB ile seçilir: Bacillus'tan gelen bu gen "
+            "levansükraz üretir ve sakkaroz varlığında ürünü "
+            "Gram-negatif hücre için ÖLDÜRÜCÜDÜR. Yani sakkarozlu "
+            "plakta yalnızca vektörü atmış hücreler ürer. Tersine "
+            "seçilim fikri budur: istediğiniz şeyi değil, istemediğiniz "
+            "şeyi öldürürsünüz.\n\n"
+            "Corynebacterium glutamicum'da gen silme ve yerleştirmenin "
+            "standart aracıdır."
+        ),
+        "lit_query": "pK18mobsacB allelic exchange sacB counterselection",
+    },
+    "PEX18TC": {
+        "name": "pEX18Tc",
+        "ozet": "Pseudomonas için sacB taşıyan gen değişim vektörü.",
+        "kullanim": "allelik değişim",
+        "kopya": "orta",
+        "inc_group": "pMB1 (pUC türevi)",
+        "markerlar": ["TcR (tet)", "sacB (karşı-seçilim)"],
+        "promotor": "lac",
+        "mcs": "pUC18 MCS, lacZ-alfa içinde",
+        "organizma": "E. coli (mobilize edilerek Pseudomonas)",
+        "notlar": (
+            "pK18mobsacB ile aynı mantık, Pseudomonas için kurulmuş "
+            "hali: E. coli'de çoğalır, P. aeruginosa ve P. putida'da "
+            "çoğalamaz, bu yüzden orada ancak kromozoma girerek "
+            "kalabilir. İkinci geçiş yine sakkaroz-sacB ile seçilir.\n\n"
+            "Tetrasiklin markeri taşımasının sebebi pratik: "
+            "Pseudomonas'ın birçok suşu doğal olarak ampisiline "
+            "dirençlidir."
+        ),
+        "lit_query": "pEX18Tc Pseudomonas gene replacement vector Hoang",
+    },
+    "PWSK29": {
+        "name": "pWSK29",
+        "ozet": "Düşük kopyalı (pSC101 replikonlu) klonlama vektörü.",
+        "kullanim": "klonlama",
+        "kopya": "düşük (6-8)",
+        "inc_group": "pSC101",
+        "markerlar": ["ApR (bla)"],
+        "promotor": "lac (T3/T7 promotörleri MCS'i kuşatır)",
+        "mcs": "pBluescript tipi MCS, lacZ-alfa içinde",
+        "organizma": "E. coli",
+        "notlar": (
+            "Yüksek kopya her zaman iyi değildir. Ürün konağa toksikse, "
+            "protein doğru katlanmak için zaman istiyorsa ya da gen "
+            "dozunun fizyolojik olması gerekiyorsa düşük kopya "
+            "tercih edilir. pSC101 replikonu hücre başına 6-8 kopya "
+            "verir - pUC'nin yüzde biri kadar.\n\n"
+            "MCS'i T3 ve T7 promotörleri kuşattığı için inserti iki "
+            "yönden de in vitro transkripsiyonla okutabilirsiniz."
+        ),
+        "lit_query": "pWSK29 low copy number vector pSC101 Wang Kushner",
+    },
+    "PJET12": {
+        "name": "pJET1.2",
+        "ozet": "Kör uç klonlama; insert girmezse koloni çıkmaz.",
+        "kullanim": "klonlama (PCR ürünü)",
+        "kopya": "yüksek",
+        "inc_group": "pMB1 (pUC türevi)",
+        "markerlar": ["ApR (bla)"],
+        "promotor": "T7 (in vitro transkripsiyon için)",
+        "mcs": "kör uç klonlama yeri, ölümcül genin içinde",
+        "organizma": "E. coli",
+        "notlar": (
+            "Mavi/beyaz taramaya gerek bırakmayan bir tasarım: "
+            "klonlama yeri, konağı öldüren bir genin İÇİNDEDİR. "
+            "Insert girerse o gen bozulur ve hücre yaşar; insert "
+            "girmezse gen sağlam kalır, ürün hücreyi öldürür ve "
+            "koloni hiç çıkmaz.\n\n"
+            "Yani boş vektör taramaya bile gelmez - seçilim "
+            "plağın üzerinde kendiliğinden olur. Buna pozitif "
+            "seçilim denir ve mavi/beyaz taramadan farkı şudur: "
+            "mavi/beyaz tarama yanlış kolonileri GÖSTERİR, pozitif "
+            "seçilim onların oluşmasını ENGELLER."
+        ),
+        "lit_query": "pJET1.2 blunt end cloning positive selection lethal gene",
+    },
     "RSF1010": {
         "name": "RSF1010",
         "ozet": "Doğal IncQ plazmiti; en geniş konak aralıklı replikon.",

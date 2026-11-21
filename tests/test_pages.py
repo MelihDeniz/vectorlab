@@ -41,7 +41,8 @@ DEFAULTS = {
 
 SAYFALAR = [
     "wizard", "designer", "disease", "refbuild", "vectors",
-    "inspect", "analyze", "enzyme_lab", "labwork", "parts", "projects",
+    "inspect", "analyze", "primers", "enzyme_lab", "labwork",
+    "parts", "projects",
     "literature",
 ]
 

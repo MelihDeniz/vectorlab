@@ -269,3 +269,52 @@ def test_tarif_bolge_tasimasi_dizi_ile_dogrulanir(tarif_sonuclari):
                 assert gercek == beklenen, f"{key}/{f.name}"
             else:
                 assert gercek in beklenen, f"{key}/{f.name}"
+
+
+# ---------------------------------------------------------------------------
+# Enzim tablosu
+# ---------------------------------------------------------------------------
+
+
+def test_enzim_tablosu_rebase_ile_tutarli():
+    """ENZYMES tablosu REBASE'in söyledigiyle birebir ayni olmali.
+
+    Tablo elle yazilabilir bir seydir ve yanlis yazilabilir: tek bir
+    yanlis kesim konumu, butun tariflerin urun uzunlugunu kaydirir ama
+    hicbir sey hata vermez. Burada ayni degerler Biopython uzerinden
+    REBASE'ten yeniden hesaplanip karsilastiriliyor.
+    """
+    from Bio import Restriction as R
+
+    for ad, d in rb.ENZYMES.items():
+        e = getattr(R, ad, None)
+        assert e is not None, f"{ad} REBASE'de (Biopython'da) yok"
+        assert str(e.site) == d["site"], (
+            f"{ad} tanima dizisi: tabloda {d['site']}, REBASE {e.site}")
+        assert e.fst5 == d["cut"], (
+            f"{ad} kesim konumu: tabloda {d['cut']}, REBASE {e.fst5}")
+        assert e.ovhg < 0, (
+            f"{ad} 5' cikinti birakmiyor (ovhg={e.ovhg}); cut_and_paste "
+            f"geometrisi 5' cikinti varsayiyor")
+        beklenen = d["site"][d["cut"]:d["cut"] + abs(e.ovhg)]
+        assert d["ovh"] == f"5' {beklenen}", (
+            f"{ad} cikinti: tabloda {d['ovh']}, hesaplanan 5' {beklenen}")
+
+
+def test_enzim_tanima_dizileri_belirsiz_baz_tasimiyor():
+    """IUPAC kodlu site sessizce "hic kesmiyor" gorunur.
+
+    `find_sites` duz metin aramasi yapar. SgrAI'nin CRCCGGYG'si gibi
+    bir site hicbir zaman eslesmez ve enzim her vektorde kesmiyor gibi
+    durur - yanlis sonuc degil, GORUNMEYEN sonuc.
+    """
+    for ad, d in rb.ENZYMES.items():
+        fazla = set(d["site"]) - set("ACGT")
+        assert not fazla, f"{ad} sitesinde belirsiz baz var: {fazla}"
+
+
+def test_enzim_cesidi_yeterli():
+    """Tarif yazarken secenek kalmasi icin tablo genis olmali."""
+    assert len(rb.ENZYMES) >= 25, f"yalnizca {len(rb.ENZYMES)} enzim"
+    uzun = [a for a, d in rb.ENZYMES.items() if len(d["site"]) == 8]
+    assert uzun, "8 bazlik nadir kesici yok"

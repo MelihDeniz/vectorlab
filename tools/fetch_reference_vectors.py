@@ -50,6 +50,24 @@ WANTED: dict[str, tuple[str, int]] = {
     "PBBR1MCS":  ("U02374", 4707),
     "RSF1010":   ("M28829", 8684),
     "PBHR1":     ("Y14439", 5300),
+    # pBBR1MCS ailesinin dort turevi: AYNI replikon, FARKLI marker.
+    # Marker secimini anlatmak icin elverisli bir set - iskelet sabit
+    # kalirken yalnizca direnc geni degisiyor.
+    "PBBR1MCS2": ("U23751", 5144),
+    "PBBR1MCS3": ("U25059", 5228),
+    "PBBR1MCS4": ("U25060", 4950),
+    "PBBR1MCS5": ("U25061", 4768),
+    # --- Allelik degisim / kars-secilim ----------------------------------
+    # sacB tasiyan vektorler: sakkaroz varliginda sacB urunu oldurucu
+    # oldugu icin plazmiti KAYBEDEN hucre secilir. Kromozoma gen
+    # yerlestirmenin standart yolu budur.
+    "PK18MOBSACB": ("FJ437239", 5719),
+    "PEX18TC":     ("AF047519", 6349),
+    # --- Dusuk kopya ve kor uc klonlama ----------------------------------
+    "PWSK29":    ("AF016889", 5434),
+    # pJET1.2 kor uc klonlamayi olumcul genle secer: insert girmezse
+    # vektorun kendi olumcul geni ifade olur ve koloni cikmaz.
+    "PJET12":    ("EF694056", 2974),
     # --- Gram-pozitif bakteriler -----------------------------------------
     "PUB110":    ("NC_001384", 4548),
     "PC194":     ("NC_002013", 2910),

@@ -80,6 +80,11 @@ page = st.navigation(
             icon=":material/search_insights:",
         ),
         st.Page(
+            "app_pages/primers.py",
+            title=t("Primer tasarımı"),
+            icon=":material/linear_scale:",
+        ),
+        st.Page(
             "app_pages/enzyme_lab.py",
             title=t("Enzimler"),
             icon=":material/content_cut:",

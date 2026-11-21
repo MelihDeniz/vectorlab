@@ -161,6 +161,43 @@ Doğrulama: kesim geometrisi, gerçek dizilerden çıkarılan çıkıntının
 REBASE'in bildirdiği çıkıntıyla birebir eşleşmesiyle sınanır
 (5' çıkıntı, 3' çıkıntı ve kör uç enzimleri dahil).
 
+### Primer tasarımı
+Primer tasarımı uygulamada zaten vardı ama dağınıktı: bir sekmesi Dizi
+analizinde, montaj primerleri Laboratuvar'da, dizileme primerleri yine
+orada. Üstelik hepsi primeri yalnızca *hedef dizinin kendisine* göre
+ölçüyordu - oysa primer laboratuvarda hedefe değil **bütün plazmite**
+girer.
+
+Bu sayfa primer işlerini tek yere toplar ve hepsine vektörü gösterir.
+Dört sekme:
+
+- **PCR primeri** — vektörün bir bölgesini çoğaltır; uçlara
+  restriksiyon bölgesi eklenebilir.
+- **Koloni PCR** — insertin iki yanındaki **iskeletten** tarama
+  primerleri. Primerlerin bilerek insertin dışında olmasının sebebi
+  şudur: insertin içine bağlanan primer boş vektörde hiç ürün vermez,
+  yani boş koloni ile tutmamış PCR birbirinden ayırt edilemez.
+  İskeletten bakınca küçük bant boş, büyük bant dolu demektir ve bant
+  yokluğu PCR'ın kendi başarısızlığıdır. Bir test primerlerin insertin
+  dışında kaldığını ve iki bandın farkının insert uzunluğuna eşit
+  olduğunu şart koşuyor.
+- **Dizileme çapaları** — vektörde bulunan katalog parçalarından
+  okumaya başlayacak primer. Evrensel dizileme primerlerinin dizileri
+  depoya ezberden yazılmadı: primer vektörün kendi dizisinden kesilir,
+  yani kaynağı gösterilebilir. pUC19'da bu, MCS'ten türeyen
+  `TCTAGAGTCGACCTGCAGGC`'yi verir.
+- **Primer incele** — elinizdeki primeri yapıştırın; Tm, GC, 3' ucu,
+  kendi dimeri ve saç tokası ölçülür, vektördeki bağlanma yerleri
+  aranır.
+
+**Özgüllük taramasının modeli.** Tarama bir *hizalama* değildir:
+boşluk (indel) aranmaz, termodinamik hesap yapılmaz. Eşleşmeyen baz
+sayılır ve 3' ucunun tam eşleşmesi şart koşulur. Gerekçe biyolojiktir
+- polimeraz uzamayı 3' ucundan başlatır, o uç oturmuyorsa primer
+bağlansa bile ürün çıkmaz. Gerçek bir özgüllük denetimi BLAST'tır; bu
+tarama onun yerine geçmez, yalnızca **aynı plazmit içindeki** ikinci
+bağlanma yerini yakalar.
+
 ### Referans vektörler
 Gerçek plazmitlerin **tam dizileri** üzerinde çalışır — 41 vektör, beş
 organizma grubunda. Hedef organizmaya göre süzülür.
@@ -414,7 +451,27 @@ bir şey öğretir:
 | pKD46 → diyabet | SalI/BclI | 6329 → 6669 bp | Plazmiti **kaybettirmek** de bir tasarım aracıdır (30/37 °C) |
 
 Her tarif için sayfa altı şeyi gösterir: referans vektörün haritası ve
-neden o vektör seçildiği, enzim tablosu (tanıma dizisi, bıraktığı uç, o
+**Tariflerin kullanabileceği enzim sayısı 9'dan 28'e çıkarıldı.**
+Değerler elle yazılmadı: `Bio.Restriction` üzerinden REBASE'ten
+hesaplandı ve `test_enzim_tablosu_rebase_ile_tutarli` her çalıştırmada
+aynı hesabı tekrarlayıp tabloyla karşılaştırıyor. (Bu testin varlık
+sebebi şudur: tablonun başındaki yorum zaten "testler bunu REBASE ile
+karşılaştırır" diyordu, ama öyle bir test YOKTU - yorum bir iddiaydı,
+doğrulama değil.)
+
+Hepsi 5' çıkıntı bırakır, çünkü `cut_and_paste` geometrisi buna göre
+kurulmuştur; 3' çıkıntı (KpnI, SacI, PstI…) ve kör uç (SmaI, EcoRV…)
+bırakanlar tabloda yoktur. Tanıma dizileri belirsiz baz da taşımaz:
+`find_sites` düz metin araması yapar ve IUPAC kodlu bir site
+(SgrAI'nin CRCCGGYG'si gibi) hiç eşleşmez - enzim sessizce "hiç
+kesmiyor" görünürdü. İkisini de birer test şart koşuyor.
+
+Tabloya eklenenler arasında KasI ve NarI birlikte duruyor: ikisi de
+GGCGCC tanır ama farklı yerden keser (G^GCGCC ve GG^CGCC), bu yüzden
+ürünleri birbirine **ligate olmaz** - izoşizomer olmak uyumlu olmak
+demek değildir.
+
+Her tarif için sayfa, neden o vektör seçildiği, enzim tablosu (tanıma dizisi, bıraktığı uç, o
 aşamada kaç yerden kestiği, Dam metilasyonuna duyarlı mı), aşama aşama
 ne çıktı ne girdi, orijinal ile ürünün haritaları yan yana, beklenen jel
 deseni ve sınırlılıklar.
@@ -521,7 +578,7 @@ Bir tasarım aracının "çalışıyor" olması yetmez, "doğru" olması gerekir
 python -m pytest
 ```
 
-285 test, dokuz dosyada: dizi motoru, tasarım modülleri, veri
+307 test, on bir dosyada: dizi motoru, tasarım modülleri, veri
 bütünlüğü, PKU tasarımı ve simülasyonu, hastalık kayıt defteri,
 referanstan kes-yapıştır, **sayfaların kendisi** ve **arayüz dili**.
 Çoğu bir *değişmezi* sınar — optimizasyon
@@ -575,7 +632,7 @@ python tools/validate_against_references.py
 ```
 
 Testler kodun kendi içinde tutarlı olduğunu gösterir; bu betik ise
-hesapları **uygulamanın dışındaki** ölçütlerle karşılaştırır. 182
+hesapları **uygulamanın dışındaki** ölçütlerle karşılaştırır. 184
 kontrol, dokuz başlıkta:
 
 | Ne | Bağımsız ölçüt |
@@ -1100,17 +1157,19 @@ app_pages/
   analyze.py           dizi analizi
   enzyme_lab.py        enzim kütüphanesi, kesim diyagramları
   inspect.py           var olan plazmiti denetle
-  disease.py           hastalık vektörü: 12 hastalık, revizyon, denetim
+  disease.py           hastalık vektörü: 13 hastalık, revizyon, denetim
   refbuild.py          referanstan kes-yapıştır: 12 tarif
   labwork.py           protokol, jel, protein, rapor
   parts.py             katalog yönetimi, iGEM serileri
+  primers.py           primer tasarımı ve inceleme
   projects.py          kayıtlı tasarımlar, sürüm geçmişi, defter
   literature.py        literatür modülü
 core/
   parts_seed.py        60 bakteriyel parça + 8 konak suşu
   pku_seed.py          PKU vektörü parçaları ve Nissle konakları
   pku_sim.py           PKU tasarımının davranış simülasyonu
-  disease_seed.py      hastalık kayıt defteri (12 hastalık, 45 strateji)
+  disease_seed.py      hastalık kayıt defteri (13 hastalık, 48 strateji)
+  primers.py           vektöre özel primer tasarımı ve özgüllük
   refbuild.py          kes-yapıştır hesabı ve 12 tarif
   igem_seed.py         iGEM kayıtlarını katalog parçasına çevirir
   signal_seed.py       sinyal peptitleri
@@ -1156,12 +1215,12 @@ tests/
   test_disease.py      hastalık kayıt defteri ve terapötik genler
   test_refbuild.py     kes-yapıştır hesabı, map_feature, tarifler
 data/
-  reference_vectors/   126 vektörün dizisi ve öznitelikleri (JSON)
+  reference_vectors/   134 vektörün dizisi ve öznitelikleri (JSON)
   igem_parts.json      iGEM parça kayıtları
   extracted_parts.json vektörlerden çıkarılmış parçalar
   signal_peptides.json 9 sinyal peptidi (UniProt)
   pku_parts.json       PKU genlerinin çekilmiş dizileri
-  disease_parts.json   15 terapötik gen (UniProt + NCBI)
+  disease_parts.json   17 terapötik gen (UniProt + NCBI)
   codon_usage/         5 konağın genomdan hesaplanan kodon tablosu
   i18n/en.json         arayüzün İngilizce sözlüğü
   CHECKSUMS.txt        izlenen veri dosyalarının SHA-256 özetleri

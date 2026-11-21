@@ -17,22 +17,65 @@ from typing import Any
 
 # Kullandığımız enzimler: tanıma dizisi, kesimin sitenin kaçıncı
 # nükleotidinden sonra olduğu (üst zincir) ve bıraktığı uç.
-# Kaynak: REBASE / üretici katalogları (standart tanıma dizileri).
-# Hepsi 5' cikinti birakir; cut_and_paste yapisi buna gore kurulmustur.
-# tests/test_refbuild.py bu tablonun REBASE ile tutarli oldugunu sinar,
-# yani elle yazilmis olmasina ragmen dogrulanmamis degildir.
+#
+# Değerler elle yazılmadı: `Bio.Restriction` üzerinden REBASE'ten
+# hesaplandı (`site`, `fst5`, `ovhg`) ve `tests/test_refbuild.py`
+# içindeki `test_enzim_tablosu_rebase_ile_tutarli` her açılışta aynı
+# hesabı tekrarlayıp tabloyla karşılaştırıyor.
+#
+# **Hepsi 5' çıkıntı bırakır.** `cut_and_paste` geometrisi buna göre
+# kurulmuştur, o yüzden 3' çıkıntı bırakanlar (KpnI, SacI, PstI, SphI,
+# ApaI, AatII, NsiI, SbfI) ve kör uç bırakanlar (SmaI, EcoRV, FspI)
+# tabloda YOK. Eksiklik değil, sınır: bu enzimler Enzimler sayfasında
+# bütün REBASE kütüphanesiyle birlikte zaten görünüyor, yalnızca
+# kes-yapıştır tarifleri onları kullanamıyor.
+#
+# Tanıma dizileri belirsiz baz TAŞIMAZ. `find_sites` düz metin araması
+# yapar: IUPAC kodu taşıyan bir site (SgrAI'nin CRCCGGYG'si gibi) hiç
+# eşleşmez ve enzim sessizce "hiç kesmiyor" görünür. SgrAI bu yüzden
+# tabloya alınmadı; bir test de bunu şart koşuyor.
 ENZYMES: dict[str, dict[str, Any]] = {
-    "HindIII": {"site": "AAGCTT", "cut": 1, "ovh": "5' AGCT"},
-    "SalI":    {"site": "GTCGAC", "cut": 1, "ovh": "5' TCGA"},
+    # --- 6 bazlık tanıma dizileri ---------------------------------------
+    "AclI":    {"site": "AACGTT", "cut": 2, "ovh": "5' CG"},
+    "AflII":   {"site": "CTTAAG", "cut": 1, "ovh": "5' TTAA"},
+    "AgeI":    {"site": "ACCGGT", "cut": 1, "ovh": "5' CCGG"},
+    "AvrII":   {"site": "CCTAGG", "cut": 1, "ovh": "5' CTAG"},
+    "BamHI":   {"site": "GGATCC", "cut": 1, "ovh": "5' GATC"},
     "BclI":    {"site": "TGATCA", "cut": 1, "ovh": "5' GATC",
                 "dam": True},
+    "BglII":   {"site": "AGATCT", "cut": 1, "ovh": "5' GATC"},
+    "BspEI":   {"site": "TCCGGA", "cut": 1, "ovh": "5' CCGG"},
+    "BsrGI":   {"site": "TGTACA", "cut": 1, "ovh": "5' GTAC"},
+    "BssHII":  {"site": "GCGCGC", "cut": 1, "ovh": "5' CGCG"},
+    "ClaI":    {"site": "ATCGAT", "cut": 2, "ovh": "5' CG",
+                "dam": True},
+    "EagI":    {"site": "CGGCCG", "cut": 1, "ovh": "5' GGCC"},
     "EcoRI":   {"site": "GAATTC", "cut": 1, "ovh": "5' AATT"},
-    "BamHI":   {"site": "GGATCC", "cut": 1, "ovh": "5' GATC"},
+    "HindIII": {"site": "AAGCTT", "cut": 1, "ovh": "5' AGCT"},
+    # KasI ve NarI aynı diziyi tanır ama FARKLI yerden keser: ikisi de
+    # GGCGCC görür, KasI G^GCGCC, NarI GG^CGCC. Çıkıntıları da farklı
+    # olduğu için ürünleri birbirine ligate OLMAZ - izoşizomer olmak
+    # uyumlu olmak demek değildir.
+    "KasI":    {"site": "GGCGCC", "cut": 1, "ovh": "5' GCGC"},
+    "NarI":    {"site": "GGCGCC", "cut": 2, "ovh": "5' CG"},
+    "MfeI":    {"site": "CAATTG", "cut": 1, "ovh": "5' AATT"},
+    "MluI":    {"site": "ACGCGT", "cut": 1, "ovh": "5' CGCG",
+                "dam": True},
+    "NcoI":    {"site": "CCATGG", "cut": 1, "ovh": "5' CATG"},
+    "NdeI":    {"site": "CATATG", "cut": 2, "ovh": "5' TA"},
+    "NheI":    {"site": "GCTAGC", "cut": 1, "ovh": "5' CTAG"},
+    "PciI":    {"site": "ACATGT", "cut": 1, "ovh": "5' CATG"},
+    "SalI":    {"site": "GTCGAC", "cut": 1, "ovh": "5' TCGA"},
+    "SpeI":    {"site": "ACTAGT", "cut": 1, "ovh": "5' CTAG"},
     "XbaI":    {"site": "TCTAGA", "cut": 1, "ovh": "5' CTAG",
                 "dam": True},
-    "SpeI":    {"site": "ACTAGT", "cut": 1, "ovh": "5' CTAG"},
     "XhoI":    {"site": "CTCGAG", "cut": 1, "ovh": "5' TCGA"},
-    "NcoI":    {"site": "CCATGG", "cut": 1, "ovh": "5' CATG"},
+    # --- 8 bazlık tanıma dizileri (nadir kesiciler) ----------------------
+    # 8 bazlık site ortalama 65 kb'de bir geçer; bir plazmitte çoğu
+    # zaman hiç kesmezler, bu da onları insert içine bölge eklemek
+    # için elverişli kılar.
+    "AscI":    {"site": "GGCGCGCC", "cut": 2, "ovh": "5' CGCG"},
+    "NotI":    {"site": "GCGGCCGC", "cut": 2, "ovh": "5' GGCC"},
 }
 
 

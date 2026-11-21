@@ -682,6 +682,12 @@ HCU_KASET = ["PRO_FNRS", "RBS_B0034", "CDS_MDEA", "TER_B0015"]
 KOLERA_KASET = ["PRO_J23105", "RBS_B0034", "CDS_CQSA", "TER_B0015"]
 CDIFF_KASET = ["PRO_J23100", "RBS_B0034", "SIG_AMYE", "CDS_BLAC_BL",
                "TER_B0015"]
+#: Oksidatif bagirsak hasari: SOD superoksidi H2O2'ye, katalaz
+#: H2O2'yi suya cevirir. Ikisi arka arkaya calisir - yalnizca SOD
+#: koymak superoksidi H2O2'de BIRAKIR, ki o da zarar vericidir.
+SOD_KASET = ["REF_NATIVE_LACTOBACILLUS_R_200", "RBS_B0034",
+             "CDS_SODA", "CDS_KATE", "TER_B0015"]
+
 LAKTOZ_KASET = ["REF_NATIVE_LACTOBACILLUS_R_200", "RBS_B0034",
                 "CDS_LACZ_LD", "TER_B0015"]
 MRSA_KASET = ["PRO_J23105", "RBS_B0034", "SIG_USP45", "CDS_LSS",
@@ -1284,6 +1290,80 @@ DISEASES += [
              "Bizim tasarım": "J23100 (sabit, güçlü)", "Etiket": "Öneri"},
         ],
     ),
+    Disease(
+        key="oksidatif",
+        name="Oksidatif bağırsak hasarı (kolit)",
+        short="Oksidatif hasar",
+        logic="Bağırsakta serbest radikali söndüren bir laktik asit "
+              "bakterisi.",
+        mechanism=(
+            "İltihaplı bağırsakta nötrofil ve makrofajlar bol miktarda "
+            "superoksit (O2⁻) üretir. Superoksit kendi başına da "
+            "zarar verir, ama asıl sorun zincirin devamıdır: hücrenin "
+            "kendi enzimleri onu hidrojen perokside (H2O2) çevirir ve "
+            "H2O2 demirle buluşunca hidroksil radikali doğar - "
+            "hücrenin hiçbir enzimiyle söndüremediği, DNA'yı ve zarı "
+            "doğrudan kesen bir tür.\n\n"
+            "Fikir: radikali üretildiği yerde, bağırsak lümeninde "
+            "söndüren bir bakteri. Ağızdan verilen antioksidanın "
+            "ulaşamadığı yer tam olarak burasıdır."),
+        papers=[
+            "LeBlanc JG ve ark. Improvement of an experimental colitis "
+            "in rats by lactic acid bacteria producing superoxide "
+            "dismutase. Inflammatory Bowel Diseases 12:1069-1077 "
+            "(2006). doi:10.1097/01.mib.0000235101.09231.9e "
+            "· PMID 17075345",
+        ],
+        pathway=_gv(
+            'a [label="İltihap bölgesinde\\nnötrofil ve makrofaj"];',
+            'b [label="Superoksit (O2⁻)\\nsalınır"];',
+            'c [label="SOD (sodA)\\nO2⁻ → H2O2"];',
+            'd [label="Katalaz (katE)\\nH2O2 → H2O + O2"];',
+            'e [label="Hidroksil radikali\\nhiç oluşmaz"];',
+            "a -> b -> c -> d -> e;"),
+        pathway_caption=(
+            "İki enzimin SIRASI tasarımın kendisidir. Yalnızca SOD "
+            "koymak superoksiti H2O2'de bırakır ve H2O2 de zararlıdır; "
+            "yalnızca katalaz koymak superoksite hiç dokunmaz. Zincirin "
+            "iki basamağı birden kapatılmazsa sorun yer değiştirir, "
+            "çözülmez."),
+        cassette=SOD_KASET,
+        biomarker=("Dışkıda kalprotektin; doku malondialdehit (MDA) ve "
+                   "miyeloperoksidaz (MPO) etkinliği"),
+        gap=("Katalaz (katE) 753 amino asitlik büyük bir proteindir ve "
+             "hem grubu gerektirir; Lactococcus lactis hem sentezini "
+             "sınırlı yapar, bu yüzden katalaz etkinliği konakta düşük "
+             "kalabilir. Makale yalnızca SOD üreten bir suş kullandı - "
+             "iki enzimi birlikte koymak bizim önerimizdir ve "
+             "deneysel olarak sınanmamıştır. Ayrıca bu iki enzim hücre "
+             "içinde çalışır; lümendeki radikale ulaşmaları için "
+             "bakterinin orada ve canlı olması gerekir."),
+        strategies=_gram_poz_merdiven(
+            SOD_KASET,
+            ["PRO_LAC", "RBS_B0034", "CDS_SODA", "CDS_KATE", "TER_B0015"],
+            "LLNZ9000",
+            "Laktik asit bakterisi: iltihaplı bağırsakta hayatta kalır "
+            "ve gıda sınıfı olduğu için düzenleyici açıdan uygundur."),
+        comparison=[
+            {"Özellik": "Konak", "Makale": "Lactococcus lactis",
+             "Bizim tasarım": "Lactococcus lactis NZ9000",
+             "Etiket": "Literatür"},
+            {"Özellik": "Enzim", "Makale": "Yalnızca SOD",
+             "Bizim tasarım": "SOD (sodA, P0A4J2) + katalaz "
+                              "(katE, P21179)",
+             "Etiket": "Öneri"},
+            {"Özellik": "Gerekçe",
+             "Makale": "Superoksiti söndürmek",
+             "Bizim tasarım": "H2O2'yi de söndürmek: SOD tek başına "
+                              "radikali H2O2'de bırakır",
+             "Etiket": "Öneri"},
+            {"Özellik": "Konum", "Makale": "Hücre içi",
+             "Bizim tasarım": "Hücre içi", "Etiket": "Literatür"},
+            {"Özellik": "Model", "Makale": "Sıçanda deneysel kolit",
+             "Bizim tasarım": "—", "Etiket": "Literatür"},
+        ],
+    ),
+
 ]
 
 # IBD'ye ikinci bir terapötik protein: elafin. Aynı hastalık, bambaşka
