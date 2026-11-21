@@ -28,7 +28,7 @@ def render_results(results, key_prefix: str):
                     r["year"]]
             line = " · ".join(b for b in bits if b)
             if r["cited_by"]:
-                line += f" · {r['cited_by']} atıf"
+                line += t(" · {0} atıf").format(r['cited_by'])
             if r["is_oa"]:
                 line += " · açık erişim"
             st.caption(line)
@@ -39,7 +39,7 @@ def render_results(results, key_prefix: str):
             if cols.button(t("Kaynakçaya ekle"), key=f"{key_prefix}_save_{r['pmid']}",
                            icon=":material/bookmark_add:"):
                 db.save_reference(r)
-                st.toast(f"Kaynakçaya eklendi: {r['title'][:50]}…")
+                st.toast(t("Kaynakçaya eklendi: {0}…").format(r['title'][:50]))
 
 
 # ---------------------------------------------------------------------------
@@ -72,8 +72,7 @@ with tabs[0]:
             st.error(res["error"], icon=":material/cloud_off:")
         else:
             st.caption(
-                f"{res['hit_count']} kayıt bulundu, ilk {len(res['results'])} "
-                "gösteriliyor."
+                t("{0} kayıt bulundu, ilk {1} gösteriliyor.").format(res['hit_count'], len(res['results']))
             )
             st.session_state.lit_results = res["results"]
 
@@ -97,7 +96,7 @@ with tabs[1]:
         )
     else:
         st.markdown(
-            f"**{st.session_state.design_name}** — {len(selected)} parça"
+            t("**{0}** — {1} parça").format(st.session_state.design_name, len(selected))
         )
         queries = lit.queries_for_parts(selected)
         picked = st.multiselect(
@@ -123,7 +122,7 @@ with tabs[1]:
                             st.markdown(
                                 f"- [{r['title']}]({url}) — "
                                 f"*{r['journal']}* {r['year']}"
-                                + (f" · {r['cited_by']} atıf"
+                                + (t(" · {0} atıf").format(r['cited_by'])
                                    if r["cited_by"] else "")
                             )
                             db.save_reference(r)
@@ -151,7 +150,7 @@ with tabs[2]:
             icon=":material/bookmark:",
         )
     else:
-        st.caption(f"{len(refs)} kaynak kayıtlı.")
+        st.caption(t("{0} kaynak kayıtlı.").format(len(refs)))
         style = st.segmented_control(
             t("Biçim"), ["numarali", "bibtex", "markdown"],
             default="numarali",
@@ -213,8 +212,7 @@ with tabs[3]:
             auto = [i for i in issues if i.auto_fixable]
             manual = [i for i in issues if not i.auto_fixable]
             st.markdown(
-                f"**{len(issues)} bulgu** — {len(auto)} tanesi otomatik "
-                f"düzeltilebilir."
+                t("**{0} bulgu** — {1} tanesi otomatik düzeltilebilir.").format(len(issues), len(auto))
             )
             st.dataframe(
                 [{"Tür": i.kind, "Bulunan": i.found, "Önerilen": i.suggestion,
@@ -252,7 +250,7 @@ with tabs[4]:
     src = st.radio(
         t("Kaynak"), ["Metin yapıştır", "Son arama sonuçlarından"],
         horizontal=True,
-    )
+    format_func=t)
 
     corpus = []
     if src == "Metin yapıştır":
@@ -277,7 +275,7 @@ with tabs[4]:
         if not all_c:
             st.caption(t("Tanınabilir bir öğe bulunamadı."))
         else:
-            st.markdown(f"**{len(all_c)} aday bulundu**")
+            st.markdown(t("**{0} aday bulundu**").format(len(all_c)))
             kinds = sorted({c.kind for _, c in all_c})
             pick = st.pills(t("Türe göre süz"), kinds, selection_mode="multi",
                             default=kinds)

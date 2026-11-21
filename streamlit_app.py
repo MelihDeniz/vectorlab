@@ -85,6 +85,16 @@ page = st.navigation(
             icon=":material/linear_scale:",
         ),
         st.Page(
+            "app_pages/porting.py",
+            title=t("Konak taşıma"),
+            icon=":material/swap_horiz:",
+        ),
+        st.Page(
+            "app_pages/procure.py",
+            title=t("Sipariş ve denetim izi"),
+            icon=":material/receipt_long:",
+        ),
+        st.Page(
             "app_pages/enzyme_lab.py",
             title=t("Enzimler"),
             icon=":material/content_cut:",

@@ -83,7 +83,7 @@ with tabs[0]:
             icon=":material/search_off:",
         )
     else:
-        st.caption(f"{len(feats)} eşleşme bulundu.")
+        st.caption(t("{0} eşleşme bulundu.").format(len(feats)))
         render_svg(
             circular_map("Analiz edilen dizi", len(seq), feats)
             if circular
@@ -114,8 +114,7 @@ with tabs[1]:
         t("Taranacak enzimler"),
         _tum,
         default=[e for e in ez.WORKHORSE if e in _tum][:24],
-        help=f"REBASE kütüphanesindeki {len(_tum)} ticari enzimin hepsi "
-             "aranabilir; varsayılan liste rutin klonlamada kullanılanlardır.",
+        help=t("REBASE kütüphanesindeki {0} ticari enzimin hepsi aranabilir; varsayılan liste rutin klonlamada kullanılanlardır.").format(len(_tum)),
     )
     groups = classify_cutters(seq, enz_set, circular)
 
@@ -173,8 +172,7 @@ with tabs[2]:
     else:
         frags = digest(seq, dig_enz, circular)
         st.caption(
-            f"{len(frags)} fragman. Agaroz jelde büyükten küçüğe doğru "
-            "sıralanır; 100 bp altındaki bantlar çoğu jelde görünmez."
+            t("{0} fragman. Agaroz jelde büyükten küçüğe doğru sıralanır; 100 bp altındaki bantlar çoğu jelde görünmez.").format(len(frags))
         )
         st.dataframe(
             [{"Fragman": i + 1, "Uzunluk (bp)": f["length"],
@@ -234,9 +232,7 @@ with tabs[3]:
         codons = codon_analysis(cds_text)
         if codons["total"]:
             st.markdown(
-                f"**Nadir kodon:** {len(codons['rare'])}/{codons['total']} "
-                f"(%{codons['rare_pct']}) · yan yana nadir çift: "
-                f"{len(codons['tandem'])}"
+                t("**Nadir kodon:** {0}/{1} (%{2}) · yan yana nadir çift: {3}").format(len(codons['rare']), codons['total'], codons['rare_pct'], len(codons['tandem']))
             )
             if codons["rare_pct"] > 8:
                 st.info(
@@ -353,16 +349,12 @@ with tabs[5]:
     )
     if _konak_org and codon.table_key_for_organism(_konak_org) is None:
         st.warning(
-            f"Tasarımın konağı **{_konak_org}** ve bu organizma için "
-            f"kodon tablomuz yok. Aşağıdaki seçim onun yerine "
-            f"kullanılacak; sonucu buna göre okuyun.",
+            t("Tasarımın konağı **{0}** ve bu organizma için kodon tablomuz yok. Aşağıdaki seçim onun yerine kullanılacak; sonucu buna göre okuyun.").format(_konak_org),
             icon=":material/warning:",
         )
     elif _konak and codon.table_key_for_organism(_konak_org) != org:
         st.info(
-            f"Tasarımın konağı **{_konak['name']}** "
-            f"({_konak_org}), ama optimizasyon "
-            f"**{_org_etiket[org]}** tablosuna göre yapılacak.",
+            t("Tasarımın konağı **{0}** ({1}), ama optimizasyon **{2}** tablosuna göre yapılacak.").format(_konak['name'], _konak_org, _org_etiket[org]),
             icon=":material/info:",
         )
     st.caption(codon.source_note(org))
@@ -373,7 +365,7 @@ with tabs[5]:
         kodon_kaynak = st.radio(
             t("Hangi bölge?"), ["Tüm dizi", "Seçtiğim açık okuma çerçevesi"],
             horizontal=True, key="kodon_kaynak",
-        )
+        format_func=t)
         cds = seq
         if kodon_kaynak != "Tüm dizi":
             orf_listesi = find_orfs(seq, min_aa=40, circular=circular)
@@ -401,8 +393,7 @@ with tabs[5]:
             if kume:
                 st.warning(
                     "Nadir kodonların kümelendiği yerler: "
-                    + ", ".join(f"{k['start']}–{k['end']}. kodon "
-                                f"({k['count']} adet)" for k in kume[:6])
+                    + ", ".join(t("{0}–{1}. kodon ({2} adet)").format(k['start'], k['end'], k['count']) for k in kume[:6])
                     + ". Arka arkaya gelen nadir kodonlar, dağınık "
                       "olanlardan daha çok sorun çıkarır: ribozom aynı "
                       "noktada birikir.",
@@ -468,7 +459,7 @@ with tabs[5]:
                     icon=":material/download:",
                 )
                 if res.changes:
-                    with st.expander(f"Değişen {len(res.changes)} kodon"):
+                    with st.expander(t("Değişen {0} kodon").format(len(res.changes))):
                         st.dataframe(
                             [{"Kodon no": c2.position, "Amino asit": c2.aa,
                               "Önce": c2.before, "Sonra": c2.after,
@@ -503,8 +494,7 @@ with tabs[6]:
                                  tahmin or 1, key="stx_pos", width=220)
         else:
             pos = tahmin
-            y.caption(f"Bulunan başlama kodonu: "
-                      f"{pos if pos else 'yok'}. nükleotid")
+            y.caption(t("Bulunan başlama kodonu: {0}. nükleotid").format(pos if pos else 'yok'))
         yukari = y.slider(t("Yukarı akış penceresi (nt)"), 20, 80, 45,
                           key="stx_up", width=240)
 

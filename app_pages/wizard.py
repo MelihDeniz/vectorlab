@@ -51,8 +51,7 @@ with left:
     hidden = [q for q in QUESTIONS if q not in shown]
     if hidden:
         st.caption(
-            f"{len(hidden)} soru bu seçimlerde anlamsız olduğu için "
-            "gösterilmiyor."
+            t("{0} soru bu seçimlerde anlamsız olduğu için gösterilmiyor.").format(len(hidden))
         )
 
 # ---------------------------------------------------------------------------
@@ -79,9 +78,9 @@ with right:
 
     with tab_oneri:
         with st.container(border=True):
-            st.markdown(f"**Konak suşu — {host['name']}**")
+            st.markdown(t("**Konak suşu — {0}**").format(host['name']))
             st.markdown(rec.host_reason)
-            st.caption(f"Genotip: `{host['genotype']}`")
+            st.caption(t("Genotip: `{0}`").format(host['genotype']))
 
         for c in rec.choices:
             p = next((x for x in parts if x["part_id"] == c.part_id), None)
@@ -92,11 +91,11 @@ with right:
                 st.markdown(c.reason)
                 meta = []
                 if p["strength"]:
-                    meta.append(f"güç: {p['strength']}")
+                    meta.append(t("güç: {0}").format(p['strength']))
                 if p["induction"]:
-                    meta.append(f"indüksiyon: {p['induction']}")
+                    meta.append(t("indüksiyon: {0}").format(p['induction']))
                 if p["copy_number"]:
-                    meta.append(f"kopya sayısı: {p['copy_number']}")
+                    meta.append(t("kopya sayısı: {0}").format(p['copy_number']))
                 meta.append(f"{p['length']} bp")
                 st.caption(" · ".join(meta))
 
@@ -126,7 +125,7 @@ with right:
                 )
                 st.markdown(f.detail)
                 if f.fix:
-                    st.markdown(f"**Ne yapmalı:** {f.fix}")
+                    st.markdown(t("**Ne yapmalı:** {0}").format(f.fix))
 
     with tab_protokol:
         st.markdown(t("**Bu yapıyla nasıl çalışırsın**"))

@@ -17,6 +17,7 @@ olmadan.
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import pytest
@@ -39,12 +40,22 @@ DEFAULTS = {
     "lit_results": [],
 }
 
-SAYFALAR = [
-    "wizard", "designer", "disease", "refbuild", "vectors",
-    "inspect", "analyze", "primers", "enzyme_lab", "labwork",
-    "parts", "projects",
-    "literature",
-]
+#: Navigasyondaki sayfalar. ELLE YAZILMAZ: `streamlit_app.py` içindeki
+#: `st.Page("app_pages/...")` çağrılarından okunur.
+#:
+#: Neden: bu liste elle yazılıyken iki yeni sayfa eklendi ve test
+#: paketi ikisini de görmeden yeşil kaldı. Elle yazılan bir sayfa
+#: listesi, tam da yeni sayfa eklendiğinde -yani hata olasılığının en
+#: yüksek olduğu anda- eksik olur. Navigasyondan okumak bu boşluğu
+#: kapatıyor; `test_sayfa_listesi_navigasyonla_tutuyor` da listenin
+#: boş ya da bozuk okunmadığını ayrıca sınıyor.
+def _navigasyondaki_sayfalar() -> list[str]:
+    kaynak = (Path(__file__).resolve().parent.parent
+              / "streamlit_app.py").read_text(encoding="utf-8")
+    return re.findall(r'"app_pages/([A-Za-z0-9_]+)\.py"', kaynak)
+
+
+SAYFALAR = _navigasyondaki_sayfalar()
 
 # Kısa ama gerçek bir kodlayan dizi: 189 bp, çerçevede, stop ile biter.
 CDS = ("ATG" + "AAACTGAAATTTGCAGAAGTTCTGAAACCGGGTTCTAGCGGTAAAATT" * 3
@@ -249,3 +260,27 @@ def test_konak_tablodan_farkliysa_sayfa_soyluyor():
     metinler = " ".join(i.value for i in at.info)
     assert "Escherichia coli" in metinler or "E. coli" in metinler, (
         "konak-tablo farkı bildirilmedi")
+
+
+def test_sayfa_listesi_navigasyonla_tutuyor():
+    """Sayfa listesi navigasyondan okunuyor ve boş değil.
+
+    `SAYFALAR` artık elle yazılmıyor, ama bu sefer de başka bir risk
+    var: düzenli ifade tutmazsa liste SESSİZCE BOŞ kalır ve duman
+    testleri hiçbir sayfayı çalıştırmadan geçer. Bu sınav o durumu
+    yakalar - hem listenin dolu olduğunu hem de her adın gerçek bir
+    dosyaya karşılık geldiğini şart koşar.
+    """
+    assert len(SAYFALAR) >= 15, f"navigasyondan {len(SAYFALAR)} sayfa okundu"
+    assert len(SAYFALAR) == len(set(SAYFALAR)), "aynı sayfa iki kez"
+    for ad in SAYFALAR:
+        assert (PAGES / f"{ad}.py").exists(), f"{ad}.py yok"
+    # Diskteki her sayfa navigasyonda olmak zorunda değil, ama
+    # navigasyonda olmayan bir sayfa kullanıcıya hiç görünmez:
+    # fark varsa bunu bilerek bırakmış olmak gerekir.
+    diskte = {p.stem for p in PAGES.glob("*.py")
+              if not p.stem.startswith("_")}
+    assert set(SAYFALAR) <= diskte, set(SAYFALAR) - diskte
+    assert not (diskte - set(SAYFALAR)), (
+        f"bu sayfalar diskte var ama navigasyonda yok: "
+        f"{sorted(diskte - set(SAYFALAR))}")

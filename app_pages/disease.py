@@ -38,23 +38,7 @@ _strateji_sayisi = sum(len(h.strategies) for h in ds.DISEASES)
 _atif_sayisi = sum(len(h.papers) for h in ds.DISEASES)
 
 st.caption(
-    f"Katalogda **{len(ds.DISEASES)} hastalık** ve **{_strateji_sayisi} "
-    f"strateji** var; {_atif_sayisi} atfın hepsi Europe PMC'den PMID ve "
-    "DOI'siyle doğrulandı. Liste uzunluk olsun diye uzun değil: her "
-    "hastalık farklı bir tasarım desenini gösteriyor. Desenlerden "
-    "birkaçı: substratı yıkan enzim, azot çeken biyosentez yolu, iki "
-    "enzimli döngü, taşıyıcısıyla birlikte çalışan çok genli yıkım "
-    "yolu, zincirin iki basamağını birden kapatan enzim çifti, "
-    "salgılanan protein terapötiği, algılayıcı-öldürücü devre, sinyal "
-    "taklidi, sinyal söndürme, hücre duvarını kesen enzim, konakta hiç "
-    "bulunmayan bir kesim etkinliğini ekleyen enzim, bağırsakta "
-    "antibiyotik parçalayan enzim ve doku onarımını hızlandıran "
-    "topikal salgı.\n\n"
-    "Bazı stratejiler denetimden **bilerek** hata alır: katalogda "
-    "Gram-pozitif replikon olmadığı için (CORE-01) ve idamesiz "
-    "karşılaştırma basamağında marker bulunmadığı için (CORE-02). "
-    "İkisi de stratejinin kendi açıklamasında yazılıdır - aracın "
-    "bozukluğu değil, tasarımın bilinen sınırıdır."
+    t("Katalogda **{0} hastalık** ve **{1} strateji** var; {2} atfın hepsi Europe PMC'den PMID ve DOI'siyle doğrulandı. Liste uzunluk olsun diye uzun değil: her hastalık farklı bir tasarım desenini gösteriyor. Desenlerden birkaçı: substratı yıkan enzim, azot çeken biyosentez yolu, iki enzimli döngü, taşıyıcısıyla birlikte çalışan çok genli yıkım yolu, zincirin iki basamağını birden kapatan enzim çifti, salgılanan protein terapötiği, algılayıcı-öldürücü devre, sinyal taklidi, sinyal söndürme, hücre duvarını kesen enzim, konakta hiç bulunmayan bir kesim etkinliğini ekleyen enzim, bağırsakta antibiyotik parçalayan enzim ve doku onarımını hızlandıran topikal salgı.\n\nBazı stratejiler denetimden **bilerek** hata alır: katalogda Gram-pozitif replikon olmadığı için (CORE-01) ve idamesiz karşılaştırma basamağında marker bulunmadığı için (CORE-02). İkisi de stratejinin kendi açıklamasında yazılıdır - aracın bozukluğu değil, tasarımın bilinen sınırıdır.").format(len(ds.DISEASES), _strateji_sayisi, _atif_sayisi)
 )
 
 secim = st.selectbox(
@@ -67,13 +51,13 @@ st.subheader(hastalik.name)
 st.markdown(hastalik.mechanism)
 
 for makale in hastalik.papers:
-    st.markdown(f"**Kaynak `Literatür`:** {makale}")
+    st.markdown(t("**Kaynak `Literatür`:** {0}").format(makale))
 
 st.graphviz_chart(hastalik.pathway)
 st.caption(hastalik.pathway_caption)
 
 if hastalik.biomarker:
-    st.caption(f"**Etkiyi ölçen biyobelirteç:** {hastalik.biomarker}")
+    st.caption(t("**Etkiyi ölçen biyobelirteç:** {0}").format(hastalik.biomarker))
 
 st.divider()
 
@@ -83,7 +67,7 @@ st.divider()
 
 st.subheader(t("Makaledeki vektör ve bizim revizyonumuz"))
 st.dataframe(hastalik.comparison, width="stretch", hide_index=True,
-             alt=f"{hastalik.short} için makale ve revizyon karşılaştırması")
+             alt=t("{0} için makale ve revizyon karşılaştırması").format(hastalik.short))
 st.caption(
     t("Makale sütunundaki her satır kaynaktan alınmıştır. Revizyonun işe "
     "yarayıp yaramayacağını hiçbir tasarım aracı hesaplayamaz; bu bir "
@@ -92,7 +76,7 @@ st.caption(
 )
 
 if hastalik.gap:
-    st.info(f"**Bilinen açık:** {hastalik.gap}",
+    st.info(t("**Bilinen açık:** {0}").format(hastalik.gap),
             icon=":material/lightbulb:")
 
 st.divider()
@@ -152,7 +136,7 @@ with tab_denetim:
                         f"`{b.rule_id}`")
             st.markdown(b.detail)
             if b.fix:
-                st.markdown(f"**Ne yapmalı:** {b.fix}")
+                st.markdown(t("**Ne yapmalı:** {0}").format(b.fix))
 
 with tab_parca:
     st.dataframe(
@@ -164,13 +148,13 @@ with tab_parca:
                      .get("accession", "") or "—")[:46]}
          for i, p in enumerate(vec.part_order)],
         width="stretch", hide_index=True,
-        alt=f"{hastalik.short} yapısının parça listesi",
+        alt=t("{0} yapısının parça listesi").format(hastalik.short),
     )
     eksik = [p for p in vec.part_order
              if p.get("seq_status") != "full"]
     if eksik:
         st.warning(
-            f"{len(eksik)} parçanın dizisi gömülü değil: "
+            t("{0} parçanın dizisi gömülü değil: ").format(len(eksik))
             + ", ".join(p["name"].split("(")[0].strip() for p in eksik)
             + ". Haritada doğru uzunlukta N bloğu olarak durur; dizi "
               "düzeyinde analiz o bölgede yapılamaz.",

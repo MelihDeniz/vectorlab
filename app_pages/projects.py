@@ -49,10 +49,7 @@ if not kayitlar:
     st.stop()
 
 st.caption(
-    f"{len(kayitlar)} kayıtlı tasarım. Her kaydediş bir sürüm bırakır ve "
-    "her sürüm, hangi kod ve veri sürümüyle üretildiğinin damgasını "
-    "taşır - aynı tasarımı sonradan açtığınızda aynı sonucu alıp "
-    "almayacağınızı ancak o damga söyler."
+    t("{0} kayıtlı tasarım. Her kaydediş bir sürüm bırakır ve her sürüm, hangi kod ve veri sürümüyle üretildiğinin damgasını taşır - aynı tasarımı sonradan açtığınızda aynı sonucu alıp almayacağınızı ancak o damga söyler.").format(len(kayitlar))
 )
 
 # ---------------------------------------------------------------------------
@@ -93,9 +90,7 @@ vec = assemble(kayit["name"], sort_canonical(parcalar),
 
 if eksik:
     st.warning(
-        f"Bu tasarımdaki {len(eksik)} parça katalogda yok: "
-        f"`{'`, `'.join(eksik)}`. Katalog yenilendiyse parça kimliği "
-        "değişmiş olabilir; yapı o parçalar olmadan kuruldu.",
+        t("Bu tasarımdaki {0} parça katalogda yok: `{1}`. Katalog yenilendiyse parça kimliği değişmiş olabilir; yapı o parçalar olmadan kuruldu.").format(len(eksik), '`, `'.join(eksik)),
         icon=":material/warning:",
     )
 
@@ -169,7 +164,7 @@ with st.expander(t("Adı, notu, silme")):
 
     st.markdown("")
     sil_onay = st.checkbox(
-        f"`{kayit['name']}` ve bütün sürüm geçmişini sil",
+        t("`{0}` ve bütün sürüm geçmişini sil").format(kayit['name']),
         key="proje_sil_onay",
         help=t("Geri alınamaz. Silmeden önce defteri indirmek "
              "isteyebilirsiniz."),
@@ -220,7 +215,7 @@ with alt_denetim:
                             f"**{f.title}**  `{f.rule_id}`")
                 st.markdown(f.detail)
                 if f.fix:
-                    st.markdown(f"**Ne yapmalı:** {f.fix}")
+                    st.markdown(t("**Ne yapmalı:** {0}").format(f.fix))
         if not bulgular:
             st.success(t("Denetim bir şey bulmadı."),
                        icon=":material/check_circle:")
@@ -263,7 +258,7 @@ with alt_surum:
         if yeni["host_id"] != onceki["host_id"]:
             satir.append(f"konak {onceki['host_id']} → {yeni['host_id']}")
         st.markdown(
-            f"**Son iki sürüm arasındaki fark:** "
+            t("**Son iki sürüm arasındaki fark:** ")
             + ("; ".join(satir) if satir
                else "parça ve insert aynı, yalnızca not ya da damga değişti")
         )

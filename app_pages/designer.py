@@ -44,7 +44,7 @@ with top:
 
 host = db.get_host(st.session_state.design_host)
 if host:
-    st.caption(f"**Genotip:** `{host['genotype']}` · {host['notes']}")
+    st.caption(t("**Genotip:** `{0}` · {1}").format(host['genotype'], host['notes']))
 
 st.divider()
 
@@ -61,7 +61,7 @@ with left:
         t("Hazır şablondan başla"),
         ["— seçim yok —", "pET tipi ifade vektörü", "pUC tipi klonlama vektörü",
          "Arabinozla indüklenen (P-BAD)", "Sabit ifade (sentetik devre)"],
-    )
+    format_func=t)
     presets = {
         "pET tipi ifade vektörü": (
             ["PRO_T7LAC", "RBS_PET", "MCS_PET28", "TER_T7", "ORI_COLE1",
@@ -137,7 +137,7 @@ with left:
     st.session_state.design_insert = raw_insert
     insert = clean_seq(raw_insert)
     if insert:
-        st.caption(f"{len(insert)} nt okundu.")
+        st.caption(t("{0} nt okundu.").format(len(insert)))
 
     st.session_state.design_enzymes = st.multiselect(
         t("Klonlamada kullanılacak enzimler"),
@@ -221,10 +221,10 @@ with right:
                     )
                     st.markdown(f.detail)
                     if f.fix:
-                        st.markdown(f"**Ne yapmalı:** {f.fix}")
+                        st.markdown(t("**Ne yapmalı:** {0}").format(f.fix))
                     if f.literature_query:
                         st.caption(
-                            f"Literatür sorgusu: `{f.literature_query}`"
+                            t("Literatür sorgusu: `{0}`").format(f.literature_query)
                         )
 
 
@@ -268,7 +268,7 @@ with right:
                 ]
                 varsayilan = (secili + gucu_bilinen)[:4]
                 secenekler[kat] = st.multiselect(
-                    f"{CATEGORY_TR.get(kat, kat)} seçenekleri",
+                    t("{0} seçenekleri").format(CATEGORY_TR.get(kat, kat)),
                     [p["part_id"] for p in kat_parcalar],
                     default=varsayilan,
                     format_func=lambda i: parts_by_id[i]["name"][:52],
@@ -343,8 +343,7 @@ with right:
                 hatali = [v for v in varyantlar if not v.ok]
                 if hatali:
                     st.warning(
-                        f"{len(hatali)} varyant denetimden geçemedi. "
-                        "Örnek: " + "; ".join(
+                        t("{0} varyant denetimden geçemedi. Örnek: ").format(len(hatali)) + "; ".join(
                             f"{v.name.split(' · ')[0]} — "
                             f"{', '.join(v.notes[:2])}"
                             for v in hatali[:3]),
@@ -391,11 +390,11 @@ with right:
                 )
                 if is_shared_deployment():
                     st.warning(
-                        f"`{vec.name}` kaydedildi, ancak " + SHARED_NOTICE,
+                        t("`{0}` kaydedildi, ancak ").format(vec.name) + SHARED_NOTICE,
                         icon=":material/cloud:",
                     )
                 else:
-                    st.success(f"`{vec.name}` kaydedildi.")
+                    st.success(t("`{0}` kaydedildi.").format(vec.name))
 
             st.dataframe(
                 [
@@ -410,6 +409,6 @@ with right:
                 ],
                 width="stretch",
                 hide_index=True,
-                alt=f"{vec.name} yapısının parça sırası tablosu",
+                alt=t("{0} yapısının parça sırası tablosu").format(vec.name),
             )
             st.code(to_fasta(vec), language="text")

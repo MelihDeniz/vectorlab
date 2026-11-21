@@ -582,6 +582,130 @@ parça için otomatik kaynak taraması, kaynakça üretimi (numaralı liste /
 BibTeX / Markdown), metin ve isimlendirme düzeltmesi, makale metninden
 parça adayı çıkarma.
 
+### Konak taşıma
+
+Laboratuvarda sürekli sorulan ama hiçbir dizi aracının yanıtlamadığı
+soru: *"E. coli'de kurduğum bu kaseti Lactococcus lactis'e taşıyabilir
+miyim?"* Dizi araçları diziyi gösterir, konağı bilmez. Oysa bir
+kasetin konağa bağlı parçaları vardır ve taşınırken değişmesi gerekir:
+promotör (E. coli -35/-10 dizisi Gram-pozitifte okunmayabilir), sinyal
+peptidi (Gram-pozitifte periplazma yoktur), marker, orijin ve kodon
+uyumu.
+
+Sayfa üç şeyi **ayrı ayrı** gösterir: neyin değiştiği, neyin aynı
+kaldığı ve neyin **taşınamadığı**. Üçüncüsü asıl mesele:
+
+| Konak | Promotör | Sinyal | Marker | Orijin |
+|---|---|---|---|---|
+| *L. lactis* NZ9000 | `REF_NATIVE_LACTOBACILLUS_R_200` | `SIG_USP45` | `MRK_THYA_LL` | **taşınamaz** |
+| *B. subtilis* 168 | `REF_PHELP_PROMOTER_211` | `SIG_AMYE` | `REF_ERM_C_735` | **taşınamaz** |
+| *P. putida* KT2440 | `REF_PM_53` | `SIG_PELB` | `MRK_KAN` | **taşınamaz** |
+| *C. glutamicum* | `REF_PHELP_PROMOTER_211` | `SIG_AMYE` | `MRK_KAN` | **taşınamaz** |
+
+Orijin sütunu bilerek böyle. Katalogda Gram-pozitifte çoğalan bir
+orijin **parçası** yok, çünkü bu plazmitler yuvarlanan halka ile
+çoğalır ve çoğalma başlangıcı (dso) GenBank kayıtlarında ayrı bir
+öznitelik olarak işaretlenmez — rep geninin içinde durur. Sınırı
+uydurmadan parça yapılamaz. Sessizce en yakın orijini koymak,
+denetimden geçen ama laboratuvarda hiç çoğalmayan bir plazmit
+üretirdi; bunun yerine rapor "taşınamadı" der ve hedef organizmada
+çoğalan **referans vektörleri** listeler. İskelet bütün olarak oradan
+alınır.
+
+Eşdeğerlik tablosundaki her hedef parça katalogda gerçekten bulunan,
+dizisi kaynağından doğrulanmış bir parçadır; "şöyle bir promotör
+olurdu" diye uydurulmuş kayıt yoktur ve bir test
+(`test_hedef_parcalar_katalogda_gercekten_var`) bunu şart koşar.
+
+İki ayrıntı daha:
+
+* **T7 hiçbir yere kendiliğinden taşınmaz** — DH5-alfa'ya bile.
+  T7 polimerazı yalnızca DE3 lizojenleri üretir, yani kısıt türde
+  değil **suşta**. En sık yapılan ifade hatası budur.
+* **RBS dizisi taşınır, gücü taşınmaz.** Sentetik iGEM RBS'lerinin
+  ölçüleri E. coli'de yapılmıştır. Parça aynı kalır ama rapor bunu
+  yazar; rastgele başka bir RBS koymak yalnızca değişiklik yapılmış
+  gibi gösterirdi.
+
+Kodon uyumu da ölçülür: insan IL-10'u *L. lactis*'e taşınınca CAI
+0.294'ten 0.167'ye düşer — yani taşıma çalışsa bile optimizasyon
+gerekir. Hedef organizma için ölçülmüş tablomuz yoksa CAI
+**hesaplanmaz**, E. coli tablosuna düşülmez.
+
+### Sipariş listesi, takvim ve maliyet
+
+Tasarım bitince iş bitmiyor: sıradaki soru "ne satın alacağım" ve bu
+soru en çok para ve zaman kaybettiren yer. Sayfa tasarımdan doğrudan
+bir malzeme listesi çıkarır — oligolar (ölçek ve saflaştırma
+uzunluktan hesaplanır), enzimler (ünite ihtiyacı ve **REBASE'den
+okunan satan firmalar**), suş, kitler, antibiyotik ve indükleyici —
+artı aşama aşama iş günü.
+
+**Fiyat ve katalog numarası uydurulmaz.** İkisi de uydurmaya en açık
+veri türüdür: fiyat ülkeye, kuruma ve yıla göre değişir; katalog
+numarası firmaya göre değişir ve biri yanlış yazılırsa yanlış ürün
+gelir. Hesaplanan şey **tüketim**dir (kaç baz oligo, kaç ünite enzim,
+kaç reaksiyon, kaç gün); birim fiyatı kullanıcı kendi listesinden
+girer. Fiyatı girilmeyen kalem toplama **katılmaz** ve ayrı listelenir
+— eksik fiyatı sıfır saymak bütçeyi sessizce küçük gösterir.
+
+Oligo sipariş sayfası CSV olarak iner ve **aynı dizi iki adla geçse
+tek satır yazılır**: iki kez sipariş etmek çıplak gözle görülmeyen ama
+parayla ölçülen bir hatadır.
+
+### Denetim izi
+
+Altı ay sonra ya da bir denetçi karşısında sorulacak soru şudur: *bu
+dizi hangi veriyle, hangi sürümle, hangi denetim kurallarından geçerek
+üretildi ve hangilerinden geçemedi?* Denetim izi dosyası (JSON ve
+Markdown) üç şeyi bir arada tutar: kimlik (uygulama sürümü, veri
+parmak izi, dosyaların değişmemiş olduğunun doğrulaması), tasarım
+(parça listesi, her parçanın dizi durumu ve aksesyonu, yapının
+SHA-256'sı) ve denetim sonucu.
+
+Hata veren kural **gizlenmez**. Uyum dosyasının bütün değeri,
+geçemeyenleri de yazmasından gelir; yalnızca başarıları yazan bir
+rapor kanıt değildir. `core/validate.py` içindeki `RULE_IDS` kataloğu
+60 kural kimliğini sayar ve bir test
+(`test_kural_katalogu_kaynakla_tutuyor`) kataloğu kaynakla
+karşılaştırır — yeni bir kural eklenip katalog güncellenmezse test
+düşer, yani "şu kurallar koştu" satırı zamanla sessizce yanlış olmaz.
+
+Bu dosya bir **uygunluk belgesi değildir** ve öyle sunulamaz; yaptığı
+iş tasarımın izlenebilir olmasıdır. Bu uyarı çıktının kendisine
+yazılır.
+
+### Komut satırı ve toplu iş
+
+Arayüz tek tasarım için iyi; bir laboratuvarın asıl sorusu "elimdeki
+400 plazmiti denetim motorundan nasıl geçiririm". `vectorlab-cli` aynı
+motorları arayüz açmadan çalıştırır:
+
+```bash
+vectorlab-cli denetle *.gb --konak BL21DE3     # toplu denetim
+vectorlab-cli primer puc19.fasta --bas 400 --son 520
+vectorlab-cli siparis tasarim.gb --oligo-csv   # sipariş sayfası
+vectorlab-cli tasi LLNZ9000 --parca PRO_T7LAC --parca ORI_PUC
+vectorlab-cli iz --parca PRO_T7LAC --parca CDS_IL10 --json
+vectorlab-cli kimlik                            # sürüm + veri parmak izi
+```
+
+Her komut `--json` ile makine okunur çıktı verir. Çıkış kodu
+sözleşmesi boru hattında kullanılmak için net: **0** hata yok, **1**
+en az bir hata (ya da taşıma tıkandı), **2** dosya okunamadı veya
+komut yanlış kullanıldı. Yani `vectorlab-cli denetle *.gb` bir CI
+adımında doğrudan kullanılır. Uyarılar çıkış kodunu değiştirmez,
+çünkü uyarı tasarımı geçersiz kılmaz.
+
+Dışarıdan gelen bir plazmit denetlenirken `annotation_complete=False`
+kullanılır — arayüzdekiyle aynı. Müşterinin plazmitinin bütün
+parçaları katalogda tanınmayabilir, o yüzden "yok" diyen kurallar
+hataya değil uyarıya düşer; aksi halde her dosya sahte hata üretirdi.
+Dizisi boş bir dosya da **okunamadı** sayılır: boş diziyi denetlemek
+bütün "yok" kurallarını tetikler ve sorunu tasarımdaymış gibi
+gösterir.
+
+
 ## Doğrulama
 
 Bir tasarım aracının "çalışıyor" olması yetmez, "doğru" olması gerekir.
@@ -593,9 +717,11 @@ Bir tasarım aracının "çalışıyor" olması yetmez, "doğru" olması gerekir
 python -m pytest
 ```
 
-307 test, on bir dosyada: dizi motoru, tasarım modülleri, veri
+345 test, on iki dosyada: dizi motoru, tasarım modülleri, veri
 bütünlüğü, PKU tasarımı ve simülasyonu, hastalık kayıt defteri,
-referanstan kes-yapıştır, **sayfaların kendisi** ve **arayüz dili**.
+referanstan kes-yapıştır, primer tasarımı, **sipariş listesi, konak
+taşıma, denetim izi ve komut satırı**, **sayfaların kendisi** ve
+**arayüz dili**.
 Çoğu bir *değişmezi* sınar — optimizasyon
 proteini değiştirmemeli, hizalama kendi kendine %100 benzerlik
 vermeli, kesim ürünlerinin toplamı kalıbın uzunluğuna eşit olmalı.
@@ -1172,11 +1298,13 @@ app_pages/
   analyze.py           dizi analizi
   enzyme_lab.py        enzim kütüphanesi, kesim diyagramları
   inspect.py           var olan plazmiti denetle
-  disease.py           hastalık vektörü: 13 hastalık, revizyon, denetim
+  disease.py           hastalık vektörü: 16 hastalık, revizyon, denetim
   refbuild.py          referanstan kes-yapıştır: 12 tarif
   labwork.py           protokol, jel, protein, rapor
   parts.py             katalog yönetimi, iGEM serileri
   primers.py           primer tasarımı ve inceleme
+  porting.py           konak taşıma: kaseti başka bakteriye uyarla
+  procure.py           malzeme listesi, takvim, maliyet, denetim izi
   projects.py          kayıtlı tasarımlar, sürüm geçmişi, defter
   literature.py        literatür modülü
 core/

@@ -46,10 +46,14 @@ Issues = "https://github.com/MelihDeniz/vectorlab/issues"
 [project.scripts]
 # Konsoldan `vectorlab` yazınca masaüstü penceresi açılır.
 vectorlab = "desktop:main"
+# `vectorlab-cli` arayüzü hiç açmadan aynı motorları çalıştırır:
+# toplu denetim, primer, sipariş listesi, konak taşıma, denetim izi.
+# Boru hattında kullanılmak için çıkış kodu sözleşmesi var (0/1/2).
+vectorlab-cli = "cli:main"
 
 [tool.setuptools]
 # Uygulama bir kütüphane değil; modüller ve veri olduğu gibi taşınır.
-py-modules = ["streamlit_app", "desktop"]
+py-modules = ["streamlit_app", "desktop", "cli"]
 
 [tool.setuptools.packages.find]
 include = ["core*", "app_pages*", "tools*"]

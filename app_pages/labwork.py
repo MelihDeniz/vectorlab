@@ -45,7 +45,7 @@ kaynak = st.segmented_control(
     t("Hangi yapı üzerinde çalışıyoruz?"),
     ["Tasarımcıdaki yapı", "Referans vektör"],
     default="Tasarımcıdaki yapı",
-) or "Tasarımcıdaki yapı"
+    format_func=t) or "Tasarımcıdaki yapı"
 
 vec = None
 seq = ""
@@ -174,10 +174,10 @@ with tab_pro:
                     [{"Bileşen": r.name, "Miktar": r.amount, "Not": r.note}
                      for r in s.reagents],
                     width="stretch", hide_index=True,
-                    alt=f"{s.title} adımının reaksiyon kurulumu",
+                    alt=t("{0} adımının reaksiyon kurulumu").format(s.title),
                 )
             if s.conditions:
-                st.markdown(f"**Koşullar:** {s.conditions}")
+                st.markdown(t("**Koşullar:** {0}").format(s.conditions))
             if s.warning:
                 st.warning(s.warning, icon=":material/priority_high:")
 
@@ -217,7 +217,7 @@ with tab_gel:
         yuzde = st.select_slider(
             t("Agaroz yüzdesi"), list(gel.AGAROSE_RANGE), value=onerilen,
             format_func=lambda v: f"%{v}",
-            help=f"Bu fragmanlar için önerilen: %{onerilen}",
+            help=t("Bu fragmanlar için önerilen: %{0}").format(onerilen),
         )
         kulvar = gel.build_lane(
             " + ".join(jel_enz)[:16], boyutlar, yuzde, float(yukleme))
@@ -262,7 +262,7 @@ with tab_prot:
     )
     kay = st.radio(t("Protein dizisi nereden gelsin?"),
                    ["Insert dizisinden çevir", "Protein dizisi yapıştır"],
-                   horizontal=True)
+                   horizontal=True, format_func=t)
 
     aa = ""
     if kay == "Insert dizisinden çevir":
@@ -284,9 +284,7 @@ with tab_prot:
                 )
                 aa = sec.protein
                 st.caption(
-                    f"{sec.start}..{sec.end} ({'+' if sec.strand > 0 else '−'}), "
-                    f"başlama kodonu {sec.start_codon}, "
-                    f"{'durdurma kodonu var' if sec.has_stop else 'DURDURMA KODONU YOK'}"
+                    t("{0}..{1} ({2}), başlama kodonu {3}, {4}").format(sec.start, sec.end, '+' if sec.strand > 0 else '−', sec.start_codon, 'durdurma kodonu var' if sec.has_stop else 'DURDURMA KODONU YOK')
                 )
     else:
         aa = st.text_area(t("Protein dizisi (tek harf kodu)"), height=110,
@@ -374,7 +372,7 @@ with tab_montaj:
                 parca_listesi.append((rec["name"].split("(")[0].strip()[:14],
                                       rec["sequence"]))
         if insert_seq and st.checkbox(
-                f"Inserti de ekle ({insert_ad}, {len(insert_seq)} bp)",
+                t("Inserti de ekle ({0}, {1} bp)").format(insert_ad, len(insert_seq)),
                 value=bool(insert_seq), key="mont_insert"):
             parca_listesi.append((insert_ad[:14], insert_seq))
 
@@ -648,7 +646,7 @@ with tab_sorun:
             st.markdown(t("### Sizin tasarımınızda var"))
             for c in var:
                 st.error(f"**{c.title}** — {c.detail}"
-                         + (f"\n\n*Bakılacak:* {c.check}" if c.check else ""),
+                         + (t("\n\n*Bakılacak:* {0}").format(c.check) if c.check else ""),
                          icon=":material/error:")
         if belirsiz:
             st.markdown(t("### Kontrol etmeniz gerekenler"))
@@ -657,12 +655,11 @@ with tab_sorun:
                     st.markdown(f"**{c.title}**")
                     st.markdown(c.detail)
                     if c.check:
-                        st.caption(f"Bakılacak: {c.check}")
+                        st.caption(t("Bakılacak: {0}").format(c.check))
         if yok:
-            with st.expander(f"Elenen sebepler ({len(yok)})"):
+            with st.expander(t("Elenen sebepler ({0})").format(len(yok))):
                 for c in yok:
-                    st.markdown(f"- **{c.title}** — tasarımınızda bu durum "
-                                f"yok, bu sebebi eleyebilirsiniz.")
+                    st.markdown(t("- **{0}** — tasarımınızda bu durum yok, bu sebebi eleyebilirsiniz.").format(c.title))
         if not sonuc.causes:
             st.info(t("Bu belirti için kayıt yok."), icon=":material/help:")
 
@@ -683,7 +680,7 @@ with tab_rap:
         t("Rapora girecek bölümler"),
         ["Harita", "Parçalar", "Denetim", "Protein", "Jel", "Protokol"],
         default=["Harita", "Parçalar", "Denetim", "Protokol"],
-    )
+    format_func=t)
 
     html_rapor = report.build_html(
         name=ad, length=uzunluk, gc=gc,
@@ -714,8 +711,7 @@ with tab_rap:
         file_name=f"{ad}-rapor.html", mime="text/html",
         icon=":material/download:", type="primary",
     )
-    st.caption(f"Rapor {len(html_rapor) // 1024} KB · harita ve jel "
-               "dosyanın içine gömülür, ayrı görsel gerekmez.")
+    st.caption(t("Rapor {0} KB · harita ve jel dosyanın içine gömülür, ayrı görsel gerekmez.").format(len(html_rapor) // 1024))
 
     with st.expander(t("Raporu burada önizle")):
         # st.iframe kaynak olarak adres ister, ham HTML almaz; raporu
@@ -723,4 +719,4 @@ with tab_rap:
         # yazmadan ve kaldırılmış bir API'ye dayanmadan gösterilebiliyor.
         src = ("data:text/html;charset=utf-8;base64,"
                + base64.b64encode(html_rapor.encode("utf-8")).decode("ascii"))
-        st.iframe(src, height=620, alt=f"{ad} raporunun önizlemesi")
+        st.iframe(src, height=620, alt=t("{0} raporunun önizlemesi").format(ad))

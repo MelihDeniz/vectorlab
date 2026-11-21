@@ -78,6 +78,78 @@ _MARKER_ANTIBIOTIC = {
 }
 
 
+#: Denetim kuralları kataloğu: `validate()` içinde tanımlı bütün kural
+#: kimlikleri. Denetim izi dosyası (`core/audit.py`) "şu kurallar
+#: koştu" diyebilmek için bu listeyi kullanır ve o iddianın doğru
+#: olması gerekir.
+#:
+#: Liste elle yazılı ama ELLE BAKIMLI DEĞİL: `test_validate.py`
+#: içindeki `test_kural_katalogu_kaynakla_tutuyor` bu dosyanın kendi
+#: kaynağını tarayıp bulduğu kimliklerle karşılaştırır. Yeni bir kural
+#: eklenip katalog güncellenmezse test düşer. Böylece "koşan kurallar"
+#: satırı zamanla sessizce yanlış olmaz.
+RULE_IDS: tuple[str, ...] = (
+    # ANA
+    "ANA-01",
+    # BIO
+    "BIO-01", "BIO-02", "BIO-03",
+    # CORE
+    "CORE-01", "CORE-02", "CORE-03", "CORE-04", "CORE-05",
+    # DEV
+    "DEV-01", "DEV-02",
+    # ENZ
+    "ENZ-01", "ENZ-02", "ENZ-03",
+    # FRM
+    "FRM-01", "FRM-02", "FRM-03", "FRM-04", "FRM-05",
+    # HST
+    "HST-01", "HST-02",
+    # INS
+    "INS-01", "INS-02", "INS-03", "INS-04", "INS-05",
+    # MRK
+    "MRK-01", "MRK-02", "MRK-03", "MRK-04", "MRK-05",
+    # ORG
+    "ORG-01", "ORG-02", "ORG-03", "ORG-04",
+    # ORI
+    "ORI-01", "ORI-02", "ORI-03", "ORI-04", "ORI-05",
+    # PHY
+    "PHY-01", "PHY-02", "PHY-03",
+    # PRO
+    "PRO-01", "PRO-02", "PRO-03", "PRO-04",
+    # REG
+    "REG-01",
+    # RPT
+    "RPT-01", "RPT-02", "RPT-03",
+    # SEL
+    "SEL-01", "SEL-02",
+    # SIG
+    "SIG-01", "SIG-02", "SIG-03", "SIG-04", "SIG-05",
+    # THR
+    "THR-01", "THR-02",
+)
+
+#: Kural öneki -> ne denetlediği. Rapora okunur başlık vermek için.
+RULE_GROUPS: dict[str, str] = {
+    "ANA": "Anaerobik promotör uyarısı",
+    "BIO": "Biyolojik içerme ve güvenlik",
+    "CORE": "Plazmitin çalışması için zorunlu öğeler",
+    "DEV": "Devre (algılayıcı-çıktı) tutarlılığı",
+    "ENZ": "Restriksiyon enzimi ve kesim uyumu",
+    "FRM": "Okuma çerçevesi ve etiketler",
+    "HST": "Konak suşu seçimi",
+    "INS": "Insert dizisinin kendisi",
+    "MRK": "Seçilim markeri",
+    "ORG": "Organizma uyumu",
+    "ORI": "Replikasyon orijini",
+    "PHY": "Fiziksel kısıtlar (boy, kopya, yük)",
+    "PRO": "Promotör",
+    "REG": "Düzenleyici (baskılayıcı/aktivatör)",
+    "RPT": "Raportör",
+    "SEL": "Seçilim ortamı",
+    "SIG": "Sinyal peptidi ve salgı",
+    "THR": "Terapötik kaset tutarlılığı",
+}
+
+
 def validate(
     vec: AssembledVector,
     host: dict[str, Any] | None = None,

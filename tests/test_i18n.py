@@ -8,6 +8,7 @@ Türkçe görünmeye başlar. Buradaki testler o sessizliği kaldırıyor.
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -96,16 +97,58 @@ def test_bos_ceviriler_sozluge_girmiyor():
             assert k not in sozluk
 
 
-def test_ceviriler_bicim_yeri_tasimiyor():
-    """Sarılan metinlerde `{...}` olmamalı.
+def test_ceviri_yer_tutuculari_birebir_ayni():
+    """Şablonun yer tutucuları çeviride de AYNI olmalı.
 
-    Biçim yeri içeren metinler elle çevrilir; sözlüğe girmiş olsalardı
-    `t()` onları olduğu gibi döndürür ve `.format()` çağrılmadığı için
-    ekranda süslü parantez görünürdü.
+    Sözlükte artık şablon var: `t("{0} kesim bulundu.").format(n)`.
+    Bu, f-string'lerin çevrilebilmesini sağladı ama yeni bir risk
+    getirdi - çeviride bir yer tutucu düşerse ya da fazladan biri
+    eklenirse `.format()` **çalışma anında** `IndexError` atar ve
+    sayfa patlar. Çeviri hatası, derleme hatası gibi görünmez; ancak
+    o sayfa İngilizce açıldığında ortaya çıkar.
+
+    Bu yüzden sınav yer tutucu KÜMESİNİ karşılaştırır. Sıra
+    karşılaştırılmaz: İngilizce cümlede sıra değişebilir
+    (`{2:+d} bp relative to {1}`) ve bu doğrudur, çünkü `.format()`
+    konumlu yer tutucuyu numarasıyla bulur.
     """
+    yer = re.compile(r"\{[^{}]*\}")
     for kaynak, ceviri in i18n.catalog("en").items():
-        assert "{" not in kaynak, f"kaynakta biçim yeri: {kaynak[:50]}"
-        assert "{" not in ceviri, f"çeviride biçim yeri: {ceviri[:50]}"
+        a, b = sorted(yer.findall(kaynak)), sorted(yer.findall(ceviri))
+        assert a == b, (
+            f"yer tutucu farkı:\n  kaynak {a}\n  çeviri {b}\n"
+            f"  {kaynak[:70]}")
+
+
+def test_sablonlar_gercekten_bicimlenebiliyor():
+    """Her şablon, kendi yer tutucu sayısıyla biçimlenebilmeli.
+
+    Yer tutucu kümesi aynı olsa bile şablonun kendisi bozuk olabilir
+    (tek süslü parantez, kapanmamış biçim belirteci). `str.format`
+    çağrısı bunu yakalar ve sınav onu çağırır - yani şablonun
+    sağlamlığı varsayılmaz, denenir.
+    """
+    yer = re.compile(r"\{(\d+)")
+    for kaynak, ceviri in i18n.catalog("en").items():
+        n = max((int(m) for m in yer.findall(kaynak)), default=-1) + 1
+        if not n:
+            continue
+        # Sahte değer türü biçim belirtecine bağlı: `{0:+d}` tamsayı
+        # ister, düz `{0}` her şeyi kabul eder. Tamsayı ikisini de
+        # karşılar (`{0:.1f}` de tamsayıyla çalışır), metin yalnızca
+        # belirteçsiz olanları. İkisini sırayla deniyoruz; biri
+        # tutuyorsa şablon sağlamdır.
+        for metin in (kaynak, ceviri):
+            for sahte in ([0] * n, ["x"] * n):
+                try:
+                    metin.format(*sahte)
+                    break
+                except (IndexError, KeyError, ValueError):
+                    continue
+            else:
+                raise AssertionError(
+                    f"şablon hiçbir değer türüyle biçimlenemedi: "
+                    f"{metin[:70]}")
 
 
 def test_kapsam_hesabi_dogru():

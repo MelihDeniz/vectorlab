@@ -9,9 +9,7 @@ from core.i18n import t
 
 lib = ez.library_size()
 st.caption(
-    f"REBASE'den gelen {lib['toplam']} enzim, {lib['ticari']} tanesi ticari "
-    "olarak satılıyor; Biopython ile birlikte dağıtılır. "
-    f"REBASE'in istediği künye: {notice.REBASE_CITATION}"
+    t("REBASE'den gelen {0} enzim, {1} tanesi ticari olarak satılıyor; Biopython ile birlikte dağıtılır. REBASE'in istediği künye: {2}").format(lib['toplam'], lib['ticari'], notice.REBASE_CITATION)
 )
 
 
@@ -102,10 +100,7 @@ with tab_lib:
             )
         if d["methylation"]:
             bilgi.append(
-                f"**Metilasyon:** {d['methylation']}. E. coli'den "
-                "saflaştırılan plazmitte bu bölge kesilmeyebilir; "
-                f"gerekirse {', '.join(ez.DAM_DCM_FREE_STRAINS[:2])} gibi "
-                "dam⁻/dcm⁻ bir suşta çoğaltın."
+                t("**Metilasyon:** {0}. E. coli'den saflaştırılan plazmitte bu bölge kesilmeyebilir; gerekirse {1} gibi dam⁻/dcm⁻ bir suşta çoğaltın.").format(d['methylation'], ', '.join(ez.DAM_DCM_FREE_STRAINS[:2]))
             )
         if not d["commercial"]:
             bilgi.append(
@@ -134,7 +129,7 @@ with tab_cut:
     kaynak = st.radio(
         t("Dizi kaynağı"), ["Tasarımcıdaki yapı", "Dizi yapıştır"],
         horizontal=True,
-    )
+    format_func=t)
 
     seq = ""
     if kaynak == "Tasarımcıdaki yapı":
@@ -166,14 +161,14 @@ with tab_cut:
         if secim:
             kesimler = ez.sites_in(seq, secim, circular=dairesel)
             toplam = sum(len(v) for v in kesimler.values())
-            st.caption(f"{toplam} kesim bulundu.")
+            st.caption(t("{0} kesim bulundu.").format(toplam))
 
             for enz, konumlar in sorted(kesimler.items()):
                 with st.container(border=True):
                     d = _details(enz)
                     if not konumlar:
                         st.markdown(
-                            f"**{enz}** (`{d['site']}`) — bu dizide kesmiyor"
+                            t("**{0}** (`{1}`) — bu dizide kesmiyor").format(enz, d['site'])
                         )
                         st.caption(
                             t("Insert içinde kullanmak için güvenli: diziyi "
@@ -183,8 +178,7 @@ with tab_cut:
                     tanima = ez.recognition_sites(seq, [enz],
                                                   circular=dairesel)[enz]
                     st.markdown(
-                        f"**{enz}** (`{d['site']}`, {d['overhang']}) — "
-                        f"{len(konumlar)} kesim"
+                        t("**{0}** (`{1}`, {2}) — {3} kesim").format(enz, d['site'], d['overhang'], len(konumlar))
                     )
                     st.caption(
                         "Tanıma dizisi başlangıcı: "
@@ -204,10 +198,7 @@ with tab_cut:
                     if ctx:
                         st.code(ctx["duplex"], language="text")
                         st.caption(
-                            f"Üst zincir {ctx['top_cut_pos']}. bazdan önce, "
-                            f"alt zincir {ctx['bottom_cut_pos']}. bazdan "
-                            f"önce kesilir · çıkıntı `{ctx['overhang_seq'] or '—'}` "
-                            f"({ctx['overhang_label']})"
+                            t("Üst zincir {0}. bazdan önce, alt zincir {1}. bazdan önce kesilir · çıkıntı `{2}` ({3})").format(ctx['top_cut_pos'], ctx['bottom_cut_pos'], ctx['overhang_seq'] or '—', ctx['overhang_label'])
                         )
                         st.markdown(t("Kesimden sonra:"))
                         st.code(ctx["products"], language="text")
@@ -230,15 +221,14 @@ with tab_comp:
     uyumlular = _compatible(hedef)
     d = _details(hedef)
     st.markdown(
-        f"**{hedef}** `{d['site']}` → çıkıntı "
-        f"`{d['overhang_seq'] or 'kör'}` ({d['overhang']})"
+        t("**{0}** `{1}` → çıkıntı `{2}` ({3})").format(hedef, d['site'], d['overhang_seq'] or 'kör', d['overhang'])
     )
     if not uyumlular:
         st.info(t("Ticari enzimler arasında uyumlu uç bırakan başka enzim yok."),
                 icon=":material/block:")
     else:
         st.markdown(
-            f"**{len(uyumlular)} uyumlu enzim:** "
+            t("**{0} uyumlu enzim:** ").format(len(uyumlular))
             + ", ".join(f"`{x}`" for x in uyumlular[:60])
             + (" …" if len(uyumlular) > 60 else "")
         )

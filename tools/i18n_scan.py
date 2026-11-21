@@ -39,23 +39,66 @@ def taranan_dosyalar() -> list[pathlib.Path]:
     return sorted(SAYFALAR.glob("*.py")) + [KOK / "streamlit_app.py"]
 
 
+#: `format_func=t` verilen widget'ların seçenek listeleri de çevrilir.
+_WIDGET = {"segmented_control", "radio", "pills", "selectbox",
+           "multiselect"}
+
+
+def _format_func_secenekleri(node: ast.Call) -> list[str]:
+    """`format_func=t` ile çağrılmış bir widget'ın seçenek dizeleri.
+
+    Bu dizeler `t()` içinde yazılı DEĞİLDİR - çalışma anında
+    `format_func` aracılığıyla `t()`'ye giderler. Tarayıcı yalnızca
+    `t("...")` çağrılarına baksaydı bu seçenekler sözlüğe hiç
+    girmez, çevrilmedikleri de hiç fark edilmezdi: ekranda Türkçe
+    kalırlardı ve kapsam yine %100 görünürdü.
+
+    Neden `format_func` gerekiyor: seçenek dizesi hem ekrandaki
+    etiket hem de kodun karşılaştırdığı değerdir. Diziyi çevirmek
+    karşılaştırmayı bozar, çevirmemek ekranı Türkçe bırakır;
+    `format_func=t` ikisini ayırır.
+    """
+    if getattr(node.func, "attr", None) not in _WIDGET:
+        return []
+    if not any(k.arg == "format_func"
+               and isinstance(k.value, ast.Name) and k.value.id == "t"
+               for k in node.keywords):
+        return []
+    liste = next((a for a in node.args[1:2]
+                  if isinstance(a, ast.List)), None)
+    if liste is None:
+        return []
+    return [e.value for e in liste.elts
+            if isinstance(e, ast.Constant) and isinstance(e.value, str)]
+
+
 def kaynak_metinler() -> list[str]:
-    """Taranan dosyalardaki `t("...")` argümanları, sırayla, tekrarsız."""
+    """Çevrilebilir metinler: `t("...")` argümanları ve widget seçenekleri.
+
+    İkisi de sırayla, tekrarsız. Widget seçenekleri `format_func=t`
+    verilmiş çağrılardan gelir (bkz. `_format_func_secenekleri`).
+    """
     out: list[str] = []
     gorulen: set[str] = set()
+
+    def ekle(s: str) -> None:
+        if s not in gorulen:
+            gorulen.add(s)
+            out.append(s)
+
     for yol in taranan_dosyalar():
         agac = ast.parse(yol.read_text(encoding="utf-8"))
         for node in ast.walk(agac):
-            if (isinstance(node, ast.Call)
-                    and isinstance(node.func, ast.Name)
+            if not isinstance(node, ast.Call):
+                continue
+            if (isinstance(node.func, ast.Name)
                     and node.func.id == "t"
                     and node.args
                     and isinstance(node.args[0], ast.Constant)
                     and isinstance(node.args[0].value, str)):
-                s = node.args[0].value
-                if s not in gorulen:
-                    gorulen.add(s)
-                    out.append(s)
+                ekle(node.args[0].value)
+            for s in _format_func_secenekleri(node):
+                ekle(s)
     return out
 
 

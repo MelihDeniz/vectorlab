@@ -44,7 +44,7 @@ kaynak = st.segmented_control(
     t("Vektör nereden gelsin?"),
     ["Tasarımcı'daki yapı", "Referans vektör", "Dizi yapıştır"],
     default="Tasarımcı'daki yapı",
-) or "Tasarımcı'daki yapı"
+    format_func=t) or "Tasarımcı'daki yapı"
 
 vektor_dizi, vektor_ad, dairesel = "", "", True
 insert_araligi = None

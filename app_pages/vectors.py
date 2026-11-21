@@ -64,9 +64,7 @@ with f1:
     arama = f1.text_input(t("Ara"), placeholder=t("pUC, KanR, p15A…"), width=200)
 
 st.caption(
-    f"Katalogda {len(vectors)} referans vektör var; {len(facet['cargo'])} "
-    "farklı kargo ve altı marker ile SEVA koleksiyonunun tamamı dahil. "
-    "Aşağıdaki hanelerle süzebilirsiniz."
+    t("Katalogda {0} referans vektör var; {1} farklı kargo ve altı marker ile SEVA koleksiyonunun tamamı dahil. Aşağıdaki hanelerle süzebilirsiniz.").format(len(vectors), len(facet['cargo']))
 )
 
 f2 = st.container(horizontal=True, vertical_alignment="bottom")
@@ -99,7 +97,7 @@ if not ids:
 
 top = st.container(horizontal=True, vertical_alignment="bottom")
 with top:
-    vid = st.selectbox(f"Vektör ({len(ids)})", ids,
+    vid = st.selectbox(t("Vektör ({0})").format(len(ids)), ids,
                        format_func=lambda i: labels[i], width=400)
     benzerlik = st.slider(
         t("Benzerlik eşiği (%)"), 85.0, 100.0, 90.0, 0.5, width=240,
@@ -122,12 +120,11 @@ with st.container(border=True):
     st.markdown(f"**{rec['name']}** — {rec.get('ozet', '')}")
     c = st.container(horizontal=True)
     c.markdown(f"**Marker:** {', '.join(rec.get('markerlar') or ['—'])}")
-    c.markdown(f"**Promotör:** {rec.get('promotor', '—')}")
-    st.markdown(f"**Klonlama bölgesi:** {rec.get('mcs', '—')}")
+    c.markdown(t("**Promotör:** {0}").format(rec.get('promotor', '—')))
+    st.markdown(t("**Klonlama bölgesi:** {0}").format(rec.get('mcs', '—')))
     st.markdown(rec.get("notlar", ""))
     st.caption(
-        f"Dizi kaynağı: {rec['source']} · kayıt {rec['accession']} · "
-        f"{rec['length']} bp · indirilme {rec['fetched']}"
+        t("Dizi kaynağı: {0} · kayıt {1} · {2} bp · indirilme {3}").format(rec['source'], rec['accession'], rec['length'], rec['fetched'])
     )
 
 act = st.container(horizontal=True)
@@ -146,7 +143,7 @@ if act.button(t("Etiketlenen parçaları tasarımcıya aktar"),
             picked.setdefault(f.category, []).append(f.part_id)
     for cat, pids in picked.items():
         st.session_state[f"ms_{cat}"] = pids
-    st.session_state.design_name = f"{rec['name']}-türevi"
+    st.session_state.design_name = t("{0}-türevi").format(rec['name'])
     st.switch_page("app_pages/designer.py")
 
 st.divider()
@@ -166,8 +163,7 @@ with tab_map:
         t("Haritada gösterilecek tek kesen enzimler"),
         sorted(single),
         default=sorted(single)[:10],
-        help=f"{rec['name']} içinde tam olarak bir kez kesen "
-             f"{len(single)} ticari enzim var.",
+        help=t("{0} içinde tam olarak bir kez kesen {1} ticari enzim var.").format(rec['name'], len(single)),
     )
     sites = {k: single[k] for k in goster}
     render_svg(circular_map(rec["name"], rec["length"], feats, sites))
@@ -197,7 +193,7 @@ with tab_feat:
                 "Parça": f.name,
             } for f in feats],
             width="stretch", hide_index=True,
-            alt=f"{rec['name']} üzerinde bulunan katalog parçaları tablosu",
+            alt=t("{0} üzerinde bulunan katalog parçaları tablosu").format(rec['name']),
         )
         kismi = [f for f in feats if f.identity < 100]
         if kismi:
@@ -210,7 +206,7 @@ with tab_feat:
             )
 
     gb = rv.genbank_features(vid)
-    st.markdown(f"**Kaydın kendi öznitelikleri** ({len(gb)})")
+    st.markdown(t("**Kaydın kendi öznitelikleri** ({0})").format(len(gb)))
     if not gb:
         st.caption(
             t("Bu GenBank kaydı öznitelik tablosu taşımıyor - pUC19 ve pUC18 "
@@ -223,7 +219,7 @@ with tab_feat:
               "Yön": "+" if g["strand"] > 0 else "−",
               "Etiket": g["label"][:70]} for g in gb],
             width="stretch", hide_index=True,
-            alt=f"{rec['name']} GenBank öznitelik tablosu",
+            alt=t("{0} GenBank öznitelik tablosu").format(rec['name']),
         )
 
 # ---------------------------------------------------------------------------
@@ -249,30 +245,24 @@ with tab_enz:
         secili = st.selectbox(
             t("Kesimi incele"), sorted(tek),
             format_func=lambda n: (
-                f"{n} — tanıma {tanimalar[n][0] if tanimalar[n] else '?'}, "
-                f"kesim {tek[n][0]}"),
+                t("{0} — tanıma {1}, kesim {2}").format(n, tanimalar[n][0] if tanimalar[n] else '?', tek[n][0])),
         )
         konum = tek[secili][0]
         if tanimalar[secili]:
             bas, son = ez.site_span(rec["sequence"], secili, konum)
             st.caption(
-                f"Tanıma dizisi {bas}..{son}, üst zincirdeki kesim "
-                f"{konum}. bazdan önce. Yayımlanmış plazmit haritaları "
-                f"genellikle TANIMA başlangıcını verir, bu yüzden iki "
-                f"sayı farklıdır - ikisi de doğrudur."
+                t("Tanıma dizisi {0}..{1}, üst zincirdeki kesim {2}. bazdan önce. Yayımlanmış plazmit haritaları genellikle TANIMA başlangıcını verir, bu yüzden iki sayı farklıdır - ikisi de doğrudur.").format(bas, son, konum)
             )
         ctx = ez.cut_context(rec["sequence"], secili, konum, flank=12)
         if ctx:
             st.code(ctx["duplex"], language="text")
             st.caption(
-                f"Üst zincir {ctx['top_cut_pos']}. bazdan önce, alt zincir "
-                f"{ctx['bottom_cut_pos']}. bazdan önce kesilir · çıkıntı "
-                f"`{ctx['overhang_seq'] or '—'}` ({ctx['overhang_label']})"
+                t("Üst zincir {0}. bazdan önce, alt zincir {1}. bazdan önce kesilir · çıkıntı `{2}` ({3})").format(ctx['top_cut_pos'], ctx['bottom_cut_pos'], ctx['overhang_seq'] or '—', ctx['overhang_label'])
             )
             st.markdown(t("Kesimden sonra:"))
             st.code(ctx["products"], language="text")
 
-    with st.expander(f"Kesmeyen enzimler ({len(gruplar['kesmez'])})"):
+    with st.expander(t("Kesmeyen enzimler ({0})").format(len(gruplar['kesmez']))):
         st.caption(
             t("Bu enzimlerin tanıma dizisi vektörde hiç yok. Inserte primerle "
             "böyle bir bölge eklerseniz vektörü parçalamadan "
@@ -298,7 +288,7 @@ with tab_clone:
     kaynak = st.radio(
         t("Insert dizisi"), ["Tasarımcıdaki insert", "Buraya yapıştır"],
         horizontal=True,
-    )
+    format_func=t)
     if kaynak == "Tasarımcıdaki insert":
         ins = clean_seq(st.session_state.get("design_insert", ""))
         ad = st.session_state.get("design_insert_name") or "insert"
@@ -330,7 +320,7 @@ with tab_clone:
             [{"Başlangıç": f["start"], "Bitiş": f["end"],
               "Uzunluk (bp)": f["length"], "Not": f["note"]} for f in frag],
             width="stretch", hide_index=True,
-            alt=f"{rec['name']} sindirim fragmanları tablosu",
+            alt=t("{0} sindirim fragmanları tablosu").format(rec['name']),
         )
         st.caption(
             t("Jelde bu boyutları görmeniz beklenir. Yakın boyutlu fragmanlar "
@@ -370,8 +360,7 @@ with tab_part:
         bas, bit, yon = f.start, f.end, f.strand
         on_ad = f"{f.name} ({rec['name']})"
         on_kat = f.category
-        st.caption(f"Seçilen bölge: {bas}..{bit}, "
-                   f"{'+' if yon > 0 else '−'} zincir, {f.length} bp")
+        st.caption(t("Seçilen bölge: {0}..{1}, {2} zincir, {3} bp").format(bas, bit, '+' if yon > 0 else '−', f.length))
 
     dizi = rv.region(vid, bas, bit, yon)
     if dizi:
@@ -394,8 +383,7 @@ with tab_part:
     )
     not_yeni = st.text_area(
         t("Not"), height=80,
-        value=f"{rec['name']} ({rec['accession']}) üzerindeki "
-              f"{bas}..{bit} bölgesinden çıkarıldı.",
+        value=t("{0} ({1}) üzerindeki {2}..{3} bölgesinden çıkarıldı.").format(rec['name'], rec['accession'], bas, bit),
     )
 
     if st.button(t("Kataloğa ekle"), icon=":material/add:", type="primary"):
@@ -416,7 +404,6 @@ with tab_part:
                 "source": "user",
             })
             st.success(
-                f"`{pid.strip()}` kataloğa eklendi - Parça kataloğu ve "
-                f"Tasarımcı sayfalarında görünür.",
+                t("`{0}` kataloğa eklendi - Parça kataloğu ve Tasarımcı sayfalarında görünür.").format(pid.strip()),
                 icon=":material/check_circle:",
             )

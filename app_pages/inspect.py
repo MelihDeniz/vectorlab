@@ -26,7 +26,7 @@ kaynak = st.segmented_control(
     t("Plazmit nereden gelsin?"),
     ["Dosya yükle", "Dizi yapıştır", "Katalogdaki referans vektör"],
     default="Dosya yükle",
-) or "Dosya yükle"
+    format_func=t) or "Dosya yükle"
 
 veri = None
 
@@ -126,9 +126,9 @@ with tab_den:
                         f"`{b.rule_id}`")
             st.markdown(b.detail)
             if b.fix:
-                st.markdown(f"**Ne yapmalı:** {b.fix}")
+                st.markdown(t("**Ne yapmalı:** {0}").format(b.fix))
             if b.literature_query:
-                st.caption(f"Literatür sorgusu: `{b.literature_query}`")
+                st.caption(t("Literatür sorgusu: `{0}`").format(b.literature_query))
 
 # ---------------------------------------------------------------------------
 

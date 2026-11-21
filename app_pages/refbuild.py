@@ -20,9 +20,7 @@ from core.seq_utils import Feature
 from core.i18n import t
 
 st.caption(
-    f"{len(refbuild.RECIPES)} tarif var. Sıfırdan kurmuyoruz: gerçek bir "
-    "klonlama vektörü alınır, kesilip yeni parçalar yapıştırılır. "
-    "Etiketler: `Literatür` makaleden, `Öneri` bizim kararımız."
+    t("{0} tarif var. Sıfırdan kurmuyoruz: gerçek bir klonlama vektörü alınır, kesilip yeni parçalar yapıştırılır. Etiketler: `Literatür` makaleden, `Öneri` bizim kararımız.").format(len(refbuild.RECIPES))
 )
 
 tarif_key = st.selectbox(
@@ -32,7 +30,7 @@ tarif_key = st.selectbox(
 tarif = refbuild.recipe_by_key(tarif_key)
 rec = ref_vectors.load(tarif.vector_id)
 if not rec:
-    st.error(f"{tarif.vector_id} kaydı bulunamadı (data/reference_vectors).")
+    st.error(t("{0} kaydı bulunamadı (data/reference_vectors).").format(tarif.vector_id))
     st.stop()
 
 hastalik = ds.by_key(tarif.disease) if tarif.disease else None
@@ -46,7 +44,7 @@ adimlar = [(s.left, s.right, k.sequence, s.title)
 try:
     res = refbuild.build_recipe(rec["sequence"], adimlar)
 except ValueError as exc:
-    st.error(f"Bu tarif kurulamadı: {exc}", icon=":material/error:")
+    st.error(t("Bu tarif kurulamadı: {0}").format(exc), icon=":material/error:")
     st.stop()
 
 URUN_ADI = f"p{(hastalik.short if hastalik else 'VL').split()[0]}-" \
@@ -60,13 +58,12 @@ with c1:
     render_svg(circular_map(rec["name"], L0, ORIJINAL, {}, size=560))
 with c2:
     st.markdown(
-        f"**{rec['name']} — {L0} bp.** {rec.get('ozet', '')} "
-        f"Dizi: NCBI `{rec.get('version', rec['accession'])}`.")
-    st.markdown(f"**Neden bu vektör? `Öneri`** {tarif.why_vector}")
+        t("**{0} — {1} bp.** {2} Dizi: NCBI `{3}`.").format(rec['name'], L0, rec.get('ozet', ''), rec.get('version', rec['accession'])))
+    st.markdown(t("**Neden bu vektör? `Öneri`** {0}").format(tarif.why_vector))
     if tarif.source:
         st.caption(f"Kaynak: {tarif.source}")
     if hastalik:
-        st.info(f"**Bu tarif ne öğretiyor:** {tarif.teaches}",
+        st.info(t("**Bu tarif ne öğretiyor:** {0}").format(tarif.teaches),
                 icon=":material/school:")
 
 # ---------------------------------------------------------------------------
@@ -82,7 +79,7 @@ for i, (adim, basamak) in enumerate(zip(tarif.steps, res.steps), start=1):
             "Bıraktığı uç": bilgi["ovh"],
             "Bu aşamada kesim sayısı": len(pos),
             "Konum (bp)": ", ".join(map(str, pos)) or "—",
-            "Aşama": f"{i}. aşama {yon}",
+            "Aşama": t("{0}. aşama {1}").format(i, yon),
             "Metilasyona duyarlı": "evet" if bilgi.get("dam") else "hayır",
         })
     kaynak = basamak.sequence
@@ -112,7 +109,7 @@ if any(refbuild.ENZYMES[e].get("dam")
 
 # ---------------------------------------------------------------------------
 st.header(t("3. Adım adım kes-yapıştır"))
-sekmeler = st.tabs([f"{i+1}. aşama: {s.title}"
+sekmeler = st.tabs([t("{0}. aşama: {1}").format(i+1, s.title)
                     for i, s in enumerate(tarif.steps)])
 for sekme, adim, basamak, kaset in zip(sekmeler, tarif.steps, res.steps,
                                        kasetler):
@@ -130,7 +127,7 @@ for sekme, adim, basamak, kaset in zip(sekmeler, tarif.steps, res.steps,
               "Dizi": "tam" if p.get("seq_status") == "full" else "eksik"}
              for i, p in enumerate(kaset.part_order)],
             width="stretch", hide_index=True,
-            alt=f"{adim.title} adımında eklenen parçalar")
+            alt=t("{0} adımında eklenen parçalar").format(adim.title))
         for n in basamak.notes[1:]:
             st.warning(n)
 
@@ -223,7 +220,7 @@ st.caption(
     "koordinat eşlemesinden geçirilir ve ürün üzerinde ne kadarının "
     "kaldığına bakılır. **Kesilen bir gen bozulmuş gendir**: kalan "
     "parça çerçeve içinde bile olsa tam protein vermez. "
-    + (f"Burada {len(bozulan)} bölge bozuldu: " + ", ".join(bozulan) + "."
+    + (t("Burada {0} bölge bozuldu: ").format(len(bozulan)) + ", ".join(bozulan) + "."
        if bozulan else "Bu tarifte hiçbir bölge bozulmadı.")
 )
 
@@ -239,8 +236,7 @@ st.dataframe(
      {"": "Terapötik içerik", "Orijinal": "yok",
       "Bizim vektör": (hastalik.logic if hastalik else "kaset eklendi")},
      {"": "Eklenen parça sayısı", "Orijinal": "—",
-      "Bizim vektör": f"{sum(len(k.part_order) for k in kasetler)} parça, "
-                      f"{sum(k.length for k in kasetler)} bp"}],
+      "Bizim vektör": t("{0} parça, {1} bp").format(sum(len(k.part_order) for k in kasetler), sum(k.length for k in kasetler))}],
     width="stretch", hide_index=True,
     alt="Orijinal ve kurulan vektörün karşılaştırması")
 
@@ -257,7 +253,7 @@ lanes = [gel.ladder_lane("1 kb"),
                                               [ilk.left, ilk.right]), agaroz)]
 for i, (adim, basamak) in enumerate(zip(tarif.steps, res.steps), start=1):
     lanes.append(gel.build_lane(
-        f"{i}. aşama\n{adim.left}+{adim.right}",
+        t("{0}. aşama\n{1}+{2}").format(i, adim.left, adim.right),
         refbuild.digest_sizes(basamak.sequence, [adim.left, adim.right]),
         agaroz))
 render_svg(gel.render_gel(lanes, agaroz, title="Beklenen sindirim deseni"))
@@ -271,12 +267,11 @@ st.header(t("6. Sonuç ve sınırlılıklar"))
 eksik = [p["name"] for k in kasetler for p in k.part_order
          if p.get("seq_status") != "full"]
 notlar = [
-    f"- Son vektör **{res.final_length} bp**; {rec['name']}'e göre "
-    f"{res.final_length - L0:+d} bp.",
+    t("- Son vektör **{0} bp**; {1}'e göre {2:+d} bp.").format(res.final_length, rec['name'], res.final_length - L0),
     "- Deneysel doğrulama yok: bu bir **tasarım önerisidir**.",
 ]
 if hastalik and hastalik.gap:
-    notlar.append(f"- Hastalık tarafındaki açık: {hastalik.gap}")
+    notlar.append(t("- Hastalık tarafındaki açık: {0}").format(hastalik.gap))
 st.markdown("\n".join(notlar))
 if eksik:
     st.warning(

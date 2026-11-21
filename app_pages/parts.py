@@ -41,10 +41,9 @@ if kaynak != "tümü":
     parts = [p for p in parts if p["source"] == kaynak]
 _stubs = sum(1 for p in db.list_parts() if p["seq_status"] != "full")
 st.caption(
-    f"{len(parts)} parça gösteriliyor · katalogda toplam {total} parça. "
+    t("{0} parça gösteriliyor · katalogda toplam {1} parça. ").format(len(parts), total)
     + (
-        f"{_stubs} parçanın dizisi eksik; erişim numarasından gerçek diziyi "
-        "çekip buradan doldurabilirsiniz."
+        t("{0} parçanın dizisi eksik; erişim numarasından gerçek diziyi çekip buradan doldurabilirsiniz.").format(_stubs)
         if _stubs
         else "Hepsinin gerçek dizisi gömülü; her parçanın kaynağı erişim "
              "numarası ve koordinatıyla yazılıdır."
@@ -74,7 +73,7 @@ with tab_list:
                 meta.metric(t("Kopya sayısı"), p["copy_number"])
 
             if p["induction"]:
-                st.markdown(f"**İndüksiyon:** {p['induction']}")
+                st.markdown(t("**İndüksiyon:** {0}").format(p['induction']))
             if p["requires"]:
                 st.markdown("**Gerektirir:** " + ", ".join(p["requires"]))
             if p["notes"]:
@@ -111,10 +110,7 @@ with tab_list:
                             db.upsert_part(rec)
                             if expected and abs(len(s) - expected) > 0:
                                 st.warning(
-                                    f"Kaydedildi, ancak uzunluk beklenenden "
-                                    f"farklı: katalogda {expected} bp "
-                                    f"yazıyordu, girilen {len(s)} bp. "
-                                    "Doğru bölgeyi aldığınızı kontrol edin.",
+                                    t("Kaydedildi, ancak uzunluk beklenenden farklı: katalogda {0} bp yazıyordu, girilen {1} bp. Doğru bölgeyi aldığınızı kontrol edin.").format(expected, len(s)),
                                     icon=":material/warning:",
                                 )
                             else:
@@ -126,8 +122,7 @@ with tab_list:
                 st.markdown(t("**Bağlı kaynaklar**"))
                 for r in refs:
                     st.markdown(
-                        f"- [{r['title']}](https://pubmed.ncbi.nlm.nih.gov/"
-                        f"{r['pmid']}/) — {r['journal']} {r['year']}"
+                        t("- [{0}](https://pubmed.ncbi.nlm.nih.gov/{1}/) — {2} {3}").format(r['title'], r['pmid'], r['journal'], r['year'])
                     )
 
             if p["source"] == "user":
@@ -138,18 +133,13 @@ with tab_list:
 
 with tab_igem:
     st.caption(
-        f"Kaynak: {ig.source_name()}. {ig.license_note()} Her parçanın "
-        "kaydında Registry kimliği ve lisansı yazılıdır."
+        t("Kaynak: {0}. {1} Her parçanın kaydında Registry kimliği ve lisansı yazılıdır.").format(ig.source_name(), ig.license_note())
     )
 
     aile = ig.anderson_family()
     st.subheader(t("Anderson sabit promotör ailesi"))
     st.markdown(
-        "Ailenin 20 üyesi 35 bp uzunluğunda ve yalnızca iki noktada "
-        f"ayrışır: -35 kutusu ({ig.BOX_35[0]}..{ig.BOX_35[1]}. baz) ve -10 "
-        f"kutusu ({ig.BOX_10[0]}..{ig.BOX_10[1]}. baz). Geri kalan 23 "
-        "nükleotid hepsinde aynıdır, yani aradaki ifade farkı tamamen bu "
-        "iki hexamerden gelir."
+        t("Ailenin 20 üyesi 35 bp uzunluğunda ve yalnızca iki noktada ayrışır: -35 kutusu ({0}..{1}. baz) ve -10 kutusu ({2}..{3}. baz). Geri kalan 23 nükleotid hepsinde aynıdır, yani aradaki ifade farkı tamamen bu iki hexamerden gelir.").format(ig.BOX_35[0], ig.BOX_35[1], ig.BOX_10[0], ig.BOX_10[1])
     )
     if aile:
         st.dataframe(
@@ -172,20 +162,12 @@ with tab_igem:
             },
         )
         st.info(
-            f"**Bu sütun ölçüm değil, hesaplama.** sigma70 konsensüsü "
-            f"(-35 `{ig.SIGMA70_35}`, -10 `{ig.SIGMA70_10}`) ile kaç "
-            "nükleotid farkı olduğunu sayar. Konsensüse yakınlık güçle aynı "
-            "yönde gider ama birebir değildir: spacer uzunluğu, yukarı akış "
-            "elemanları ve ölçüm koşulları da etkiler. Gerçek ölçüm "
-            "değerleri Registry'nin kendi parça sayfalarındadır.",
+            t("**Bu sütun ölçüm değil, hesaplama.** sigma70 konsensüsü (-35 `{0}`, -10 `{1}`) ile kaç nükleotid farkı olduğunu sayar. Konsensüse yakınlık güçle aynı yönde gider ama birebir değildir: spacer uzunluğu, yukarı akış elemanları ve ölçüm koşulları da etkiler. Gerçek ölçüm değerleri Registry'nin kendi parça sayfalarındadır.").format(ig.SIGMA70_35, ig.SIGMA70_10),
             icon=":material/functions:",
         )
         en_guclu = aile[0]
         st.caption(
-            f"Üst sınır {en_guclu['igem_id']}: iki kutusu da konsensüsün "
-            "tam kendisi. Devrenizde ifadeyi kademelendirmek istiyorsanız "
-            "listenin iki ucundan ve ortasından birer promotör seçip aynı "
-            "geni üçünden ifade edin."
+            t("Üst sınır {0}: iki kutusu da konsensüsün tam kendisi. Devrenizde ifadeyi kademelendirmek istiyorsanız listenin iki ucundan ve ortasından birer promotör seçip aynı geni üçünden ifade edin.").format(en_guclu['igem_id'])
         )
 
     st.subheader(t("Ribozom bağlanma bölgesi serisi"))
@@ -247,7 +229,7 @@ with tab_new:
             if not pid.strip() or not name.strip():
                 st.error(t("Kod ve ad zorunlu."))
             elif db.get_part(pid.strip()):
-                st.error(f"`{pid}` kodu zaten kullanılıyor.")
+                st.error(t("`{0}` kodu zaten kullanılıyor.").format(pid))
             elif not s and not length_manual:
                 st.error(t("Ya bir dizi girin ya da uzunluk belirtin."))
             else:
@@ -259,7 +241,7 @@ with tab_new:
                     "strength": strength or None, "notes": notes,
                     "accession": accession, "pmid": pmid, "source": "user",
                 })
-                st.success(f"`{name}` kataloğa eklendi.")
+                st.success(t("`{0}` kataloğa eklendi.").format(name))
                 st.rerun()
 
 st.divider()
