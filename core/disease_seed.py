@@ -158,6 +158,134 @@ GENE_NOTES: dict[str, str] = {
         "keser.\n\n"
         "**Özgül değildir:** AI-2 ortak bir dildir, onu tüketmek "
         "yararlı komşuların haberleşmesini de bozar."),
+    "CDS_PUCL": (
+        "Ürat yıkımının ÜÇ basamağından birinci ve üçüncüsünü birden "
+        "yapar: ürik asidi 5-hidroksiizoürata (HIU) yükseltger "
+        "(N-uç ürat oksidaz alanı) ve zincirin sonundaki OHCU'yu "
+        "(S)-allantoine dekarboksiller (C-uç alanı). UniProt kaydın "
+        "adını zaten böyle veriyor: *Uric acid degradation "
+        "bifunctional protein PucL*.\n\n"
+        "**Terapötik mantığın özü:** insanda ürat oksidaz geni "
+        "işlevsizdir, o yüzden pürin yıkımı ürik asitte durur ve "
+        "çözünürlüğü düşük olan bu molekül birikir. Enzimi bağırsağa "
+        "koymak, zincirin insanın kaybettiği basamağını geri "
+        "koymaktır.\n\n"
+        "**Makaledeki dizi bununla aynı değil.** Kaynak çalışma kodon "
+        "optimize edilmiş bir pucL kullanır ve üstüne iki nokta "
+        "mutasyonu koyar: Asp-44 yerine Val, Gln-268 yerine Arg "
+        "(pucL-M adını verdikleri sürüm). Buradaki dizi yabanıl "
+        "*B. subtilis* 168 pucL'idir.\n\n"
+        "Bu mutasyonları koordinatına bakıp körü körüne taşımayın - "
+        "denetledik: bu dizinin 44. kalıntısı gerçekten Asp, ama "
+        "268. kalıntısı zaten Arg, Gln değil (262-274 arası sırayla "
+        "L H Y V A H **R** F L D T Y S). Demek ki makalenin "
+        "numaralaması bu kayıtla örtüşmüyor ve ikinci mutasyonun yeri "
+        "bu dizide başka bir yerdedir. Bir makaleden mutasyon "
+        "koordinatı alırken o konumdaki kalıntının beklenen kalıntı "
+        "olduğunu doğrulamak zorunludur; Tasarımcı'daki "
+        "bölge-yönelimli mutagenez aracı tam bu yüzden değiştirdiği "
+        "kodonu ve kalıntıyı size gösterir."),
+    "CDS_PUCM": (
+        "5-hidroksiizoüratı (HIU) hidrolize edip OHCU'ya çevirir "
+        "(EC 3.5.2.17): üç basamaklı ürat yıkım zincirinin "
+        "ORTASINDAKİ basamak. En çok atlanan basamak da budur, çünkü "
+        "ürikaz koyduk denince genellikle yalnızca pucL'in birinci "
+        "işlevi düşünülür.\n\n"
+        "HIU kendiliğinden de bozunur - kaynak makale ikinci ve "
+        "üçüncü basamağın kendiliğinden yürüyebildiğini, ama "
+        "birincisinin vazgeçilmez olduğunu açıkça yazar. Enzimle "
+        "yapıldığında zincir hızlı ve tek ürüne gider; enzimsiz "
+        "bırakıldığında ara ürünler birikir. 114 amino asitlik küçük "
+        "bir proteindir, yani kasete eklenmesinin metabolik bedeli de "
+        "düşüktür."),
+    "CDS_UACT": (
+        "Ürik asidi hücre içine taşıyan, protona bağımlı yüksek "
+        "kapasiteli taşıyıcı (UniProt: *Uric acid transporter "
+        "UacT*).\n\n"
+        "**Katalogda uacT yazıyor, makalede ygfU yazıyor - aynı "
+        "gendir:** UniProt Q46821'in gen adı uacT, eş adı ygfU'dur. "
+        "Kaynak makaleyi açıp bizim listede ygfU yok diye "
+        "düşünmeyin.\n\n"
+        "Taşıyıcı olmadan kaset çalışmaz ve bu, enzim listesine "
+        "bakarken görünmeyen bir eksiktir: ürat yıkım enzimleri "
+        "sitoplazmada çalışır, ürik asit ise bağırsak lümeninde "
+        "durur. Zar geçişi sağlanmazsa substrat enzime hiç ulaşmaz. "
+        "Terapötik bir kasette enzimi koymak ile enzimin substratına "
+        "erişmesi iki ayrı sorundur."),
+    "CDS_KATG": (
+        "Katalaz-peroksidaz HPI (EC 1.11.1.21). Ürat kasetinde iki iş "
+        "yapar ve ikincisi şaşırtıcı olanıdır.\n\n"
+        "**Birincisi, zehir temizliği:** ürat oksidaz her ürik asit "
+        "için bir hidrojen peroksit (H2O2) üretir. Yıkımı "
+        "hızlandırdıkça ürettiğiniz peroksit de artar; "
+        "temizlenmezse tasarımın kendisi hücreye zarar verir. Kaynak "
+        "makale katalaz eklenince hücrenin ürettiği reaktif oksijen "
+        "türlerinin azaldığını ölçmüştür.\n\n"
+        "**İkincisi, oksijen geri dönüşümü:** katalazın tepkimesi "
+        "2 H2O2 -> O2 + 2 H2O'dur, yani harcanan oksijenin bir "
+        "kısmını GERİ VERİR. Kalın bağırsak neredeyse anaerobiktir ve "
+        "ürat oksidazın substratlarından biri O2'dir - yani orada "
+        "sınırlayıcı olan enzim miktarı değil, oksijendir. Makalenin "
+        "oksijen geri dönüşüm sistemi dediği şeyin yarısı budur, "
+        "öbür yarısı Vhb'dir."),
+    "CDS_VHB": (
+        "*Vitreoscilla stercoraria*'nın hemoglobini (Vhb), 146 amino "
+        "asitlik küçük bir hem proteini. Biyoteknolojideki klasik "
+        "kullanımı şudur: düşük oksijenli kültürde hücreye ifade "
+        "edildiğinde oksijen kullanımını iyileştirir. Kaynak makale "
+        "onu tam bu nedenle kasete koyar - suşun az oksijende de "
+        "ürat yıkabilmesi için.\n\n"
+        "**Dizi denetimi:** makalenin kullandığı kayıt NCBI "
+        "WP_019959060.1'dir; buradaki UniProt P04252 dizisinin "
+        "çevirisi o kayda birebir eşittir (146 aa, karşılaştırıldı). "
+        "Yani bu parça makaledeki proteinin aynısıdır.\n\n"
+        "**Dürüst olmak gerekirse:** UniProt bu proteinin işlevini "
+        "terminal oksidaz olarak çalışır diye anotlar; bu, oksijen "
+        "deposu demekle aynı şey değildir. Vhb'nin hücre içi oksijen "
+        "erişimini nasıl iyileştirdiği literatürde hâlâ tartışılır. "
+        "Onu kasete makale koyduğu için koyuyoruz, mekanizması "
+        "kesinleşmiş olduğu için değil."),
+    "CDS_PEP_MX": (
+        "*Myxococcus xanthus*'un prolil endopeptidazı (prolil "
+        "oligopeptidaz, EC 3.4.21.26): peptit bağını içteki bir "
+        "prolinin karboksil tarafından keser.\n\n"
+        "**Neden tam olarak bu kesim:** glutenin gliadin kısmı prolin "
+        "ve glutamin bakımından çok zengindir, insanın mide, pankreas "
+        "ve fırça kenarı proteazları ise prolinden sonra verimli "
+        "kesemez. Bu yüzden sindirimden uzun, prolinden zengin "
+        "peptitler sağ çıkar; en iyi çalışılmışı alfa-2 gliadinin "
+        "33 amino asitlik parçasıdır (33-mer). Prolil endopeptidaz "
+        "insanın kesemediği bağı keser, yani eksik olan enzim "
+        "etkinliğini yerine koyar.\n\n"
+        "Kayıt TrEMBL durumundadır (otomatik üretilmiş, elle "
+        "incelenmemiş). Dizinin çevirisinin UniProt'un bildirdiği "
+        "proteine eşit olduğu doğrulanmıştır, ama kaydın küratörlüğü "
+        "yapılmamıştır."),
+    "CDS_TFF1": (
+        "İnsan trefoil faktör 1'inin (hTFF1) olgun kısmı. Trefoil "
+        "peptitleri mukus jelinin içinde duran, proteaza dirençli "
+        "küçük peptitlerdir; UniProt işlevi şöyle özetler: sindirim "
+        "sistemi mukozasının üstündeki mukus jelini kararlı kılan ve "
+        "zarar verici etkenlere karşı fiziksel bariyer sağlayan "
+        "protein.\n\n"
+        "Yara iyileşmesindeki rolü restitüsyondur: epitel hücreleri "
+        "yaranın üstüne göç eder ve bariyer, hücre bölünmesini "
+        "beklemeden kapanır. Işın ya da kemoterapi sonrası bölünmenin "
+        "durduğu bir dokuda işe yarayabilecek mekanizma tam olarak "
+        "budur.\n\n"
+        "**Katlanma uyarısı:** 61 amino asitlik bu parça ÜÇ disülfür "
+        "bağı taşır (UniProt: 31-57, 41-56, 51-68 - tam kayıt "
+        "numaralamasıyla). Disülfür bağı sitoplazmanın indirgen "
+        "ortamında kurulmaz; bu yüzden E. coli'de ön üretim "
+        "yapılacaksa periplazmaya gönderilmesi gerekir ve kaset "
+        "DsbA sinyaliyle kurulur. Elafinde karşılaşılan sorunun "
+        "aynısıdır.\n\n"
+        "**İnsan geni olduğuna dikkat edin:** bu araç bakteri "
+        "vektörleri için yapıldı; insan dizileri yalnızca "
+        "salgılanacak terapötik yük olarak bulunur (IL-10, elafin, "
+        "GLP-1, hTFF1) ve bu istisna belgelenmiştir. Vektörün hiçbir "
+        "parçası - orijin, promotör, marker, iskelet - memeli "
+        "kaynaklı değildir."),
 }
 
 
@@ -1423,3 +1551,469 @@ if _psa and not any(s.key == "D" for s in _psa.strategies):
         "seçildi: iki kasetli bir devre yüksek kopyada hücreye ağır "
         "gelir ve algılayıcının arka plan sinyali yükselir."))
 
+
+# ---------------------------------------------------------------------------
+# Ürat, çölyak ve oral mukozit: üç yeni kayıt
+#
+# Üçü de aynı soruyu farklı yerden sorar: eksik olan ENZİM mi, enzimin
+# substratına ERİŞİMİ mi, yoksa ürünün DOKUYA ULAŞMASI mı? Ürat
+# kasetinde taşıyıcı olmadan enzim boşa çalışır, çölyakta enzimin
+# peptitten önce bağırsağa varması gerekir, mukozitte protein
+# tükürükle yıkandığı için bakterinin yerinde durması gerekir.
+# ---------------------------------------------------------------------------
+
+#: Hiperürisemi. Kaset kaynak makalenin son suşundaki GEN SIRASINI
+#: izler (pucL-pucM-vhb-ygfU-katG) ve promotörü de makalenin
+#: kullandığı Ptrc'dir. Kendi önerimiz (oksijensizlikte açılan PfnrS)
+#: ayrı bir basamak olarak duruyor, kasete karıştırılmadı.
+URAT_KASET = ["PRO_TRC", "RBS_B0034", "CDS_PUCL", "RBS_B0032", "CDS_PUCM",
+              "RBS_B0032", "CDS_VHB", "RBS_B0032", "CDS_UACT",
+              "RBS_B0032", "CDS_KATG", "TER_B0015"]
+
+#: Çölyak. Salgılanan sürüm makalenin daha etkili bulduğu sürümdür;
+#: hücre içinde tutulan sürüm D basamağında karşılaştırma olarak var.
+COLYAK_KASET = ["REF_NATIVE_LACTOBACILLUS_R_200", "RBS_B0034", "SIG_USP45",
+                "CDS_PEP_MX", "TER_B0015"]
+
+#: Oral mukozit. AG013'ün kaseti kromozoma yerleştirilmiştir, plazmite
+#: değil; buradaki plazmit sürümü aracın yapabildiği şeydir ve fark
+#: "bilinen açık" notunda açıkça yazılıdır.
+MUKOZIT_KASET = ["REF_NATIVE_LACTOBACILLUS_R_200", "RBS_B0034", "SIG_USP45",
+                 "CDS_TFF1", "TER_B0015"]
+
+
+DISEASES += [
+
+    Disease(
+        key="urat",
+        name="Hiperürisemi ve gut",
+        short="Hiperürisemi",
+        logic="Bağırsakta ürik asidi allantoine parçalayan bir bakteri: "
+              "insanın evrimde kaybettiği enzim basamağını geri koymak.",
+        mechanism=(
+            "Pürin yıkımı çoğu canlıda allantoine kadar gider; insanda "
+            "gitmez. Ürat oksidaz geni hominoid soyunda sözde-gene "
+            "dönüşmüştür, bu yüzden zincir ürik asitte durur ve son ürün "
+            "olarak ürik asit atılır. Ürik asidin çözünürlüğü ise "
+            "düşüktür: serum derişimi yaklaşık 6,8 mg/dL'yi geçtiğinde "
+            "monosodyum ürat kristalleri eklemde çöker, gut krizini "
+            "başlatan iltihap budur.\n\n"
+            "Ürik asidin yaklaşık üçte ikisi böbrekten, kalanı "
+            "bağırsaktan atılır. Hiperüriseminin en sık nedeni üretim "
+            "fazlalığı değil, **böbrek atılımının azalmasıdır** - yani "
+            "sorun kapasitededir. Fikir buradan çıkar: böbreği zorlamak "
+            "yerine bağırsak yolunu güçlendirmek. Bağırsakta ürik asidi "
+            "parçalayan bir bakteri, kandan bağırsağa geçen üratı "
+            "tüketerek derişim eğimini atılım yönünde tutar.\n\n"
+            "Damardan verilen ürikaz ilaçları (pegloticase gibi) etkilidir "
+            "ama bağışıklık yanıtı ve infüzyon reaksiyonu sorunu vardır. "
+            "Bağırsakta yerinde üretilen enzim kana karışmaz; aradaki "
+            "fark budur."),
+        papers=[
+            "Zhao R, Li Z, Sun Y, Ge W, Wang M, Liu H, Xun L, Xia Y. "
+            "Engineered Escherichia coli Nissle 1917 with urate oxidase "
+            "and an oxygen-recycling system for hyperuricemia treatment. "
+            "Gut Microbes 14:2070391 (2022). "
+            "doi:10.1080/19490976.2022.2070391 · PMID 35491895",
+        ],
+        pathway=_gv(
+            'a [label="Pürin yıkımı\\n(insanda ürat oksidaz yok)"];',
+            'b [label="Ürik asit birikir\\nçözünürlüğü düşük"];',
+            'c [label="UacT / YgfU\\nüratı hücreye alır"];',
+            'd [label="PucL N-uç alanı\\nürat + O2 → HIU + H2O2"];',
+            'e [label="PucM\\nHIU → OHCU"];',
+            'f [label="PucL C-uç alanı\\nOHCU → (S)-allantoin"];',
+            'g [label="KatG\\n2 H2O2 → O2 + 2 H2O", fillcolor="#E7F5E9"];',
+            'h [label="Vhb\\naz oksijende çalışma", fillcolor="#E7F5E9"];',
+            "a -> b -> c -> d -> e -> f;",
+            'd -> g [label="H2O2"];',
+            'g -> d [label="O2 geri", style=bold];',
+            "h -> d [style=dashed];"),
+        pathway_caption=(
+            "Zincirin üç basamağı var ve ikisini aynı protein yapıyor: "
+            "PucL'in N-uç alanı ürat oksidaz, C-uç alanı OHCU "
+            "dekarboksilazdır; aradaki basamağı PucM kapatır. Kaynak "
+            "makale ikinci ve üçüncü basamağın kendiliğinden de "
+            "yürüyebildiğini, ama birincisinin vazgeçilmez olduğunu "
+            "söyler.\n\n"
+            "**Diyagramdaki kalın ok tasarımın can alıcı yeridir:** "
+            "katalaz yalnızca zehir temizlemiyor, ürat oksidazın "
+            "harcadığı oksijeni geri veriyor. Kalın bağırsak neredeyse "
+            "anaerobiktir, yani orada sınırlayıcı olan enzim miktarı "
+            "değil oksijendir - bu yüzden katalaz ve Vhb, kasete "
+            "'ihtiyaten' eklenmiş yardımcılar değil, işin yürümesinin "
+            "koşuludur.\n\n"
+            "Soldaki iki kutu insanın kendisine ait: tasarımın yaptığı "
+            "şey, insanda kopmuş olan zinciri bakteride tamamlamaktır."),
+        cassette=URAT_KASET,
+        biomarker=("Serum ürik asit (mg/dL); 24 saatlik idrar ürat "
+                   "atılımı; dışkıda ürat/allantoin oranı (bakterinin "
+                   "gerçekten çalıştığını gösteren doğrudan ölçüm)"),
+        gap=("**Kasetin boyu:** beş gen, yalnızca kodlayan bölgeler "
+             "5901 bp. Bu, bu araçtaki en büyük terapötik kasettir ve "
+             "metabolik yükü yüksektir; makale de katalaz ile Vhb "
+             "eklendiğinde büyüme hızının düştüğünü (son hücre "
+             "yoğunluğunun düşmediğini) ölçmüştür. Yüksek kopyalı bir "
+             "orijinle kurulmamalıdır.\n\n"
+             "**Promotör sorunu:** Ptrc makalenin kullandığı promotördür "
+             "ama bir lac operatörü taşır, yani lacI taşıyan bir konakta "
+             "indükleyici gerekir. Bağırsakta IPTG yoktur. Denetim bunu "
+             "kendiliğinden yakalar: Ptrc'li basamaklarda **REG-01** "
+             "uyarısını (LacI baskılaması yetersiz kalabilir) görürsünüz. "
+             "E basamağı bu yüzden PfnrS'li sürümü ayrıca sunuyor - bu "
+             "bizim önerimizdir, makalede sınanmamıştır.\n\n"
+             "**Orijin:** makale pBBR1MCS-2 (orta kopyalı, geniş konaklı) "
+             "kullanır; katalogda pBBR1 replikonu yok, onun yerine düşük "
+             "kopyalı p15A kullanıldı. Kopya sayısı farkı ifade düzeyini "
+             "de değiştirir.\n\n"
+             "**Dizi farkı:** makale kodon optimize edilmiş ve iki nokta "
+             "mutasyonu taşıyan bir pucL kullanır; buradaki dizi yabanıl "
+             "*B. subtilis* 168 pucL'idir (ayrıntı parçanın notunda).\n\n"
+             "**En büyük bilinmeyen tasarımda değil, fizyolojide:** ürik "
+             "asidin bağırsak lümenine geçişi ABCG2 taşıyıcısına bağlıdır. "
+             "Bakteri ne kadar hızlı yıkarsa yıksın, lümene gelen ürat "
+             "miktarı sınırlıysa serum etkisi de sınırlı kalır."),
+        strategies=_ecoli_merdiven(
+            URAT_KASET, "ORI_P15A",
+            "Terapötik Nissle: makalenin konağı da E. coli Nissle "
+            "1917'dir, buradaki suş onun ΔdapA içerme sürümüdür."),
+        comparison=[
+            {"Özellik": "Konak", "Makale": "E. coli Nissle 1917",
+             "Bizim tasarım": "E. coli Nissle 1917 ΔdapA",
+             "Etiket": "Literatür"},
+            {"Özellik": "Genler",
+             "Makale": "pucL + pucM (B. subtilis), ygfU + katG "
+                       "(E. coli), vhb (Vitreoscilla)",
+             "Bizim tasarım": "Aynı beş gen; uacT = ygfU (eş ad), "
+                              "Vhb dizisi WP_019959060.1 ile birebir",
+             "Etiket": "Literatür"},
+            {"Özellik": "pucL sürümü",
+             "Makale": "Kodon optimize + Asp44Val, Gln268Arg (pucL-M)",
+             "Bizim tasarım": "Yabanıl B. subtilis 168 pucL (O32141)",
+             "Etiket": "Fark"},
+            {"Özellik": "Promotör", "Makale": "Ptrc",
+             "Bizim tasarım": "Ptrc (A-D) · PfnrS (E basamağı)",
+             "Etiket": "Öneri"},
+            {"Özellik": "İskelet", "Makale": "pBBR1MCS-2 (orta kopya)",
+             "Bizim tasarım": "p15A orijini (düşük kopya)",
+             "Etiket": "Fark"},
+            {"Özellik": "İdame",
+             "Makale": "Plazmit markeri",
+             "Bizim tasarım": "ccdAB toksin-antitoksin (A) ya da dapA "
+                              "tamamlama (B)",
+             "Etiket": "Öneri"},
+            {"Özellik": "Model",
+             "Makale": "Farede damardan ürik asit verilerek kurulan "
+                       "yeni akut hiperürisemi modeli",
+             "Bizim tasarım": "—", "Etiket": "Literatür"},
+        ],
+    ),
+
+    Disease(
+        key="colyak",
+        name="Çölyak hastalığı (glutene bağlı enteropati)",
+        short="Çölyak",
+        logic="Glutenin insanın kesemediği bağını kesen bir enzimi, "
+              "gıda sınıfı bir bakteriyle ince bağırsakta yerinde "
+              "üretmek.",
+        mechanism=(
+            "Glutenin gliadin kısmı prolin ve glutamin bakımından "
+            "olağandışı zengindir. İnsanın mide, pankreas ve fırça "
+            "kenarı proteazları prolinden sonraki bağı verimli "
+            "kesemez; bu yüzden sindirimden uzun, prolinden zengin "
+            "peptitler **sağ çıkar**. En iyi çalışılmışı alfa-2 "
+            "gliadinin 33 amino asitlik parçasıdır (33-mer).\n\n"
+            "Bu peptit bağırsak epitelini geçtiğinde doku "
+            "transglutaminazı (TG2) belirli glutaminleri glutamata "
+            "çevirir (deamidasyon). Deamide peptit HLA-DQ2 ve DQ8'e "
+            "yüksek ilgiyle bağlanır, CD4+ T hücreleri uyarılır ve "
+            "ortaya çıkan iltihap villusları düzleştirir - emilim "
+            "yüzeyi kaybolur.\n\n"
+            "Tek tedavi ömür boyu glutensiz diyettir ve uyum gerçekte "
+            "zordur: gluten, buğday içermeyen ürünlerde bile bulaşma "
+            "yoluyla karşımıza çıkar. Fikir, eksik olan enzim "
+            "etkinliğini yerine koymaktır. Ağızdan enzim vermenin "
+            "sorunu mideyi geçmektir; enzimi bağırsakta ÜRETEN bir "
+            "bakteri bu sorunu baştan atlar."),
+        papers=[
+            "Shan L, Molberg Ø, Parrot I, Hausch F, Filiz F, Gray GM, "
+            "Sollid LM, Khosla C. Structural basis for gluten "
+            "intolerance in celiac sprue. Science 297:2275-2279 (2002). "
+            "doi:10.1126/science.1074129 · PMID 12351792",
+            "Alvarez-Sieiro P, Martín MC, Redruello B, del Río B, "
+            "Ladero V, Palanski BA, Khosla C, Fernández M, Álvarez MA. "
+            "Generation of food-grade recombinant Lactobacillus casei "
+            "delivering Myxococcus xanthus prolyl endopeptidase. "
+            "Applied Microbiology and Biotechnology 98:6689-6700 "
+            "(2014). doi:10.1007/s00253-014-5730-7 · PMID 24752841",
+        ],
+        pathway=_gv(
+            'a [label="Gluten / gliadin\\nprolin + glutamin zengini"];',
+            'b [label="İnsan proteazları\\nprolinden sonra kesemez"];',
+            'c [label="33-mer sağ çıkar\\n(alfa-2 gliadin)"];',
+            'd [label="TG2 deamidasyonu\\nGln → Glu"];',
+            'e [label="HLA-DQ2/DQ8\\nsunum"];',
+            'f [label="CD4+ T yanıtı\\nvillus atrofisi"];',
+            'g [label="Prolil endopeptidaz\\n(M. xanthus PEP)", '
+            'fillcolor="#E7F5E9"];',
+            "a -> b -> c -> d -> e -> f;",
+            'g -> c [label="33-mer\'i keser", style=bold];'),
+        pathway_caption=(
+            "Zincirin kırılma noktası **c kutusudur**: hastalık, "
+            "peptitin sağ çıkmasıyla başlar. Enzim oraya müdahale eder, "
+            "yani aşağı akıştaki hiçbir basamağı (TG2, HLA sunumu, T "
+            "hücresi) hedeflemez - substratı ortadan kaldırır.\n\n"
+            "Bunun pratik sonucu bir zamanlama kısıtıdır: enzimin "
+            "peptiti, peptit epiteli geçmeden önce kesmesi gerekir. "
+            "Yani etkinlik yalnızca enzimin katalitik hızına değil, "
+            "bağırsak geçiş süresine ve enzimin o bölgede ne kadar "
+            "bulunduğuna bağlıdır. Bir enzimin tüpte 33-mer'i kesmesi, "
+            "hastada hasarı önlediğini göstermez.\n\n"
+            "**b kutusu neden önemli:** burada bozuk olan insan "
+            "proteazı değil; insanın hiç sahip olmadığı bir kesim "
+            "yeteneği söz konusu. Bu yüzden tasarım bir eksiği "
+            "tamamlamıyor, yeni bir etkinlik ekliyor."),
+        cassette=COLYAK_KASET,
+        biomarker=("Doku transglutaminaz IgA (anti-TG2) ve deamide "
+                   "gliadin peptit antikorları; duodenum biyopsisinde "
+                   "Marsh evresi. Enzimin kendisi için: kütle "
+                   "spektrometresiyle artık 33-mer ölçümü"),
+        gap=("**Konak farkı:** makale *Lactobacillus casei* kullanır "
+             "(bugünkü adıyla *Lacticaseibacillus casei*); katalogda bu "
+             "tür yok, onun yerine gıda sınıfı *Lactococcus lactis* "
+             "NZ9000 kullanıldı. İkisi de laktik asit bakterisidir ama "
+             "mide-bağırsak dayanıklılıkları aynı değildir ve makalenin "
+             "benzetilmiş sindirim sistemi testi *L. casei* ile "
+             "yapılmıştır.\n\n"
+             "**Gram-pozitif replikon açığı (CORE-01):** A basamağında "
+             "denetim hata verir, çünkü katalogda bu bakteride çoğalan "
+             "bir orijin yok. Açık iskelettedir, kasette değil; "
+             "Referanstan kes-yapıştır sayfasındaki pNZ8048 tarifi bu "
+             "açığı kapatmak için duruyor.\n\n"
+             "**Kayıt durumu:** PEP dizisi TrEMBL'dendir, yani elle "
+             "incelenmemiştir. Çevirisi doğrulanmıştır ama küratörlüğü "
+             "yapılmamıştır.\n\n"
+             "**Kanıt düzeyi:** makale 33-mer'in benzetilmiş ince "
+             "bağırsak ortamında yıkıldığını gösterir. Hastada klinik "
+             "etkinlik gösterilmemiştir ve yazarlar da bunu açıkça "
+             "yazar. Gluten sindirimi için geliştirilen enzimlerin "
+             "klinik denemelerinde genel tablo şimdiye kadar "
+             "karışıktır."),
+        strategies=_gram_poz_merdiven(
+            COLYAK_KASET,
+            ["PRO_T7", "RBS_PET", "CDS_PEP_MX", "TER_T7"],
+            "LLNZ9000",
+            "Gıda sınıfı laktik asit bakterisi: enzimi yiyecekle "
+            "birlikte alınıp ince bağırsakta üretmesi beklenir."),
+        comparison=[
+            {"Özellik": "Konak", "Makale": "Lactobacillus casei BL23",
+             "Bizim tasarım": "Lactococcus lactis NZ9000",
+             "Etiket": "Fark"},
+            {"Özellik": "Enzim",
+             "Makale": "M. xanthus prolil endopeptidaz",
+             "Bizim tasarım": "M. xanthus prolil endopeptidaz "
+                              "(Q9X5N2, 689 aa)",
+             "Etiket": "Literatür"},
+            {"Özellik": "Konum",
+             "Makale": "İki suş karşılaştırıldı: salgılanan ve hücre "
+                       "içinde tutulan",
+             "Bizim tasarım": "Salgılanan (A-C, Usp45 sinyali) ve "
+                              "hücre içi (D) - aynı karşılaştırma",
+             "Etiket": "Literatür"},
+            {"Özellik": "Sonuç",
+             "Makale": "Salgılanan suş 33-mer'i daha etkili yıktı ve "
+                       "sindirim stresine dayandı",
+             "Bizim tasarım": "Varsayılan basamak bu yüzden salgılanan "
+                              "sürüm",
+             "Etiket": "Literatür"},
+            {"Özellik": "Gıda sınıfı seçilim",
+             "Makale": "Gıda sınıfı sistem (antibiyotik markeri yok)",
+             "Bizim tasarım": "thyA içermesi (timin bağımlılığı)",
+             "Etiket": "Öneri"},
+            {"Özellik": "Model",
+             "Makale": "Benzetilmiş ince bağırsak ortamı (in vitro)",
+             "Bizim tasarım": "—", "Etiket": "Literatür"},
+        ],
+    ),
+
+    Disease(
+        key="mukozit",
+        name="Oral mukozit (ışın ve kemoterapiye bağlı)",
+        short="Oral mukozit",
+        logic="Ağız mukozasının üstünde durup iyileşmeyi hızlandıran "
+              "peptidi sürekli salgılayan bir bakteri - gargara olarak.",
+        mechanism=(
+            "Baş-boyun ışın tedavisi ve yüksek doz kemoterapi, hızlı "
+            "bölünen hücreleri ayırt etmeden vurur. Ağız epitelinin "
+            "bazal hücreleri de bunlardandır: epitel incelir, sonra "
+            "ülserleşir. Sonuç, hastanın yiyememesi, yüksek doz "
+            "ağrı kesici gereksinimi, beslenme tüpü ve enfeksiyon "
+            "riskidir.\n\n"
+            "Buradaki asıl sorun konforun ötesindedir: ağrı yüzünden "
+            "kanser tedavisine ara verilir ya da dozu düşürülür, bu da "
+            "kanser sonucunu kötüleştirir. Yani mukozit, tedavinin "
+            "kendisini sınırlayan bir yan etkidir.\n\n"
+            "Trefoil peptitleri (TFF1/2/3) mukus jelinde duran, "
+            "proteaza dirençli küçük peptitlerdir ve epitel onarımında "
+            "**restitüsyonu** hızlandırır: hücreler yaranın üstüne göç "
+            "eder, bariyer bölünmeyi beklemeden kapanır. Bölünmenin "
+            "ışınla durdurulduğu bir dokuda işe yarayabilecek mekanizma "
+            "tam olarak budur.\n\n"
+            "Proteini doğrudan sürmenin sorunu basit: tükürük onu "
+            "dakikalar içinde yıkar. Fikir, peptidi mukozanın üstünde "
+            "duran canlı bir bakteriye sürekli ürettirmektir."),
+        papers=[
+            "Caluwaerts S, Vandenbroucke K, Steidler L, Neirynck S, "
+            "Vanhoenacker P, Corveleyn S, Watkins B, Sonis S, Coulie B, "
+            "Rottiers P. AG013, a mouth rinse formulation of "
+            "Lactococcus lactis secreting human Trefoil Factor 1, "
+            "provides a safe and efficacious therapeutic tool for "
+            "treating oral mucositis. Oral Oncology 46:564-570 (2010). "
+            "doi:10.1016/j.oraloncology.2010.04.008 · PMID 20542722",
+            "Vandenbroucke K, Hans W, Van Huysse J, Neirynck S, "
+            "Demetter P, Remaut E, Rottiers P, Steidler L. Active "
+            "delivery of trefoil factors by genetically modified "
+            "Lactococcus lactis prevents and heals acute colitis in "
+            "mice. Gastroenterology 127:502-513 (2004). "
+            "doi:10.1053/j.gastro.2004.05.020 · PMID 15300583",
+        ],
+        pathway=_gv(
+            'a [label="Işın / kemoterapi"];',
+            'b [label="Bazal keratinosit\\nbölünmesi durur"];',
+            'c [label="Epitel incelir\\nve ülserleşir"];',
+            'd [label="Ağrı, yiyememe\\nkanser tedavisine ara"];',
+            'e [label="L. lactis mukozada\\nhTFF1 salgılar", '
+            'fillcolor="#E7F5E9"];',
+            'f [label="Restitüsyon\\nhücre göçüyle kapanma", '
+            'fillcolor="#E7F5E9"];',
+            "a -> b -> c -> d;",
+            "e -> f;",
+            'f -> c [label="bariyeri kapatır", style=bold];'),
+        pathway_caption=(
+            "Zincirin solu tasarımın değiştirebileceği bir şey değil: "
+            "ışının bölünmeyi durdurması tedavinin kendisidir. "
+            "Müdahale noktası **c kutusudur** ve seçilen mekanizma "
+            "bunu belirler.\n\n"
+            "Restitüsyonun burada seçilmesinin nedeni şudur: hücre "
+            "bölünmesini uyaran bir büyüme faktörü, kanser tedavisi "
+            "gören bir hastada istenmeyen bir şeydir. Trefoil "
+            "peptitleri bölünmeyi değil GÖÇÜ hızlandırır, yani "
+            "bariyeri yeni hücre yapmadan kapatır. Mekanizma seçimi, "
+            "hastanın kanser hastası olmasının doğrudan sonucudur.\n\n"
+            "Diyagramda bakteri zincirin içinde değil, yanında duruyor: "
+            "bu tasarım bağırsağı kolonize etmeye çalışmaz, mukozanın "
+            "üstünde geçici olarak kalır."),
+        cassette=MUKOZIT_KASET,
+        biomarker=("WHO ya da RTOG/NCI mukozit evresi; ülser yüzey "
+                   "alanı; opioid kullanımı ve beslenme tüpü gereken "
+                   "gün sayısı (hastanın gerçekten hissettiği sonuç)"),
+        gap=("**En önemli fark plazmitin kendisidir.** AG013'ün suşu "
+             "(sAGX0085) htff1 kasetini KROMOZOMUNA yerleştirmiştir, "
+             "plazmite değil. Nedeni açık: klinik bir ürün için "
+             "plazmit, seçilim baskısı ve kararlılık sorunu demektir. "
+             "Bu araç plazmit tasarlar, dolayısıyla buradaki tasarım "
+             "ürünün kendisi değil, ona giden yoldaki laboratuvar "
+             "sürümüdür. Bir ürün yapılacaksa doğru cevap plazmit "
+             "değildir - bunu gizlemek yerine yazıyoruz.\n\n"
+             "**İçerme merdiveni burada yanlış soruyu yanıtlıyor:** "
+             "thyA ve dapA bağımlılığı, bağırsakta kalıcı olmayı "
+             "hedefleyen bakteriler için düşünülmüştür. AG013 ağızda "
+             "topikal verilir ve kalıcı olması beklenmez; makalenin "
+             "güvenlik çalışmaları suşun nötropenik koşullarda bile "
+             "dolaşıma geçmediğini gösterir. Burada asıl soru "
+             "kalıcılık değil, temas süresidir.\n\n"
+             "**Gram-pozitif replikon açığı (CORE-01):** A basamağında "
+             "denetim hata verir; katalogda L. lactis'te çoğalan bir "
+             "orijin yok. pNZ8048 tarifi bu açığı kapatır.\n\n"
+             "**Katlanma:** hTFF1 üç disülfür bağı taşır. "
+             "L. lactis'te Usp45 sinyaliyle salgılandığında bağlar "
+             "hücre dışında kurulur; E. coli'de ön üretim yapılırken "
+             "sitoplazmada yanlış katlanır, bu yüzden B ve C "
+             "basamaklarında DsbA sinyali gerekir."),
+        strategies=_gram_poz_merdiven(
+            MUKOZIT_KASET,
+            ["PRO_T7", "RBS_PET", "SIG_DSBA", "CDS_TFF1", "TER_T7"],
+            "LLNZ9000",
+            "Gıda sınıfı L. lactis: ağız mukozasına gargara olarak "
+            "verilir ve peptidi yerinde üretir."),
+        comparison=[
+            {"Özellik": "Konak", "Makale": "Lactococcus lactis sAGX0085",
+             "Bizim tasarım": "Lactococcus lactis NZ9000",
+             "Etiket": "Literatür"},
+            {"Özellik": "Terapötik",
+             "Makale": "İnsan trefoil faktör 1 (hTFF1)",
+             "Bizim tasarım": "hTFF1 olgun zinciri (P04155, 61 aa)",
+             "Etiket": "Literatür"},
+            {"Özellik": "Kasetin yeri",
+             "Makale": "Kromozoma kararlı yerleştirme",
+             "Bizim tasarım": "Plazmit (araç plazmit tasarlar)",
+             "Etiket": "Fark"},
+            {"Özellik": "Veriliş yolu",
+             "Makale": "Gargara (AG013), topikal",
+             "Bizim tasarım": "Aynı kullanım hedeflenir",
+             "Etiket": "Literatür"},
+            {"Özellik": "İdame",
+             "Makale": "Gerekmez (kromozomda)",
+             "Bizim tasarım": "thyA içermesi ya da ön üretimde "
+                              "antibiyotik markeri",
+             "Etiket": "Fark"},
+            {"Özellik": "Model",
+             "Makale": "Hamsterda ışına bağlı oral mukozit; nötropenik "
+                       "hamster ve sıçanda güvenlik",
+             "Bizim tasarım": "—", "Etiket": "Literatür"},
+        ],
+    ),
+
+]
+
+# Çölyak kaydına dördüncü basamak: sinyal peptidini ÇIKARMAK. Makale
+# iki suşu yan yana sınadı (salgılanan ve hücre içinde tutulan) ve
+# salgılananı daha etkili buldu; o karşılaştırma buraya basamak olarak
+# taşındı, çünkü "sinyal peptidi gerçekten gerekli mi?" sorusunun
+# deneysel yanıtı olan ender durumlardan biri.
+_colyak = by_key("colyak")
+if _colyak and not any(s.key == "D" for s in _colyak.strategies):
+    _colyak.strategies.append(Strategy(
+        "D", "Enzim hücre içinde tutulur (sinyal peptidi yok)",
+        ["REF_NATIVE_LACTOBACILLUS_R_200", "RBS_B0034", "CDS_PEP_MX",
+         "TER_B0015", "MRK_THYA_LL"], "LLNZ9000",
+        "A basamağıyla aynı kaset, tek farkı Usp45 sinyalinin "
+        "çıkarılmış olması: enzim sitoplazmada kalır. Makalenin "
+        "sınadığı ikinci suş budur ve sonuç nettir - salgılanan suş "
+        "33-mer'i daha etkili yıktı.\n\n"
+        "Nedeni mekaniktir: 33-mer bağırsak lümeninde durur, bakterinin "
+        "içine girmez. Enzim hücre içinde kalırsa substratına hiç "
+        "ulaşamaz; tek şansı hücrenin parçalanıp enzimi salmasıdır, ki "
+        "bu da denetlenemez. Ürat kasetindeki durumun tam tersi: orada "
+        "substrat (ürik asit) bir taşıyıcıyla içeri alınabiliyordu, "
+        "burada 33 amino asitlik bir peptit için öyle bir yol yok.\n\n"
+        "Basamak merdivende duruyor çünkü sinyal peptidinin gerekli "
+        "olup olmadığı genellikle tartışılır, burada ise deneysel "
+        "yanıtı var.\n\n"
+        "**Denetim burada da CORE-01 verir:** Gram-pozitif replikon "
+        "açığı bu basamakta da duruyor."))
+
+
+# Ürat kasetine beşinci basamak: promotörü değiştirmek. Ptrc bir lac
+# operatörü taşır ve bağırsakta IPTG yoktur; PfnrS ise oksijensizlikte
+# kendiliğinden açılır - yani kasetin açılma koşulu, kasetin çalışması
+# gereken yerin kendisi olur. Bu bizim önerimizdir ve makalede
+# sınanmamıştır, o yüzden varsayılan basamak değil ek basamak.
+_urat = by_key("urat")
+if _urat and not any(s.key == "E" for s in _urat.strategies):
+    _urat.strategies.append(Strategy(
+        "E", "PfnrS promotörü: bağırsakta kendiliğinden açılan sürüm",
+        ["PRO_FNRS"] + URAT_KASET[1:] + ["ORI_P15A"] + _CCDAB, "ECN_DAPA",
+        "A basamağıyla aynı kaset, tek farkı promotör. Ptrc güçlüdür "
+        "ama bir lac operatörü taşır; lacI taşıyan bir konakta "
+        "indükleyici gerekir ve bağırsakta IPTG yoktur. PfnrS, FNR "
+        "düzenleyicisi aracılığıyla oksijen azaldığında açılır - "
+        "yani kaset tam olarak çalışması gereken yerde, kalın "
+        "bağırsağın anaerobik ortamında açılır ve laboratuvar "
+        "koşullarında kapalı durur.\n\n"
+        "Bedeli şudur: PfnrS'nin gücü Ptrc'den düşüktür ve beş genlik "
+        "bir operonda bu, en uçtaki genin (katG) ifadesini "
+        "sınırlayabilir. Oksijeni geri veren enzimi kısmak, oksijen "
+        "kıtlığında çalışacak bir tasarımda ters etki yapar - "
+        "basamağın bir karşılaştırma olarak durmasının nedeni budur.\n\n"
+        "**Bu basamak bizim önerimizdir, makalede sınanmamıştır.**"))

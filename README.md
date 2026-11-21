@@ -318,7 +318,7 @@ Tasarımı tezgâha taşıyan sayfa. Dört sekme:
 ### Hastalık vektörü
 Literatürden bir terapötik canlı bakteri vektörünü alıp revize etmek ve
 hastalığa göre işe yarayıp yaramayacağını denetlemek için ayrı bir
-sayfa. Katalogda **12 hastalık ve 45 strateji** var; 18 atfın hepsi
+sayfa. Katalogda **16 hastalık ve 60 strateji** var; 24 atfın hepsi
 Europe PMC'den PMID ve DOI'siyle **doğrulanmıştır**. Liste uzunluk olsun
 diye uzun değil: her hastalık farklı bir tasarım desenini gösterir.
 
@@ -336,6 +336,10 @@ diye uzun değil: her hastalık farklı bir tasarım desenini gösterir.
 | Kolera | Sinyal taklidi — virülansı kapatır (cqsA) | Duan 2010, *PNAS* 107:11260-11264, PMID 20534565 |
 | AI-2 quorum söndürme | Sinyali ortamdan çeken enzim (LsrK) | Xavier 2005, *Nature* 437:750-753, PMID 16193054 |
 | Antibiyotiğe bağlı disbiyoz | Bağırsakta antibiyotik parçalayan enzim (P1A) | Kokai-Kun 2019, *Lancet Infect Dis* 19:487-496, PMID 30885591 |
+| Oksidatif bağırsak hasarı | Zincirin iki basamağını birden kapatan enzim çifti (sodA + katE) | LeBlanc 2006, *Inflamm Bowel Dis* 12:1069-1077, PMID 17075345 |
+| Hiperürisemi ve gut | Çok genli yıkım yolu + taşıyıcı + oksijen geri dönüşümü (pucL, pucM, uacT, katG, vhb) | Zhao 2022, *Gut Microbes* 14:2070391, PMID 35491895 |
+| Çölyak hastalığı | Konağın hiç sahip olmadığı kesim etkinliğini eklemek (M. xanthus PEP) | Shan 2002, *Science* 297:2275-2279, PMID 12351792 · Alvarez-Sieiro 2014, *Appl Microbiol Biotechnol* 98:6689-6700, PMID 24752841 |
+| Oral mukozit | Topikal salgı: doku onarımını hücre göçüyle hızlandıran peptit (hTFF1) | Caluwaerts 2010, *Oral Oncol* 46:564-570, PMID 20542722 |
 
 Testler atıfları de denetler: PMID'si ya da DOI'si olmayan bir atıf
 eklenirse `test_atiflarda_pmid_ve_doi_var` düşer.
@@ -353,7 +357,7 @@ Gram-pozitif konaklı olanlarda (A) gıda sınıfı konak, (B) E. coli'de ön
 üretim, (C) ön üretim + ccdAB. Denetim her basamağa farklı şey söyler ve
 bunu görmek merdivenin asıl amacıdır.
 
-**Terapötik genler.** On beş gen UniProt + NCBI'dan çekilmiştir ve her
+**Terapötik genler.** Yirmi dört gen UniProt + NCBI'dan çekilmiştir ve her
 birinin nükleotid dizisi çevrilip UniProt'un bildirdiği proteine
 **birebir eşit olduğu doğrulanmıştır** — eşit olmayan kayıt dosyaya
 yazılmaz (`tools/fetch_disease_parts.py`):
@@ -366,30 +370,41 @@ yazılmaz (`tools/fetch_disease_parts.py`):
 | CDS_MDEA | mdeA / MGL | *P. putida* | P13254 | 1197 bp |
 | CDS_IL10 | IL10 | *H. sapiens* | P22301 | 537 bp |
 | MRK_THYA_LL | thyA | *L. lactis* | Q02Y43 | 840 bp |
+| CDS_SODA | sodA | *L. lactis* | P0A4J2 | 621 bp |
+| CDS_KATE | katE | *E. coli* | P21179 | 2262 bp |
 | CDS_LASR | lasR | *P. aeruginosa* | P25084 | 720 bp |
-| CDS_PYOS5 | pyoS5 | *P. aeruginosa* | Q9I4Y4 | 1497 bp |
 | CDS_CQSA | cqsA | *V. cholerae* | Q9KM65 | 1170 bp |
 | CDS_LACZ_LD | lacZ | *L. delbrueckii* | P0C1Y0 | 3024 bp |
 | CDS_BLAC_BL | penP (P1A) | *B. licheniformis* | P00808 | 924 bp |
 | CDS_LSRK | lsrK | *E. coli* | P77432 | 1593 bp |
+| CDS_PUCL | pucL | *B. subtilis* | O32141 | 1485 bp |
+| CDS_PUCM | pucM | *B. subtilis* | O32142 | 345 bp |
+| CDS_UACT | uacT / ygfU | *E. coli* | Q46821 | 1449 bp |
+| CDS_KATG | katG | *E. coli* | P13029 | 2181 bp |
+| CDS_VHB | vhb | *V. stercoraria* | P04252 | 441 bp |
+| CDS_PYOS5 | pyoS5 | *P. aeruginosa* | Q9I4Y4 | 1497 bp |
+| CDS_PEP_MX | pep (PEP) | *M. xanthus* | Q9X5N2 | 2070 bp |
 | CDS_LSS | lss (olgun) | *S. simulans* | P10547 | 744 bp |
 | CDS_GLP1 | GCG → GLP-1(1-37) | *H. sapiens* | P01275 | 117 bp |
 | CDS_ELAFIN | PI3 (olgun) | *H. sapiens* | P19957 | 177 bp |
+| CDS_TFF1 | TFF1 (olgun) | *H. sapiens* | P04155 | 186 bp |
 
-**Bölgesi kesilmiş genler.** Son üçü proteinin tamamı değildir.
+**Bölgesi kesilmiş genler.** Son 4'ü (lizostafin, GLP-1, elafin, hTFF1) proteinin tamamı değildir.
 Terapötik yapıların çoğu olgun enzimi ya da tek bir peptidi ifade eder;
 ön-pro proteinin bütününü koymak yanlış olur. Bölge sınırları
 **UniProt'un kendi öznitelik tablosundan okunur**, ezberden yazılmaz:
 lizostafin `Chain 248-493`, GLP-1 `Peptide 92-128`, elafin
-`Chain 61-117`. Tam kaydın çevirisi önce doğrulanır, kesme ondan sonra
-yapılır ve kesilen parçanın çevirisi de ayrıca sınanır. Üçünün de
+`Chain 61-117`, hTFF1 `Chain 25-84`. Tam kaydın çevirisi önce doğrulanır, kesme ondan sonra
+yapılır ve kesilen parçanın çevirisi de ayrıca sınanır. Dördünün de
 başlangıç kodonu (ATG) ve stop kodonu **bizim eklediğimizdir** — bu
 parçanın notunda açıkça yazılıdır ve bir test notun orada durduğunu
 şart koşar. Bağımsız doğrulama bölge uzunluklarını UniProt
 koordinatlarından yeniden hesaplar.
 
-Pyocin S5 kaydı **TrEMBL** durumundadır, yani otomatik üretilmiş ve
-elle incelenmemiştir; bu fark gizlenmez, parçanın notuna yazılır.
+Pyocin S5 ve *M. xanthus* prolil endopeptidazı **TrEMBL** durumundadır,
+yani otomatik üretilmiş ve elle incelenmemiştir; bu fark gizlenmez,
+parçanın notuna yazılır ve bir test (`test_incelenmemis_kayitlar_isaretli`)
+notun orada durduğunu şart koşar.
 
 Denetim kuralları:
 
@@ -404,18 +419,18 @@ Denetim kuralları:
 | BIO-02 | Terapötik bakteride antibiyotik direnç geni |
 | BIO-03 | Nissle'ın kriptik plazmitleri, orijin uyumu doğrulanmalı |
 
-**Bilinen açıklar, kapatılmadan yazılır.** 45 stratejinin 13'ü
+**Bilinen açıklar, kapatılmadan yazılır.** 60 stratejinin 18'i
 denetimden **bilerek** hata alır ve ikisi de aracın bozukluğu değil,
 tasarımın sınırıdır:
 
-* **CORE-01 (7 strateji)** — Gram-pozitif konaklı tasarımlarda
+* **CORE-01 (11 strateji)** — Gram-pozitif konaklı tasarımlarda
   replikasyon orijini yok, çünkü katalogda L. lactis ya da B. subtilis'te
   çoğalan bir replikon bulunmuyor. Sebebi somut: bu plazmitler yuvarlanan
   halka ile çoğalır ve çoğalma başlangıcı (dso) GenBank kayıtlarında ayrı
   bir öznitelik olarak işaretlenmez, rep geninin içinde durur. Sınırı
   uydurmadan parça kataloğuna eklenemez. İskelet "Referanstan
   kes-yapıştır" sayfasındaki pNZ8048 ve pUB110 tariflerinden gelir.
-* **CORE-02 (6 strateji)** — "idame yok" karşılaştırma basamağında
+* **CORE-02 (7 strateji)** — "idame yok" karşılaştırma basamağında
   marker yoktur, yani transformasyondan sonra doğru koloniyi seçmenin
   yolu bile yok. Basamak, merdivenin diğer üçünün ne işe yaradığını
   göstermek için duruyor.

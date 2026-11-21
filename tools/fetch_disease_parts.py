@@ -5,6 +5,12 @@ incelenmiş kaydı bul, EMBL çapraz başvurusundaki protein kimliğiyle
 NCBI'dan kodlayan diziyi al, **çevirisinin UniProt'un bildirdiği
 proteine birebir eşit olduğunu sına**. Eşit değilse kayıt yazılmaz.
 
+Bir UniProt kaydının birden fazla EMBL çapraz başvurusu olabilir ve
+bunlar aynı diziyi vermez: eski bir gönderi başlangıç kodonunu yanlış
+yerden alabilir ya da genom dizisinden tek kalıntıda ayrılabilir. Bu
+yüzden adaylar sırayla denenir ve **çevirisi eşit olan ilki** alınır;
+hiçbiri eşit değilse kayıt yine yazılmaz.
+
 Ezberden tek baz yazılmaz. Bir terapötik gende çerçeve kayması ya da
 yanlış başlangıç, haritada görünmeyen ama proteini tamamen bozan bir
 hatadır; bu yüzden doğrulama isteğe bağlı değil.
@@ -59,6 +65,16 @@ WANTED = [
      "P1A beta-laktamaz (bağırsakta antibiyotik yıkan terapötik)"),
     ("CDS_LSRK", "lsrK", "Escherichia coli", "cds",
      "lsrK (AI-2 kinaz, quorum söndürme)"),
+    ("CDS_PUCL", "pucL", "Bacillus subtilis", "cds",
+     "pucL (ürat oksidaz + OHCU dekarboksilaz, iki işlevli)"),
+    ("CDS_PUCM", "pucM", "Bacillus subtilis", "cds",
+     "pucM (5-hidroksiizoürat hidrolaz)"),
+    ("CDS_UACT", "uacT", "Escherichia coli", "cds",
+     "uacT / ygfU (ürat taşıyıcı)"),
+    ("CDS_KATG", "katG", "Escherichia coli", "cds",
+     "katG (katalaz-peroksidaz HPI)"),
+    ("CDS_VHB", "vhb", "Vitreoscilla stercoraria", "cds",
+     "Vhb (bakteriyel hemoglobin, oksijen geri dönüşümü)"),
 ]
 
 # Protein adıyla aranacaklar (gen adı belirsiz olanlar).
@@ -69,6 +85,8 @@ WANTED = [
 WANTED_UNREVIEWED = [
     ("CDS_PYOS5", "pyoS5", "Pseudomonas aeruginosa", "cds",
      "Pyocin S5 (P. aeruginosa'ya özgü bakteriyosin)"),
+    ("CDS_PEP_MX", "pep", "Myxococcus xanthus", "cds",
+     "PEP (prolil endopeptidaz, gluten 33-mer'ini keser)"),
 ]
 
 # Proteinin TAMAMI değil, UniProt'un kendi anotasyonunda işaretlenmiş bir
@@ -89,6 +107,9 @@ WANTED_REGION = [
     ("CDS_ELAFIN", "gene:PI3", "Homo sapiens", "cds",
      "Elafin (olgun, elastaz inhibitörü)",
      ("Chain", "Elafin")),
+    ("CDS_TFF1", "gene:TFF1", "Homo sapiens", "cds",
+     "hTFF1 (olgun insan trefoil faktör 1)",
+     ("Chain", "Trefoil factor 1")),
 ]
 
 
@@ -112,16 +133,24 @@ def uniprot(query: str, reviewed: bool = True) -> dict | None:
                      params={"query": query, "format": "json", "size": 5})
     r.raise_for_status()
     for rec in r.json().get("results", []):
-        pid = embl = None
+        # Bir UniProt kaydının birden fazla EMBL çapraz başvurusu olur ve
+        # BUNLAR AYNI DİZİYİ VERMEZ. İlkini almak yanlış: uacT'nin 1995
+        # tarihli U28375 kaydı başlangıç kodonunu 23 kalıntı yukarıdan
+        # alır, katG'nin 1988 tarihli M21516 kaydı 621. kalıntıda K-12
+        # genomundan ayrılır. Hepsi aday olarak toplanır, çevirisi
+        # UniProt'un dizisine EŞİT OLAN ilki kullanılır - doğrulama
+        # ölçütü değişmedi, yalnızca tek adayda durmak yerine hepsine
+        # uygulanıyor.
+        adaylar: list[tuple[str, str]] = []
         for x in rec.get("uniProtKBCrossReferences", []):
             if x["database"] != "EMBL":
                 continue
             props = {p["key"]: p["value"] for p in x.get("properties", [])}
             if props.get("ProteinId", "-") != "-":
-                pid, embl = props["ProteinId"], x["id"]
-                break
-        if not pid:
+                adaylar.append((x["id"], props["ProteinId"]))
+        if not adaylar:
             continue
+        embl, pid = adaylar[0]
         ad = (rec.get("proteinDescription", {})
               .get("recommendedName", {}).get("fullName", {}).get("value", ""))
         return {"accession": rec["primaryAccession"],
@@ -129,7 +158,8 @@ def uniprot(query: str, reviewed: bool = True) -> dict | None:
                 "reviewed": rec.get("entryType", "").endswith("(Swiss-Prot)"),
                 "protein": rec["sequence"]["value"],
                 "length_aa": rec["sequence"]["length"],
-                "full_name": ad, "protein_id": pid, "embl": embl}
+                "full_name": ad, "protein_id": pid, "embl": embl,
+                "adaylar": adaylar}
     return None
 
 
@@ -219,19 +249,30 @@ def main() -> int:
             basarisiz.append(f"{part_id}: UniProt'ta uygun kayıt yok")
             continue
 
-        dna = cds(up["protein_id"])
-        time.sleep(0.4)
-        if not dna:
-            basarisiz.append(f"{part_id}: CDS indirilemedi "
-                             f"({up['protein_id']})")
-            continue
-
-        cevrilen = translate(dna).rstrip("*")
+        # Adaylar sırayla denenir; çevirisi UniProt proteinine eşit
+        # olan ilki alınır. Hiçbiri eşit değilse kayıt YAZILMAZ ve
+        # denenenlerin ne verdiği rapor edilir.
         beklenen = up["protein"]
-        if cevrilen != beklenen:
-            basarisiz.append(
-                f"{part_id}: ÇEVİRİ TUTMADI ({len(cevrilen)} aa vs "
-                f"{len(beklenen)} aa)")
+        dna = None
+        denenen: list[str] = []
+        for aday_embl, aday_pid in up.get("adaylar") or [
+                (up["embl"], up["protein_id"])]:
+            ham = cds(aday_pid)
+            time.sleep(0.4)
+            if not ham:
+                denenen.append(f"{aday_pid}: indirilemedi")
+                continue
+            if translate(ham).rstrip("*") == beklenen:
+                dna = ham
+                up["embl"], up["protein_id"] = aday_embl, aday_pid
+                break
+            denenen.append(f"{aday_pid}: {len(translate(ham).rstrip('*'))} aa "
+                           f"ve dizi tutmuyor")
+        if dna is None:
+            basarisiz.append(f"{part_id}: hiçbir EMBL kaydının çevirisi "
+                             f"UniProt {up['accession']} proteinine "
+                             f"({len(beklenen)} aa) eşit değil — "
+                             + "; ".join(denenen))
             continue
 
         kayit: dict[str, Any] = {

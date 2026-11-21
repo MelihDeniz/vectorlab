@@ -151,7 +151,7 @@ def test_acigi_olan_hastalik_bunu_yaziyor():
 
 def test_hastalik_genleri_yuklendi():
     genler = ds.disease_parts()
-    assert len(genler) >= 8
+    assert len(genler) >= 24
     assert all(g["sequence"] and g["part_id"] for g in genler)
 
 
@@ -232,10 +232,16 @@ def test_yukleyici_kaynagi_parcaya_tasiyor():
 
 
 def test_kayit_defteri_genisligi():
-    """Sunumda gösterilecek kadar çeşitlilik var mı?"""
-    assert len(ds.DISEASES) >= 12
-    assert sum(len(h.strategies) for h in ds.DISEASES) >= 40
-    assert sum(len(h.papers) for h in ds.DISEASES) >= 15
+    """Sunumda gösterilecek kadar çeşitlilik var mı?
+
+    Eşikler bugünkü sayının hemen altında tutuluyor. Gevşek bir eşik
+    (örneğin >= 5) bu sınavı işe yaramaz kılar: bir hastalık kaydı
+    yanlışlıkla silinse ya da bir strateji listeden düşse sınav bunu
+    hiç fark etmez. Yeni kayıt eklenince eşik de yükseltilir.
+    """
+    assert len(ds.DISEASES) >= 16
+    assert sum(len(h.strategies) for h in ds.DISEASES) >= 60
+    assert sum(len(h.papers) for h in ds.DISEASES) >= 24
 
 
 def test_hastaliklarin_konaklari_cesitli():
