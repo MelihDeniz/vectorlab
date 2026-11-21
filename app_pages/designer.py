@@ -5,10 +5,11 @@ import streamlit as st
 from core import db, enzymes as ez, library as lib
 from core.assembly import assemble, sort_canonical, to_fasta, to_genbank
 from core.env import SHARED_NOTICE, is_shared_deployment
-from core.parts_seed import CATEGORY_TR
+from core.parts_seed import CATEGORY_TR, DESIGNER_CATEGORIES
 from core.plasmid_map import circular_map, linear_map, render as render_svg
 from core.seq_utils import clean_seq, restriction_sites
 from core.validate import summarize, validate
+from core.i18n import t
 
 SEV_ICON = {"hata": ":material/error:", "uyari": ":material/warning:",
             "bilgi": ":material/info:"}
@@ -24,12 +25,12 @@ hosts = db.list_hosts()
 top = st.container(horizontal=True, vertical_alignment="bottom")
 with top:
     st.session_state.design_name = st.text_input(
-        "Yapı adı", value=st.session_state.design_name, width=220
+        t("Yapı adı"), value=st.session_state.design_name, width=220
     )
     host_ids = [h["host_id"] for h in hosts]
     host_labels = {h["host_id"]: f"{h['name']} — {h['use']}" for h in hosts}
     st.session_state.design_host = st.selectbox(
-        "Konak suşu",
+        t("Konak suşu"),
         host_ids,
         index=host_ids.index(st.session_state.design_host)
         if st.session_state.design_host in host_ids else 0,
@@ -37,7 +38,7 @@ with top:
         width=300,
     )
     st.session_state.design_purpose = st.segmented_control(
-        "Amaç", ["ifade", "klonlama"],
+        t("Amaç"), ["ifade", "klonlama"],
         default=st.session_state.design_purpose,
     ) or st.session_state.design_purpose
 
@@ -54,10 +55,10 @@ left, right = st.columns([0.38, 0.62], gap="large")
 # ---------------------------------------------------------------------------
 
 with left:
-    st.subheader("Parçalar")
+    st.subheader(t("Parçalar"))
 
     preset = st.selectbox(
-        "Hazır şablondan başla",
+        t("Hazır şablondan başla"),
         ["— seçim yok —", "pET tipi ifade vektörü", "pUC tipi klonlama vektörü",
          "Arabinozla indüklenen (P-BAD)", "Sabit ifade (sentetik devre)"],
     )
@@ -75,13 +76,12 @@ with left:
             ["PRO_J23105", "RBS_B0032", "RPT_SFGFP", "TER_B0015", "ORI_P15A",
              "MRK_CAT"], "DH5A", "ifade"),
     }
-    # Kategori sırası; seçim durumu bu widget'ların kendisinde tutulur.
-    CATS = ["device", "promoter", "operator", "rbs", "signal", "tag",
-            "protease_site",
-            "linker", "mcs", "reporter", "terminator", "ori", "marker",
-            "regulator"]
+    # Kategori sırası `core/parts_seed.py` içinde; Projeler sayfası da
+    # kayıtlı tasarımı geri yüklerken aynı listeye ihtiyaç duyuyor.
+    # Seçim durumu bu widget'ların kendisinde tutulur.
+    CATS = DESIGNER_CATEGORIES
 
-    if preset in presets and st.button("Şablonu yükle", icon=":material/download:"):
+    if preset in presets and st.button(t("Şablonu yükle"), icon=":material/download:"):
         ids, h, purpose = presets[preset]
         # Widget key'leri doğrudan yazılmalı: key verilmiş bir multiselect
         # kendi durumunu korur ve `default` parametresini sonraki
@@ -124,15 +124,15 @@ with left:
     ]
 
     st.markdown("")
-    st.subheader("Insert")
+    st.subheader(t("Insert"))
     st.session_state.design_insert_name = st.text_input(
-        "Insert adı", value=st.session_state.design_insert_name
+        t("Insert adı"), value=st.session_state.design_insert_name
     )
     raw_insert = st.text_area(
-        "Insert dizisi (FASTA ya da düz dizi)",
+        t("Insert dizisi (FASTA ya da düz dizi)"),
         value=st.session_state.design_insert,
         height=130,
-        placeholder="ATGAGC...",
+        placeholder=t("ATGAGC..."),
     )
     st.session_state.design_insert = raw_insert
     insert = clean_seq(raw_insert)
@@ -140,11 +140,11 @@ with left:
         st.caption(f"{len(insert)} nt okundu.")
 
     st.session_state.design_enzymes = st.multiselect(
-        "Klonlamada kullanılacak enzimler",
+        t("Klonlamada kullanılacak enzimler"),
         ez.search("", commercial_only=True),
         default=st.session_state.design_enzymes,
-        help="Seçerseniz insertin içinde kesip kesmediği ve uçların uyumu "
-             "denetlenir.",
+        help=t("Seçerseniz insertin içinde kesip kesmediği ve uçların uyumu "
+             "denetlenir."),
     )
 
 # ---------------------------------------------------------------------------
@@ -172,20 +172,20 @@ counts = summarize(findings)
 with right:
     if not selected:
         st.info(
-            "Soldan parça seçin ya da hazır bir şablon yükleyin.",
+            t("Soldan parça seçin ya da hazır bir şablon yükleyin."),
             icon=":material/arrow_back:",
         )
     else:
         m = st.container(horizontal=True)
-        m.metric("Uzunluk", f"{vec.length} bp")
-        m.metric("GC", f"%{vec.gc}")
-        m.metric("Dizisi bilinen", f"%{vec.resolved_fraction}")
-        m.metric("Hata", counts["hata"], delta=None)
-        m.metric("Uyarı", counts["uyari"], delta=None)
+        m.metric(t("Uzunluk"), f"{vec.length} bp")
+        m.metric(t("GC"), f"%{vec.gc}")
+        m.metric(t("Dizisi bilinen"), f"%{vec.resolved_fraction}")
+        m.metric(t("Hata"), counts["hata"], delta=None)
+        m.metric(t("Uyarı"), counts["uyari"], delta=None)
 
         tab_map, tab_lin, tab_check, tab_lib, tab_seq = st.tabs(
-            ["Dairesel harita", "Doğrusal harita", "Denetim",
-             "Kütüphane kur", "Dizi ve dışa aktarım"]
+            [t("Dairesel harita"), t("Doğrusal harita"), t("Denetim"),
+             t("Kütüphane kur"), t("Dizi ve dışa aktarım")]
         )
 
         single = {
@@ -203,14 +203,14 @@ with right:
         with tab_lin:
             render_svg(linear_map(vec.name, vec.length, vec.features, single))
             st.caption(
-                "Kaset düzenini okumak için doğrusal görünüm daha nettir; "
-                "oklar yönü gösterir."
+                t("Kaset düzenini okumak için doğrusal görünüm daha nettir; "
+                "oklar yönü gösterir.")
             )
 
         with tab_check:
             if not findings:
                 st.success(
-                    "Denetimden geçti - bilinen bir sorun bulunamadı.",
+                    t("Denetimden geçti - bilinen bir sorun bulunamadı."),
                     icon=":material/check_circle:",
                 )
             for f in findings:
@@ -230,24 +230,24 @@ with right:
 
         with tab_lib:
             st.caption(
-                "Gerçek laboratuvarda ifade düzeyi tek tasarımla "
+                t("Gerçek laboratuvarda ifade düzeyi tek tasarımla "
                 "ayarlanmaz: promotör ve RBS değiştirilerek bir seri "
                 "kurulur, hepsi denenir, işe yarayan seçilir. Sebebi "
                 "basit — ifade düzeyini önceden hesaplayamazsınız, ama "
-                "bir aralığı tarayabilirsiniz."
+                "bir aralığı tarayabilirsiniz.")
             )
 
             degisken_kategoriler = ["promoter", "rbs", "ori", "marker",
                                     "terminator"]
             lk = st.container(horizontal=True, vertical_alignment="bottom")
             hangi = lk.multiselect(
-                "Hangi kategoriler değişsin?", degisken_kategoriler,
+                t("Hangi kategoriler değişsin?"), degisken_kategoriler,
                 default=["promoter", "rbs"],
                 format_func=lambda c: CATEGORY_TR.get(c, c),
             )
             lk.caption(
-                "Seçmediğiniz kategoriler soldaki tasarımdan olduğu gibi "
-                "alınır."
+                t("Seçmediğiniz kategoriler soldaki tasarımdan olduğu gibi "
+                "alınır.")
             )
 
             secenekler: dict[str, list[str]] = {}
@@ -282,13 +282,13 @@ with right:
                 toplam *= max(len(v), 1)
 
             ozet = st.container(horizontal=True)
-            ozet.metric("Sabit parça", len(sabit))
-            ozet.metric("Birleşim", toplam if hangi else 0)
+            ozet.metric(t("Sabit parça"), len(sabit))
+            ozet.metric(t("Birleşim"), toplam if hangi else 0)
 
             if not hangi or toplam <= 1:
                 st.info(
-                    "En az bir kategoriyi değişken yapın ve o kategoriden "
-                    "birden fazla parça seçin.",
+                    t("En az bir kategoriyi değişken yapın ve o kategoriden "
+                    "birden fazla parça seçin."),
                     icon=":material/category:")
             else:
                 varyantlar, lib_uyari = lib.build(
@@ -302,11 +302,11 @@ with right:
 
                 aralik = lib.span(varyantlar)
                 a = st.container(horizontal=True)
-                a.metric("Varyant", len(varyantlar))
-                a.metric("Hatasız", sum(1 for v in varyantlar if v.ok))
+                a.metric(t("Varyant"), len(varyantlar))
+                a.metric(t("Hatasız"), sum(1 for v in varyantlar if v.ok))
                 if aralik["fold"]:
-                    a.metric("Taranan aralık", f"{aralik['fold']}×")
-                a.metric("Basamak", len(aralik["tiers"]))
+                    a.metric(t("Taranan aralık"), f"{aralik['fold']}×")
+                a.metric(t("Basamak"), len(aralik["tiers"]))
 
                 st.dataframe(
                     [{"Varyant": v.name,
@@ -320,23 +320,23 @@ with right:
                     alt="Kombinatoryal kütüphanedeki varyantlar",
                     column_config={
                         "Beklenen ifade": st.column_config.ProgressColumn(
-                            "Beklenen ifade", min_value=0.0, max_value=1.0,
+                            t("Beklenen ifade"), min_value=0.0, max_value=1.0,
                             format="percent"),
                     },
                 )
 
                 st.info(
-                    "**Beklenen ifade bir ölçüm değildir.** Üç kaynaktan "
+                    t("**Beklenen ifade bir ölçüm değildir.** Üç kaynaktan "
                     "türetilmiş sıralamadır: Anderson promotörlerinde "
                     "sigma70 konsensüsüne uzaklık (diziden hesaplanır), "
                     "katalogdaki güç etiketi ve iGEM başlığındaki "
                     "strong/medium/weak nitelemesi. İfadeyle aynı yönde "
                     "gider ama kaç kat fark edeceğini söylemez - serinin "
-                    "varlık sebebi de budur.",
+                    "varlık sebebi de budur."),
                     icon=":material/functions:")
 
                 if varyantlar and varyantlar[0].basis:
-                    with st.expander("En yüksek varyantın dayanağı"):
+                    with st.expander(t("En yüksek varyantın dayanağı")):
                         for b in varyantlar[0].basis:
                             st.markdown(f"- {b}")
 
@@ -352,15 +352,15 @@ with right:
 
                 d = st.container(horizontal=True)
                 d.download_button(
-                    "Kütüphaneyi CSV olarak indir", lib.to_csv(varyantlar),
+                    t("Kütüphaneyi CSV olarak indir"), lib.to_csv(varyantlar),
                     file_name=f"{st.session_state.design_name}-kutuphane.csv",
                     mime="text/csv", icon=":material/download:",
                 )
                 secili_varyant = st.selectbox(
-                    "Bir varyantı tasarımcıya yükle",
+                    t("Bir varyantı tasarımcıya yükle"),
                     [v.name for v in varyantlar],
                 )
-                if st.button("Bu varyantı yükle",
+                if st.button(t("Bu varyantı yükle"),
                              icon=":material/download_for_offline:"):
                     hedef = next(v for v in varyantlar
                                  if v.name == secili_varyant)
@@ -374,16 +374,16 @@ with right:
         with tab_seq:
             c = st.container(horizontal=True)
             c.download_button(
-                "GenBank indir", to_genbank(vec),
+                t("GenBank indir"), to_genbank(vec),
                 file_name=f"{vec.name}.gb", mime="chemical/seq-na-genbank",
                 icon=":material/download:",
             )
             c.download_button(
-                "FASTA indir", to_fasta(vec),
+                t("FASTA indir"), to_fasta(vec),
                 file_name=f"{vec.name}.fasta", mime="text/plain",
                 icon=":material/download:",
             )
-            if st.button("Yapıyı kaydet", icon=":material/save:"):
+            if st.button(t("Yapıyı kaydet"), icon=":material/save:"):
                 db.save_construct(
                     vec.name, st.session_state.design_host,
                     st.session_state.design_parts, insert,

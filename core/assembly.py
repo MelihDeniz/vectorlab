@@ -11,6 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+from core import notice
 from core.seq_utils import Feature, clean_seq, gc_percent
 
 
@@ -167,6 +168,20 @@ def sort_canonical(parts: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return sorted(parts, key=lambda p: rank.get(p["category"], 99))
 
 
+def _comment_lines(metin: str, genislik: int = 80) -> list[str]:
+    """COMMENT alanini GenBank'in sutun duzenine gore sar.
+
+    Ilk satir "COMMENT" + 5 bosluk ile 12. sutundan baslar, devam
+    satirlari 12 bosluk girintiyle hizalanir. Toplam satir uzunlugu
+    `genislik` sutunu gecmez.
+    """
+    import textwrap
+
+    govde = textwrap.wrap(metin, width=genislik - 12) or [""]
+    return [f"COMMENT     {govde[0]}"] + [f"            {s}"
+                                          for s in govde[1:]]
+
+
 def to_genbank(vec: AssembledVector, organism: str = "Escherichia coli") -> str:
     """Yapıyı GenBank formatında yaz (SnapGene/Benchling bunu okur)."""
     from datetime import date
@@ -183,6 +198,14 @@ def to_genbank(vec: AssembledVector, organism: str = "Escherichia coli") -> str:
         f"DEFINITION  {vec.name} - VectorLab ile tasarlandi.",
         "SOURCE      synthetic DNA construct",
         f"  ORGANISM  {organism}",
+        # Dosya uygulamadan cikip baska bir yere gittiginde kullanim
+        # amaci beyaninin onunla gitmesi gerekir.
+        #
+        # GenBank satirlari 80 sutunda sarilir ve COMMENT'in devami
+        # 12 bosluk girintiyle yazilir. Biopython uzun tek satiri de
+        # okur, ama SnapGene ve Benchling bicimde daha katidir;
+        # LOCUS satirinda ogrendigimiz ders burada da gecerli.
+        *_comment_lines(notice.EXPORT),
         "FEATURES             Location/Qualifiers",
         f"     source          1..{vec.length}",
         f'                     /organism="{organism}"',
@@ -218,7 +241,9 @@ def to_genbank(vec: AssembledVector, organism: str = "Escherichia coli") -> str:
 
 
 def to_fasta(vec: AssembledVector, width: int = 70) -> str:
-    header = f">{vec.name} | {vec.length} bp | {'dairesel' if vec.circular else 'dogrusal'}"
+    header = (f">{vec.name} | {vec.length} bp | "
+              f"{'dairesel' if vec.circular else 'dogrusal'} | "
+              f"{notice.EXPORT}")
     body = "\n".join(
         vec.sequence[i : i + width] for i in range(0, len(vec.sequence), width)
     )

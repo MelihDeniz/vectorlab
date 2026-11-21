@@ -68,6 +68,30 @@ CREATE TABLE IF NOT EXISTS constructs (
     updated_at   TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- Bir yapının her kaydedilişi burada da saklanır. `constructs` tablosu
+-- yapının BUGÜNKÜ halini tutar; bu tablo nasıl o hale geldiğini.
+--
+-- Neden gerekli: bir tasarımı altı ay sonra açtığınızda aynı sonucu
+-- alıp almadığınız, kodun sürümüne ve o sırada yüklü veri dosyalarına
+-- bağlıdır. `provenance` alanı her sürüm için o damgayı saklar, yani
+-- "bu diziyi hangi veriyle ürettim" sorusu sonradan cevaplanabilir.
+-- Laboratuvar defteri mantığı budur: kayıt, sonucun kendisi kadar
+-- önemlidir.
+CREATE TABLE IF NOT EXISTS construct_versions (
+    version_id   INTEGER PRIMARY KEY AUTOINCREMENT,
+    name         TEXT NOT NULL,
+    host_id      TEXT,
+    part_ids     TEXT NOT NULL DEFAULT '[]',
+    insert_seq   TEXT NOT NULL DEFAULT '',
+    insert_name  TEXT NOT NULL DEFAULT '',
+    notes        TEXT NOT NULL DEFAULT '',
+    provenance   TEXT NOT NULL DEFAULT '',
+    saved_at     TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_versions_name
+    ON construct_versions(name, version_id DESC);
+
 CREATE TABLE IF NOT EXISTS literature (
     pmid      TEXT PRIMARY KEY,
     doi       TEXT NOT NULL DEFAULT '',
@@ -362,7 +386,16 @@ def save_construct(
     insert_seq: str = "",
     insert_name: str = "",
     notes: str = "",
-) -> None:
+) -> bool:
+    """Yapıyı kaydet ve değiştiyse yeni bir sürüm yaz.
+
+    Dönen değer yeni bir sürüm oluşturulup oluşturulmadığını söyler.
+    Aynı tasarımı üst üste kaydetmek sürüm geçmişini şişirmesin diye,
+    bir önceki sürümle birebir aynıysa yeni sürüm yazılmaz - geçmiş
+    ancak gerçekten değişen şeyleri gösterirse işe yarar.
+    """
+    damga = provenance.stamp()
+    parcalar = json.dumps(part_ids)
     con = connect()
     with con:
         con.execute(
@@ -377,31 +410,114 @@ def save_construct(
                  notes = excluded.notes,
                  provenance = excluded.provenance,
                  updated_at = datetime('now')""",
-            (name, host_id, json.dumps(part_ids), insert_seq, insert_name,
-             notes, provenance.stamp()),
+            (name, host_id, parcalar, insert_seq, insert_name,
+             notes, damga),
         )
+
+        son = con.execute(
+            """SELECT host_id, part_ids, insert_seq, insert_name, notes,
+                      provenance
+               FROM construct_versions WHERE name = ?
+               ORDER BY version_id DESC LIMIT 1""", (name,)).fetchone()
+        simdi = (host_id, parcalar, insert_seq, insert_name, notes, damga)
+        yeni_surum = son is None or tuple(son) != simdi
+        if yeni_surum:
+            con.execute(
+                """INSERT INTO construct_versions
+                       (name, host_id, part_ids, insert_seq, insert_name,
+                        notes, provenance)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                (name, host_id, parcalar, insert_seq, insert_name,
+                 notes, damga),
+            )
     con.close()
+    return yeni_surum
 
 
-def list_constructs() -> list[dict[str, Any]]:
+def get_construct(name: str) -> dict[str, Any] | None:
+    """Tek bir yapı, yoksa None."""
     con = connect()
-    rows = con.execute("SELECT * FROM constructs ORDER BY updated_at DESC").fetchall()
+    row = con.execute("SELECT * FROM constructs WHERE name = ?",
+                      (name,)).fetchone()
+    con.close()
+    if row is None:
+        return None
+    d = dict(row)
+    d["part_ids"] = _parcalari_coz(d.get("part_ids"))
+    return d
+
+
+def list_construct_versions(name: str) -> list[dict[str, Any]]:
+    """Bir yapının sürüm geçmişi, en yenisi başta."""
+    con = connect()
+    rows = con.execute(
+        """SELECT * FROM construct_versions WHERE name = ?
+           ORDER BY version_id DESC""", (name,)).fetchall()
     con.close()
     out = []
     for r in rows:
         d = dict(r)
-        try:
-            d["part_ids"] = json.loads(d["part_ids"])
-        except (TypeError, json.JSONDecodeError):
-            d["part_ids"] = []
+        d["part_ids"] = _parcalari_coz(d.get("part_ids"))
+        out.append(d)
+    return out
+
+
+def rename_construct(eski: str, yeni: str) -> bool:
+    """Yapıyı yeniden adlandır; sürüm geçmişi de taşınır.
+
+    Yeni ad kullanımdaysa False döner ve hiçbir şey değişmez.
+    """
+    eski, yeni = eski.strip(), yeni.strip()
+    if not yeni or eski == yeni:
+        return False
+    con = connect()
+    try:
+        if con.execute("SELECT 1 FROM constructs WHERE name = ?",
+                       (yeni,)).fetchone():
+            return False
+        with con:
+            con.execute(
+                "UPDATE constructs SET name = ?, updated_at = datetime('now')"
+                " WHERE name = ?", (yeni, eski))
+            con.execute(
+                "UPDATE construct_versions SET name = ? WHERE name = ?",
+                (yeni, eski))
+        return True
+    finally:
+        con.close()
+
+
+def _parcalari_coz(ham: Any) -> list[str]:
+    """`part_ids` alanını listeye çevir; bozuksa boş liste."""
+    try:
+        val = json.loads(ham)
+    except (TypeError, json.JSONDecodeError):
+        return []
+    return val if isinstance(val, list) else []
+
+
+def list_constructs() -> list[dict[str, Any]]:
+    """Kayıtlı yapılar, en son güncellenen başta; sürüm sayısıyla."""
+    con = connect()
+    rows = con.execute(
+        """SELECT c.*, (SELECT COUNT(*) FROM construct_versions v
+                        WHERE v.name = c.name) AS version_count
+           FROM constructs c ORDER BY c.updated_at DESC""").fetchall()
+    con.close()
+    out = []
+    for r in rows:
+        d = dict(r)
+        d["part_ids"] = _parcalari_coz(d.get("part_ids"))
         out.append(d)
     return out
 
 
 def delete_construct(name: str) -> None:
+    """Yapıyı ve sürüm geçmişini sil."""
     con = connect()
     with con:
         con.execute("DELETE FROM constructs WHERE name = ?", (name,))
+        con.execute("DELETE FROM construct_versions WHERE name = ?", (name,))
     con.close()
 
 

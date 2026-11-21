@@ -168,13 +168,109 @@ def test_her_vektorun_organizmasi_var():
 # ---------------------------------------------------------------------------
 
 
-def test_kodon_tablosu_dosyasi_tam():
-    yol = DATA / "ecoli_codon_usage.json"
+#: Beş konak organizması için beklenen tablolar ve genomları.
+#: Erişim numaraları NCBI'ya sorularak teyit edildi.
+KODON_TABLOLARI = {
+    "ecoli": ("NC_000913.3", 3000),
+    "bsubtilis": ("NC_000964.3", 3000),
+    "pputida": ("NC_002947.4", 4000),
+    "llactis": ("NC_009004.1", 2000),
+    "cglutamicum": ("NC_003450.3", 2500),
+}
+
+
+@pytest.mark.parametrize("anahtar", sorted(KODON_TABLOLARI))
+def test_kodon_tablosu_dosyasi_tam(anahtar):
+    accession, en_az_gen = KODON_TABLOLARI[anahtar]
+    yol = DATA / "codon_usage" / f"{anahtar}.json"
     assert yol.exists(), "tools/fetch_codon_usage.py çalıştırılmamış"
     d = json.loads(yol.read_text(encoding="utf-8"))
     assert len(d["codons"]) == 64
-    assert d["gene_count"] > 3000
+    assert d["accession"] == accession
+    assert d["gene_count"] >= en_az_gen
     assert len(d["reference_set"]) >= 40
+    # Referans kümenin nasıl seçildiği kayıtta durmalı: tablo sonradan
+    # denetlenecekse ölçütün ne olduğu bilinmek zorunda.
+    assert d["reference_rule"]
+    assert sum(d["reference_classes"].values()) == len(d["reference_set"]) or \
+        sum(d["reference_classes"].values()) >= 40
+
+    # "İyi bir CAI kaçtır" ölçeği ÖLÇÜLMÜŞ olmalı, gömülü sayı değil.
+    olcek = d["reference_cai"]
+    assert olcek["gene_count"] >= 40
+    assert 0.50 < olcek["median"] < 0.90, (
+        f"{anahtar} referans CAI ortancası {olcek['median']} - çok ifade "
+        "edilen genlerin 0,7 civarında olması beklenir")
+    assert olcek["p10"] < olcek["median"] < olcek["p90"]
+
+
+@pytest.mark.parametrize("anahtar,beklenen", [
+    ("ecoli", "TAA"), ("bsubtilis", "TAA"), ("llactis", "TAA"),
+    ("pputida", "TGA"), ("cglutamicum", "TAA"),
+])
+def test_baskin_durdurma_kodonu_dogru(anahtar, beklenen):
+    """Durdurma kodonu dağılımı gerçek olmalı.
+
+    Bu testin varlık sebebi gerçek bir hatadır: durdurma kodonları
+    `count_codons` tarafından hiç sayılmıyordu (ilk ve son kodon
+    atlanır), ama tabloda sıfırdan farklı sayılar görünüyordu - onlar
+    iç çerçevede durdurma kodonu taşıyan üç selenoprotein geninden
+    geliyordu. Sonuç: E. coli tablosu "TGA, durdurma kodonlarının
+    %100'ü" diyordu, oysa E. coli'de baskın durdurma kodonu TAA'dır.
+
+    Beklenen değerler yayımlanmış örüntüdür: AT'den zengin genomlarda
+    TAA baskındır, GC'den zengin P. putida'da TGA'ya kayar.
+    """
+    d = json.loads((DATA / "codon_usage" / f"{anahtar}.json")
+                   .read_text(encoding="utf-8"))
+    stoplar = {c: v["count"] for c, v in d["codons"].items()
+               if v["aa"] == "*"}
+    assert sum(stoplar.values()) > 1000, (
+        "durdurma kodonları gen sayısı kadar sayılmamış")
+    assert max(stoplar, key=lambda c: stoplar[c]) == beklenen, stoplar
+    # Durdurma kodonu anlamlı kodon istatistiğine girmemeli.
+    for c, v in d["codons"].items():
+        if v["aa"] == "*":
+            assert v["per_1000"] == 0.0 and v["w"] == 0.0
+
+
+def test_kodon_tablolari_birbirinden_farkli():
+    """Beş tablo gerçekten farklı olmalı.
+
+    Aynı çıkarlarsa bütün bu iş boşunadır - tek tablo yeterdi. Fark
+    organizmaların GC içeriğinden gelir ve w değerlerinde görünür.
+    """
+    tablolar = {}
+    for anahtar in KODON_TABLOLARI:
+        d = json.loads((DATA / "codon_usage" / f"{anahtar}.json")
+                       .read_text(encoding="utf-8"))
+        tablolar[anahtar] = tuple(sorted(
+            (c, v["w"]) for c, v in d["codons"].items()))
+    assert len(set(tablolar.values())) == len(tablolar), (
+        "iki organizmanın tablosu birebir aynı çıktı")
+
+
+def test_gc_zengini_genomlar_gc_zengini_kodon_seciyor():
+    """Bağımsız biyolojik denetim.
+
+    P. putida (%61 GC) ve C. glutamicum (%54 GC) üçüncü konumda G ya da
+    C tercih etmeli; B. subtilis (%44) ve L. cremoris (%35) etmemeli.
+    Tablolar bunu kendiliğinden göstermiyorsa hesap yanlıştır.
+    """
+    def gc3_agirligi(anahtar: str) -> float:
+        d = json.loads((DATA / "codon_usage" / f"{anahtar}.json")
+                       .read_text(encoding="utf-8"))
+        # En iyi kodonların (w = 1,0) kaçı G/C ile bitiyor?
+        en_iyi = [c for c, v in d["codons"].items()
+                  if v["w"] >= 1.0 and v["aa"] != "*"]
+        gc_biten = [c for c in en_iyi if c[2] in "GC"]
+        return len(gc_biten) / len(en_iyi)
+
+    gc_zengini = [gc3_agirligi("pputida"), gc3_agirligi("cglutamicum")]
+    at_zengini = [gc3_agirligi("bsubtilis"), gc3_agirligi("llactis")]
+    assert min(gc_zengini) > max(at_zengini), (
+        f"GC zengini {gc_zengini} AT zengini {at_zengini} - "
+        "tablolar genomun GC içeriğini izlemiyor")
 
 
 # ---------------------------------------------------------------------------
@@ -187,6 +283,44 @@ def test_montaj_uzunlugu_parcalarin_toplami():
     parts = sort_canonical(db.get_parts(ids))
     vec = assemble("t", parts)
     assert vec.length == sum(p["length"] for p in parts)
+
+
+def test_genbank_satirlari_80_sutunu_gecmiyor():
+    """GenBank başlığı 80 sütunda sarılır.
+
+    Biopython uzun satırı da okur, ama SnapGene ve Benchling biçimde
+    daha katıdır. Kullanım amacı beyanı COMMENT alanına eklendiğinde
+    satır 150 karaktere çıkıyordu; `_comment_lines` bunun için var.
+    """
+    ids = ["PRO_T7LAC", "RBS_PET", "TER_T7", "ORI_COLE1", "MRK_KAN"]
+    vec = assemble("pTest", sort_canonical(db.get_parts(ids)))
+    baslik = to_genbank(vec).split("ORIGIN")[0]
+    uzun = [ln for ln in baslik.splitlines() if len(ln) > 80]
+    assert not uzun, f"80 sütunu geçen satır(lar): {uzun}"
+
+
+def test_disa_aktarilan_dosyalar_kullanim_beyanini_tasiyor():
+    """Beyan dosyayla birlikte gitmeli.
+
+    Dosya uygulamadan çıkıp başka birine ulaştığında, hangi amaçla
+    üretildiğini kendi içinde söylemesi gerekir.
+    """
+    from core import notice
+    from core.assembly import to_fasta
+
+    ids = ["PRO_T7LAC", "RBS_PET", "ORI_COLE1", "MRK_KAN"]
+    vec = assemble("pTest", sort_canonical(db.get_parts(ids)))
+
+    # GenBank COMMENT alanını Biopython'un kendisi okuyabilmeli.
+    from io import StringIO
+
+    from Bio import SeqIO
+    rec = SeqIO.read(StringIO(to_genbank(vec)), "genbank")
+    yorum = rec.annotations.get("comment", "").replace("\n", " ")
+    assert "arastirma ve egitim" in yorum
+    assert "tani ya da tedavi" in yorum
+
+    assert notice.EXPORT in to_fasta(vec).splitlines()[0]
 
 
 def test_genbank_ciktisi_bicimsel_olarak_gecerli():

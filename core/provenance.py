@@ -33,7 +33,12 @@ CHECKSUM_FILE = DATA / "CHECKSUMS.txt"
 # ve unutulan dosya sessizce izlenmemiş kalıyordu - sinyal peptitleri
 # ve hastalık genleri tam olarak böyle gözden kaçtı. Taramak bunu
 # yapısal olarak imkânsız kılar.
-TRACKED_DIRS = ["", "reference_vectors"]
+# `i18n/` BİLEREK dışarıda. Oradaki dosya arayüzün çevirisidir; hiçbir
+# dizi, uzunluk ya da denetim sonucu ona bağlı değil. İzlenseydi, bir
+# etiketin İngilizcesini düzeltmek veri kimliğini değiştirir ve iki
+# tasarım "farklı veriyle üretilmiş" görünürdü - oysa değişen tek şey
+# bir düğmenin yazısıdır. Yanlış sinyal, eksik sinyalden kötüdür.
+TRACKED_DIRS = ["", "reference_vectors", "codon_usage"]
 
 
 def _sha256(path: Path) -> str:

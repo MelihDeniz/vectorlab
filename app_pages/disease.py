@@ -1,7 +1,7 @@
 """Hastalık vektörü: literatürden bir terapötik bakteri vektörünü al,
 revize et, denetle.
 
-Sayfa beş hastalığı aynı akışla ele alır: (1) hangi makale, (2) hastalık
+Sayfa her hastalığı aynı akışla ele alır: (1) hangi makale, (2) hastalık
 mekanizması, (3) makaledeki vektör neydi ve biz neyi değiştirdik,
 (4) hangi idame/içerme stratejisi, (5) tasarım denetimden geçiyor mu.
 Her satır `Literatür` (makaleden) ya da `Öneri` (bizim kararımız) diye
@@ -13,17 +13,22 @@ defterindedir; bu dosya yalnızca onu gösterir.
 
 import streamlit as st
 
-from core import db, disease_seed as ds
+from core import db, disease_seed as ds, notice
 from core.assembly import assemble, to_fasta, to_genbank
 from core.parts_seed import CATEGORY_TR
 from core.plasmid_map import linear_map, render as render_svg
 from core.seq_utils import restriction_sites
 from core.validate import summarize, validate
+from core.i18n import t
 
 SEV_ICON = {"hata": ":material/error:", "uyari": ":material/warning:",
             "bilgi": ":material/info:"}
 
 parts_by_id = {p["part_id"]: p for p in db.list_parts()}
+
+# Bu sayfa insan hastalıklarına yönelik canlı bakteriyel yapılar
+# tasarlıyor. Alttaki tek satırlık beyan burada yetmez.
+st.warning(notice.THERAPEUTIC, icon=":material/gavel:")
 
 # ---------------------------------------------------------------------------
 # Hastalık seçimi
@@ -49,7 +54,7 @@ st.caption(
 )
 
 secim = st.selectbox(
-    "Hastalık", ds.keys(),
+    t("Hastalık"), ds.keys(),
     format_func=lambda k: f"{ds.by_key(k).name}  —  {ds.by_key(k).logic}",
 )
 hastalik = ds.by_key(secim)
@@ -72,14 +77,14 @@ st.divider()
 # Karşılaştırma
 # ---------------------------------------------------------------------------
 
-st.subheader("Makaledeki vektör ve bizim revizyonumuz")
+st.subheader(t("Makaledeki vektör ve bizim revizyonumuz"))
 st.dataframe(hastalik.comparison, width="stretch", hide_index=True,
              alt=f"{hastalik.short} için makale ve revizyon karşılaştırması")
 st.caption(
-    "Makale sütunundaki her satır kaynaktan alınmıştır. Revizyonun işe "
+    t("Makale sütunundaki her satır kaynaktan alınmıştır. Revizyonun işe "
     "yarayıp yaramayacağını hiçbir tasarım aracı hesaplayamaz; bu bir "
     "**tasarım önerisidir, deneysel olarak sınanmamıştır** ve sunumda "
-    "böyle söylenmelidir."
+    "böyle söylenmelidir.")
 )
 
 if hastalik.gap:
@@ -92,10 +97,10 @@ st.divider()
 # Strateji ve denetim
 # ---------------------------------------------------------------------------
 
-st.subheader("İdame ve içerme stratejisi")
+st.subheader(t("İdame ve içerme stratejisi"))
 
 etiketler = {f"{s.key} · {s.title}": s for s in hastalik.strategies}
-secili_ad = st.radio("Strateji", list(etiketler), key=f"str_{secim}")
+secili_ad = st.radio(t("Strateji"), list(etiketler), key=f"str_{secim}")
 strateji = etiketler[secili_ad]
 st.markdown(strateji.summary)
 
@@ -106,20 +111,20 @@ bulgular = validate(vec, host=konak, purpose=hastalik.purpose)
 sayim = summarize(bulgular)
 
 m = st.container(horizontal=True)
-m.metric("Uzunluk", f"{vec.length} bp")
-m.metric("Dizisi bilinen", f"%{vec.resolved_fraction}")
-m.metric("Konak", (konak or {}).get("name", strateji.host))
-m.metric("Hata", sayim["hata"])
-m.metric("Uyarı", sayim["uyari"])
+m.metric(t("Uzunluk"), f"{vec.length} bp")
+m.metric(t("Dizisi bilinen"), f"%{vec.resolved_fraction}")
+m.metric(t("Konak"), (konak or {}).get("name", strateji.host))
+m.metric(t("Hata"), sayim["hata"])
+m.metric(t("Uyarı"), sayim["uyari"])
 
 st.caption(
-    "Operon sırası elle kurulur: Tasarımcı parçaları kategoriye göre "
+    t("Operon sırası elle kurulur: Tasarımcı parçaları kategoriye göre "
     "sıralar ve iki genli bir operonu bozar. Burada parçalar "
-    "stratejide yazıldığı sırayla birleştirilir."
+    "stratejide yazıldığı sırayla birleştirilir.")
 )
 
 tab_harita, tab_denetim, tab_parca, tab_dizi = st.tabs(
-    ["Harita", "Denetim", "Parçalar", "Dizi"]
+    [t("Harita"), t("Denetim"), t("Parçalar"), t("Dizi")]
 )
 
 with tab_harita:
@@ -129,13 +134,13 @@ with tab_harita:
     render_svg(linear_map(vec.name, vec.length, vec.features,
                           {k: tek[k] for k in sorted(tek)[:10]}))
     st.caption(
-        "Doğrusal harita, kaset düzenini dairesel haritadan daha net "
-        "gösterir. Oklar okuma yönüdür."
+        t("Doğrusal harita, kaset düzenini dairesel haritadan daha net "
+        "gösterir. Oklar okuma yönüdür.")
     )
 
 with tab_denetim:
     if not bulgular:
-        st.success("Bilinen bir sorun bulunamadı.",
+        st.success(t("Bilinen bir sorun bulunamadı."),
                    icon=":material/check_circle:")
     for b in bulgular:
         with st.container(border=True):
@@ -169,14 +174,14 @@ with tab_parca:
 
 with tab_dizi:
     c = st.container(horizontal=True)
-    c.download_button("GenBank indir", to_genbank(vec),
+    c.download_button(t("GenBank indir"), to_genbank(vec),
                       file_name=f"{vec.name}.gb",
                       mime="chemical/seq-na-genbank",
                       icon=":material/download:")
-    c.download_button("FASTA indir", to_fasta(vec),
+    c.download_button(t("FASTA indir"), to_fasta(vec),
                       file_name=f"{vec.name}.fasta", mime="text/plain",
                       icon=":material/download:")
-    if c.button("Tasarımcıya aktar", icon=":material/construction:"):
+    if c.button(t("Tasarımcıya aktar"), icon=":material/construction:"):
         from core.parts_seed import CATEGORIES
         for kat in CATEGORIES:
             st.session_state[f"ms_{kat}"] = [
@@ -190,7 +195,7 @@ with tab_dizi:
 
 st.divider()
 st.caption(
-    "Terapötik genlerin dizileri UniProt ve NCBI'dan çekilmiş, "
+    t("Terapötik genlerin dizileri UniProt ve NCBI'dan çekilmiş, "
     "çevirileri UniProt'taki proteine eşit olduğu doğrulanmıştır "
-    "(`tools/fetch_disease_parts.py`). Hiçbir dizi ezberden yazılmadı."
+    "(`tools/fetch_disease_parts.py`). Hiçbir dizi ezberden yazılmadı.")
 )

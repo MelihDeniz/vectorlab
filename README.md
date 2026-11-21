@@ -51,8 +51,28 @@ Hata ayıklarken `baslat-konsollu.bat` günlüğü konsolda da gösterir.
 ## Kurulum ve çalıştırma
 
 ```bash
-pip install -r requirements.txt
+pip install -e ".[desktop,dev]"
 ```
+
+`requirements.txt` da duruyor ve aynı işi görür; `pyproject.toml`
+paketi ayrıca `pip install` edilebilir hale getirir ve `vectorlab`
+komutunu tanımlar.
+
+Python kurulu olmayan bir makine için tek klasörlük Windows kurulumu
+üretilebilir:
+
+```bash
+pip install -e ".[desktop,build]"
+```
+
+```bash
+pyinstaller vectorlab.spec
+```
+
+Çıktı `dist/VectorLab/VectorLab.exe` olur. Tarifin neden tek dosyalık
+değil klasörlük olduğu `vectorlab.spec` içinde yazılı: tek dosyalık
+kipte uygulama kendi `data/` klasörünü her çalıştırmada değişen geçici
+bir yere açar ve kullanıcının kaydettiği tasarımlar kaybolur.
 
 ```bash
 streamlit run streamlit_app.py
@@ -115,7 +135,7 @@ nadir kodon analizi, Shine-Dalgarno boşluk kontrolü, primer tasarımı.
 ### Enzimler
 REBASE'den gelen **1088 restriksiyon enzimi** (623'ü ticari olarak
 satılıyor). Veri Biopython ile birlikte dağıtılır; kaynak
-Roberts ve ark., rebase.neb.com.
+Roberts ve ark., rebase.neb.com. REBASE'in istediği künye: Roberts RJ, Vincze T, Posfai J, Macelis D. *Nucleic Acids Res.* 51: D629-D630 (2023), doi:10.1093/nar/gkac975 (PMID 36318248). REBASE açık bir veritabanıdır ve kullanımı akademik çalışmayla sınırlı değildir; türetilen dağıtımın da açık kalması beklenir, bu depo MIT olduğu için koşul karşılanıyor.
 
 - **Kütüphane** — ada ya da tanıma dizisine göre arama; tanıma dizisi
   uzunluğu, uç tipi (5'/3' çıkıntı, kör), Tip IIS ve ticari erişilebilirlik
@@ -460,6 +480,30 @@ eklediğiniz).
 sabit promotör ailesi (20 üye) ve Weiss ribozom bağlanma bölgesi
 serisi.
 
+### Projeler
+Kaydetmek zaten vardı ama tek yönlüydü: bir tasarımı kaydedebiliyor,
+sonra geri açamıyordunuz. Kayıt, geri alınamıyorsa kayıt değildir.
+
+Sayfa üç şey yapar:
+
+1. **Geri yükleme.** Kayıtlı tasarımı Tasarımcı'ya geri koyar.
+   Tasarımcı parça seçimini `ms_<kategori>` widget'larında tuttuğu
+   için geri yükleme o anahtarları doldurmak zorunda; `design_parts`
+   yazmak yetmez, key verilmiş bir multiselect kendi durumunu korur ve
+   `default` parametresini yok sayar. Bir test bu ayrımı sabitliyor.
+
+2. **Sürüm geçmişi.** Her kaydediş `construct_versions` tablosuna da
+   yazılır - ama yalnızca gerçekten bir şey değiştiyse; aynı tasarımı
+   üst üste kaydetmek geçmişi şişirmez. Asıl değerli sütun
+   `provenance`: o sürümün hangi kod sürümü ve hangi veri
+   dosyalarıyla üretildiğini söyler. "Altı ay önce aynı diziyi mi
+   almıştım" sorusu ancak bu damga saklanırsa cevaplanabilir. Son iki
+   sürüm arasındaki fark (eklenen/çıkarılan parça, insert uzunluğu,
+   konak) ayrıca yazılır.
+
+3. **Laboratuvar defteri.** Tasarımı, parçalarını, denetim sonucunu ve
+   damgasını tek bir HTML dosyasında verir.
+
 ### Literatür
 Europe PMC üzerinden arama (API anahtarı gerekmez), tasarımdaki her
 parça için otomatik kaynak taraması, kaynakça üretimi (numaralı liste /
@@ -477,15 +521,23 @@ Bir tasarım aracının "çalışıyor" olması yetmez, "doğru" olması gerekir
 python -m pytest
 ```
 
-223 test, yedi dosyada: dizi motoru, tasarım modülleri, veri
-bütünlüğü, PKU tasarımı ve simülasyonu, hastalık kayıt defteri ve
-referanstan kes-yapıştır. Çoğu bir *değişmezi* sınar — optimizasyon
+285 test, dokuz dosyada: dizi motoru, tasarım modülleri, veri
+bütünlüğü, PKU tasarımı ve simülasyonu, hastalık kayıt defteri,
+referanstan kes-yapıştır, **sayfaların kendisi** ve **arayüz dili**.
+Çoğu bir *değişmezi* sınar — optimizasyon
 proteini değiştirmemeli, hizalama kendi kendine %100 benzerlik
 vermeli, kesim ürünlerinin toplamı kalıbın uzunluğuna eşit olmalı.
 Değişmezler beklenen değer yazmaktan güçlüdür, çünkü girdi değişse de
 geçerli kalırlar.
 
-Paket yazıldığından beri **yedi gerçek hata** buldu:
+`tests/test_pages.py` sonradan eklendi ve bir boşluğu kapattı:
+diğer testlerin hepsi `core/` modüllerini doğrudan çağırıyor,
+sayfaların kendisine hiç dokunmuyordu. Bir sayfadaki yanlış `st.`
+çağrısı ya da yazım hatası ancak uygulama elle açılınca görünüyordu -
+yani kullanıcı (ya da hoca) o sayfayı açtığında. Artık on iki sayfanın
+hepsi `streamlit.testing.v1.AppTest` ile gerçekten çalıştırılıyor.
+
+Paket yazıldığından beri **dokuz gerçek hata** buldu:
 
 1. Ürettiğimiz GenBank'ın LOCUS satırı sütun kaymasıyla bozuktu
    (Biopython "malformed locus line" uyarısı veriyordu).
@@ -505,7 +557,16 @@ Paket yazıldığından beri **yedi gerçek hata** buldu:
    Aracın kendi kuralının, aracı yazanın hatasını bulması iyi bir
    işarettir.
 
-Yedisi de düzeltildi ve yedisinin de testi duruyor.
+8. Kodon optimizasyonu tek bir E. coli tablosuyla çalışıyordu, ama
+   katalogda dört ayrı organizma konağı var ve Hastalık vektörü
+   sayfası *L. cremoris*'te terapötik tasarlıyor. O yapıyı optimize
+   eden kullanıcı sessizce yanlış tabloyu alıyordu.
+9. Durdurma kodonu sayıları iç çerçevedeki selenoprotein
+   okumalarından geliyordu; E. coli tablosu "TGA, durdurma
+   kodonlarının %100'ü" diyordu, oysa doğrusu TAA %64'tür. Bunu
+   kendi bağımsız doğrulama betiğimizin yeni bölümü yakaladı.
+
+Dokuzu da düzeltildi ve dokuzunun da testi duruyor.
 
 ### Bağımsız doğrulama
 
@@ -514,8 +575,8 @@ python tools/validate_against_references.py
 ```
 
 Testler kodun kendi içinde tutarlı olduğunu gösterir; bu betik ise
-hesapları **uygulamanın dışındaki** ölçütlerle karşılaştırır. 135
-kontrol, sekiz başlıkta:
+hesapları **uygulamanın dışındaki** ölçütlerle karşılaştırır. 182
+kontrol, dokuz başlıkta:
 
 | Ne | Bağımsız ölçüt |
 | --- | --- |
@@ -528,6 +589,7 @@ kontrol, sekiz başlıkta:
 | Terapötik genler | Biopython'un `translate(cds=True)` işlevi: başlangıç, stop, çerçeve ve erken stop denetimini o yapar |
 | Bölge sınırları | UniProt öznitelik tablosundaki koordinatlardan yeniden hesap |
 | Tarifler | Ürün uzunluğu atılan/eklenenden yeniden hesaplanır; kaset ürün dizisinde birebir aranır |
+| Kodon tabloları | Amino asit ataması Biopython'un kendi kodon tablosuyla; `per_1000` ve `fraction` toplamları; baskın durdurma kodonu yayımlanmış örüntüyle |
 
 Bu betik de bir şey yakaladı — ama uygulamada değil, karşılaştırma
 tablosunda. Aşağıya bakın.
@@ -569,6 +631,59 @@ Veri çekme betiklerinden birini çalıştırdıktan sonra:
 ```bash
 python tools/update_checksums.py
 ```
+
+### Arayüz dili
+Üstteki seçici arayüzü Türkçe ile İngilizce arasında değiştirir.
+
+**Anahtar Türkçe metnin kendisidir.** `t("Yapı adı")` çağrısı Türkçe
+kipte aynı dizeyi döndürür, İngilizce kipte `data/i18n/en.json`
+içinden karşılığını arar. Soyut anahtar (`ui.designer.name`)
+kullanılmadı: bu uygulama Türkçe yazıldı ve Türkçe birincil dil olarak
+kalıyor; soyut anahtar 2000'den fazla çağrı yerini okunmaz hale
+getirir ve çeviri eksik olduğunda ekranda anahtarın kendisi görünürdü.
+Kaynak metni anahtar yapmak, çeviri eksik olduğunda **çalışan Türkçe**
+bırakır.
+
+Bedeli şudur: Türkçe metin değişirse çeviri bağı sessizce kopar. İki
+test bunu sessiz bırakmıyor - biri sözlükte eksik kayıt, diğeri kodda
+artık bulunmayan öksüz kayıt arıyor. `tools/i18n_scan.py` kapsamı
+bildirir, `--yaz` ve `--temizle` ile sözlüğü kodla eşitler.
+
+463 arayüz metninin hepsi çevrildi (%100). Metinleri `t(...)` ile
+sarmak elle yapılmadı: `tools/i18n_wrap.py` bunu bir kez yaptı.
+Dönüştürücü `ast.unparse` kullanmıyor, çünkü o **yorumları siler** -
+bu depoda yorumlar kodun yarısı kadar yer tutuyor ve kararların
+gerekçesi orada yazılı. Bunun yerine her dizenin kaynak dosyadaki tam
+konumu alınıp yalnızca o aralık değiştiriliyor. (İlk denemede bütün
+dosyalar derlenmedi: `col_offset` karakter değil **UTF-8 bayt**
+konumudur ve Türkçe metinde 'ı', 'ş', 'ğ' iki bayt tutar.)
+
+**Çevrilmeyen kısım dürüstçe söyleniyor.** Arayüzün etiketleri ve
+açıklamaları İngilizce, ama parça kataloğundan, hastalık kayıt
+defterinden, denetim kurallarından ve protokol metinlerinden gelen
+**bilimsel içerik** hâlâ Türkçe. İngilizce kipte sayfanın altında bunu
+söyleyen bir satır duruyor. "İngilizce destekliyor" deyip yarısını
+Türkçe bırakmak kullanıcıyı yanıltmak olurdu. Ayrıca 143 f-string
+(içinde hesaplanmış sayı taşıyan metinler) mekanik olarak
+sarılamadığı için henüz çevrilmedi; tarayıcı kaç tane kaldığını
+söylüyor.
+
+### Kullanım amacı
+Uygulama **yalnızca araştırma ve eğitim amaçlıdır**; tanı, tedavi ya
+da klinik karar için kullanılamaz ve bir tıbbi cihaz değildir. Bu
+beyan tek bir dosyada durmuyor - orada kimse okumaz:
+
+- her sayfanın altında tek satır olarak,
+- Hastalık vektörü sayfasında, terapötik tasarımların üstünde uzun
+  haliyle,
+- dışa aktarılan GenBank dosyasının `COMMENT` alanında ve FASTA
+  başlığında (dosya uygulamadan çıkıp başka birine gittiğinde beyanın
+  onunla gitmesi gerekir),
+- basılan protokol raporunun altbilgisinde.
+
+Uzun hali [`DISCLAIMER.md`](DISCLAIMER.md) içinde: neyin model neyin
+ölçüm olduğu, biyogüvenlik ve yasal yükümlülükler, kaynak
+veritabanlarının revize edilebileceği.
 
 ## Veri kaynakları ve lisanslar
 
@@ -863,19 +978,69 @@ gayet doğru görünür:
 - **ORG-04** — E. coli konakta Gram-pozitif replikon varsa mekik vektör
   önerisi.
 
-### Kodon tablosu nereden geliyor
-`data/ecoli_codon_usage.json` ezberden yazılmadı:
-`tools/fetch_codon_usage.py` E. coli K-12 MG1655 genomunu (NC_000913.3)
-indirir, 4226 geçerli kodlayan diziyi okur ve kodonları sayar. CAI'nin
-ölçütü olan göreli uyarlanabilirlik (w) değerleri ise çok ifade edilen
-78 genden hesaplanır - ribozomal proteinler, uzama faktörleri, glikoliz
-enzimleri ve dış zar porinleri. Hangi genlerin ölçüt alındığı çıktının
-içine de yazılır.
+### Kodon tabloları nereden geliyor
+`data/codon_usage/` altındaki beş tablo ezberden yazılmadı:
+`tools/fetch_codon_usage.py` her konağın RefSeq genomunu indirir,
+geçerli kodlayan dizileri okur ve kodonları sayar.
+
+| Anahtar | Organizma | Erişim | Gen |
+| --- | --- | --- | --- |
+| `ecoli` | *E. coli* K-12 MG1655 | NC_000913.3 | 4226 |
+| `bsubtilis` | *B. subtilis* 168 | NC_000964.3 | 4217 |
+| `pputida` | *P. putida* KT2440 | NC_002947.4 | 5467 |
+| `llactis` | *L. cremoris* MG1363 | NC_009004.1 | 2394 |
+| `cglutamicum` | *C. glutamicum* ATCC 13032 | NC_003450.3 | 2938 |
+
+Erişim numaraları NCBI'ya sorularak teyit edildi, ezberden yazılmadı.
+
+**Neden beş tablo.** Uygulama tek bir E. coli tablosuyla çalışıyordu,
+ama katalogda dört ayrı organizma konağı var ve Hastalık vektörü
+sayfası *L. cremoris*'te terapötik tasarlıyor. O yapıyı optimize eden
+kullanıcı sessizce E. coli tablosunu alıyordu - arayüzde uyarı da
+yoktu. Artık `codon.optimize(..., org=...)` hangi organizmaya göre
+çalıştığını söylemek zorunda ve Dizi analizi sayfasındaki seçici
+varsayılan olarak tasarımın konağının organizmasına açılıyor. Konak
+ile seçilen tablo farklıysa sayfa bunu yazıyor.
+
+Farkın büyüklüğü küçümsenecek gibi değil: en sık lösin kodonu
+*P. putida*'da CTG (GC'den zengin genom), *L. cremoris*'te ise AT'den
+zengin kodonlar baskın. Tablolar genomların gerçek GC içeriğini
+kendiliğinden izliyor ve bir test bunu şart koşuyor.
+
+**Referans küme nasıl seçiliyor.** CAI'nin ölçütü "çok ifade edilen
+genler neye benziyor" sorusudur. Gen adlarına göre seçmek beş
+organizmada işe yaramaz: bu kayıtlarda gen adı taşıyan CDS oranı %14
+ile %100 arasında değişiyor (*P. putida* 1357/5467, *L. cremoris*
+591/2394). Protein tanımına göre seçmek de tek başına yetmiyor, çünkü
+aynı protein beş kayıtta farklı adlanıyor - E. coli'de "50S ribosomal
+**subunit** protein L4", B. subtilis'te "ribosomal protein L4",
+C. glutamicum'da "ribosomal protein **bL12**". Bu yüzden iki kuralın
+**birleşimi** alınıyor ve beşine de aynı kural uygulanıyor; her
+kalıbın kaç gen getirdiği çıktının içine yazılıyor. Referans kümeler
+66-76 gen arasında çıkıyor.
+
+**"İyi bir CAI kaçtır" sorusunun cevabı da tablodan geliyor.** Eskiden
+kodda iki gömülü sayı vardı (E. coli `rpsA` 0,787 ve `tufA` 0,824).
+Beş organizma olunca gömülü sayı yanlış oldu: her tablonun ölçeği
+kendi referans genlerinden hesaplanıp dosyanın içine yazılıyor
+(ortancalar 0,71-0,76 aralığında).
+
+**Durdurma kodonları ayrı sayılıyor.** `count_codons` ilk ve son
+kodonu atlar, yani durdurma kodonlarını hiç saymaz. Buna rağmen eski
+tabloda sıfırdan farklı sayılar vardı: onlar iç çerçevede durdurma
+kodonu taşıyan üç selenoprotein geninden geliyordu ve sonuç, E. coli
+tablosunun "TGA, durdurma kodonlarının %100'ü" demesiydi. Oysa
+E. coli'de baskın durdurma kodonu TAA'dır. Artık her genin SON kodonu
+sayılıyor ve çıkan dağılım yayımlanmış örüntüyle örtüşüyor: AT'den
+zengin genomlarda TAA baskın (E. coli %64, L. cremoris %69), GC'den
+zengin *P. putida*'da TGA'ya kayıyor (%67). Bir test bunu da şart
+koşuyor.
 
 Bu hesap, uygulamada zaten elle yazılmış olan "nadir kodon" listesini
 bağımsız olarak doğruladı: o listedeki dokuz kodonun hepsi genomdan
-hesaplanan tabloda w < 0,05 çıkıyor. En iyi kodonlar da bilinen E. coli
-tercihleriyle örtüşüyor (Leu için CTG, Arg için CGT, Ala için GCT).
+hesaplanan tabloda w < 0,10 çıkıyor. En iyi kodonlar da bilinen
+E. coli tercihleriyle örtüşüyor (Leu için CTG, Arg için CGT, Ala için
+GCT).
 
 ### Saç tokası hesabının sınırı
 Sap bölgesinin serbest enerjisi Biopython'un RNA en yakın komşu
@@ -939,6 +1104,7 @@ app_pages/
   refbuild.py          referanstan kes-yapıştır: 12 tarif
   labwork.py           protokol, jel, protein, rapor
   parts.py             katalog yönetimi, iGEM serileri
+  projects.py          kayıtlı tasarımlar, sürüm geçmişi, defter
   literature.py        literatür modülü
 core/
   parts_seed.py        60 bakteriyel parça + 8 konak suşu
@@ -996,7 +1162,8 @@ data/
   signal_peptides.json 9 sinyal peptidi (UniProt)
   pku_parts.json       PKU genlerinin çekilmiş dizileri
   disease_parts.json   15 terapötik gen (UniProt + NCBI)
-  ecoli_codon_usage.json  genomdan hesaplanan kodon tablosu
+  codon_usage/         5 konağın genomdan hesaplanan kodon tablosu
+  i18n/en.json         arayüzün İngilizce sözlüğü
   CHECKSUMS.txt        izlenen veri dosyalarının SHA-256 özetleri
   vectorlab.db         veritabanı (ilk çalıştırmada kurulur)
 ```

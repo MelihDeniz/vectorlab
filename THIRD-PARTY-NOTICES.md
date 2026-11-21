@@ -39,6 +39,38 @@ Restriksiyon enzimi verisi bu depoda saklanmaz; çalışma anında
 Biopython'un `Bio.Restriction` modülünden okunur. Veri REBASE'ten
 gelir: <http://rebase.neb.com>
 
+REBASE kendi ana sayfasında kullanım koşulunu şöyle yazıyor:
+
+> REBASE is an open database provided to benefit the scientific
+> community. Adaptation or distribution of information from REBASE
+> should also remain open and accessible to the public.
+
+Yani kullanımı akademik çalışmayla **sınırlı değildir**, ama
+REBASE'ten türetilen bilginin dağıtımının da açık kalması bekleniyor.
+Bu depo MIT lisansıyla açık olduğu için koşul karşılanıyor. Aynı sayfa
+künye de istiyor ("please cite the latest review"); istenen künye:
+
+> Roberts RJ, Vincze T, Posfai J, Macelis D. REBASE: a database for
+> DNA restriction and modification: enzymes, genes and genomes.
+> *Nucleic Acids Res.* 51: D629-D630 (2023).
+> doi:[10.1093/nar/gkac975](https://doi.org/10.1093/nar/gkac975)
+> (PMID 36318248)
+
+Künye `core/notice.py` içinde tek yerde durur ve Enzimler sayfasında,
+basılan protokol raporunda ve bu dosyada aynı metinle görünür.
+
+## Kod bağımlılıklarının lisansları
+
+Hepsi ticari kullanıma açık, permissive lisanslar:
+
+| Paket | Lisans |
+| --- | --- |
+| Streamlit | Apache License 2.0 |
+| Biopython | Biopython License Agreement (BSD benzeri) |
+| Requests | Apache License 2.0 |
+| pywebview | BSD 3-Clause |
+| pytest (yalnızca geliştirme) | MIT |
+
 ## Kullanılmayan kaynaklar
 
 Addgene ve SnapGene içeriği kullanılmamıştır. Bu veritabanlarının

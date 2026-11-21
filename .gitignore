@@ -29,3 +29,7 @@ data/_cache/
 
 # Masaustu sarmalayicisinin calisma gunlugu.
 data/desktop.log
+
+# PyInstaller ciktisi (vectorlab.spec ile uretilir).
+build/
+dist/

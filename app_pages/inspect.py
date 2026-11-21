@@ -7,22 +7,23 @@ from core.parts_seed import CATEGORY_TR
 from core.plasmid_map import circular_map, render as render_svg
 from core.seq_utils import classify_cutters
 from core.validate import summarize, validate
+from core.i18n import t
 
 SEV_BOX = {"hata": st.error, "uyari": st.warning, "bilgi": st.info}
 SEV_ICON = {"hata": ":material/error:", "uyari": ":material/warning:",
             "bilgi": ":material/info:"}
 
 st.caption(
-    "Denetim motoru şimdiye kadar yalnızca parçalardan kurduğunuz "
+    t("Denetim motoru şimdiye kadar yalnızca parçalardan kurduğunuz "
     "yapılara uygulanabiliyordu. Burada elinizdeki bir plazmiti - "
     "hocanın verdiği, bir kayıttan indirdiğiniz ya da daha önce "
-    "kurduğunuz - aynı 42 kuraldan geçirebilirsiniz."
+    "kurduğunuz - aynı 42 kuraldan geçirebilirsiniz.")
 )
 
 parts = db.list_parts()
 
 kaynak = st.segmented_control(
-    "Plazmit nereden gelsin?",
+    t("Plazmit nereden gelsin?"),
     ["Dosya yükle", "Dizi yapıştır", "Katalogdaki referans vektör"],
     default="Dosya yükle",
 ) or "Dosya yükle"
@@ -31,21 +32,21 @@ veri = None
 
 if kaynak == "Dosya yükle":
     dosya = st.file_uploader(
-        "GenBank (.gb) ya da FASTA dosyası",
+        t("GenBank (.gb) ya da FASTA dosyası"),
         type=["gb", "gbk", "genbank", "fa", "fasta", "txt", "seq"],
-        help="GenBank tercih edin: kaydın kendi öznitelik tablosu da "
+        help=t("GenBank tercih edin: kaydın kendi öznitelik tablosu da "
              "kullanılır ve denetim çok daha doğru olur. SnapGene ve "
-             "Benchling GenBank dışa aktarabilir.",
+             "Benchling GenBank dışa aktarabilir."),
     )
     if dosya is not None:
         veri = ip.parse_upload(dosya.getvalue(), dosya.name)
 
 elif kaynak == "Dizi yapıştır":
     c = st.container(horizontal=True, vertical_alignment="bottom")
-    ad = c.text_input("Plazmit adı", value="plazmitim", width=260)
-    dairesel = c.toggle("Dairesel", value=True)
-    ham = st.text_area("Dizi (FASTA ya da düz)", height=150,
-                       placeholder="ATGC… ya da >adı ile başlayan FASTA")
+    ad = c.text_input(t("Plazmit adı"), value="plazmitim", width=260)
+    dairesel = c.toggle(t("Dairesel"), value=True)
+    ham = st.text_area(t("Dizi (FASTA ya da düz)"), height=150,
+                       placeholder=t("ATGC… ya da >adı ile başlayan FASTA"))
     if ham.strip():
         veri = ip.parse_upload(ham.encode("utf-8"), ad)
         veri["name"] = ad
@@ -54,7 +55,7 @@ elif kaynak == "Dizi yapıştır":
 else:
     vlist = rv.list_vectors()
     vid = st.selectbox(
-        "Referans vektör", [v["vector_id"] for v in vlist],
+        t("Referans vektör"), [v["vector_id"] for v in vlist],
         format_func=lambda i: next(
             f"{v['name']} — {v['length']} bp" for v in vlist
             if v["vector_id"] == i),
@@ -65,13 +66,13 @@ else:
             "source": "genbank"}
 
 if veri is None:
-    st.info("Bir plazmit yükleyin ya da seçin.", icon=":material/upload_file:")
+    st.info(t("Bir plazmit yükleyin ya da seçin."), icon=":material/upload_file:")
     st.stop()
 if veri.get("error"):
     st.error(veri["error"], icon=":material/error:")
     st.stop()
 if not veri.get("sequence"):
-    st.error("Dosyadan dizi okunamadı.", icon=":material/error:")
+    st.error(t("Dosyadan dizi okunamadı."), icon=":material/error:")
     st.stop()
 
 # ---------------------------------------------------------------------------
@@ -79,12 +80,12 @@ if not veri.get("sequence"):
 # ---------------------------------------------------------------------------
 
 ayar = st.container(horizontal=True, vertical_alignment="bottom")
-esik = ayar.slider("Katalog eşleşme eşiği (%)", 85.0, 100.0, 92.0, 0.5,
+esik = ayar.slider(t("Katalog eşleşme eşiği (%)"), 85.0, 100.0, 92.0, 0.5,
                    width=260)
 konak_id = ayar.selectbox(
-    "Konak suşu", [h["host_id"] for h in db.list_hosts()],
+    t("Konak suşu"), [h["host_id"] for h in db.list_hosts()],
     format_func=lambda h: (db.get_host(h) or {}).get("name", h), width=260)
-amac = ayar.segmented_control("Amaç", ["ifade", "klonlama"],
+amac = ayar.segmented_control(t("Amaç"), ["ifade", "klonlama"],
                               default="klonlama") or "klonlama"
 
 ins = ip.inspect(veri, parts, min_identity=esik)
@@ -94,17 +95,17 @@ bulgular = validate(vec, host=db.get_host(konak_id), purpose=amac,
 sayim = summarize(bulgular)
 
 m = st.container(horizontal=True)
-m.metric("Plazmit", ins.name[:18])
-m.metric("Uzunluk", f"{ins.length} bp")
-m.metric("GC", f"%{vec.gc}")
-m.metric("Tanınan", f"%{ins.coverage}")
-m.metric("Hata", sayim["hata"])
-m.metric("Uyarı", sayim["uyari"])
+m.metric(t("Plazmit"), ins.name[:18])
+m.metric(t("Uzunluk"), f"{ins.length} bp")
+m.metric(t("GC"), f"%{vec.gc}")
+m.metric(t("Tanınan"), f"%{ins.coverage}")
+m.metric(t("Hata"), sayim["hata"])
+m.metric(t("Uyarı"), sayim["uyari"])
 
 st.divider()
 
 tab_den, tab_tani, tab_harita, tab_enz = st.tabs(
-    ["Denetim", "Tanınanlar", "Harita", "Enzim haritası"]
+    [t("Denetim"), t("Tanınanlar"), t("Harita"), t("Enzim haritası")]
 )
 
 # ---------------------------------------------------------------------------
@@ -115,9 +116,9 @@ with tab_den:
             f"**{n['title']}** — {n['detail']}",
             icon=SEV_ICON.get(n["kind"], ":material/info:"))
 
-    st.markdown("### Denetim bulguları")
+    st.markdown(t("### Denetim bulguları"))
     if not bulgular:
-        st.success("Bilinen bir sorun bulunamadı.",
+        st.success(t("Bilinen bir sorun bulunamadı."),
                    icon=":material/check_circle:")
     for b in bulgular:
         with st.container(border=True):
@@ -132,7 +133,7 @@ with tab_den:
 # ---------------------------------------------------------------------------
 
 with tab_tani:
-    st.markdown("**Denetime giren elemanlar**")
+    st.markdown(t("**Denetime giren elemanlar**"))
     st.dataframe(
         [{"Tür": CATEGORY_TR.get(p["category"], p["category"]),
           "Eleman": p["name"],
@@ -145,13 +146,13 @@ with tab_tani:
         alt="Plazmitte tanınan elemanlar",
     )
     st.caption(
-        "\"dosyadan\" yazan satırlar, katalogda karşılığı bulunmayan ama "
+        t("\"dosyadan\" yazan satırlar, katalogda karşılığı bulunmayan ama "
         "kaydın kendi öznitelik tablosunda bildirilen elemanlardır. "
-        "Bunlar olmasaydı denetim, var olan bir orijini yok sanabilirdi."
+        "Bunlar olmasaydı denetim, var olan bir orijini yok sanabilirdi.")
     )
 
     if ins.unidentified:
-        st.markdown("**Tanınmayan bölgeler**")
+        st.markdown(t("**Tanınmayan bölgeler**"))
         st.dataframe(
             [{"Başlangıç": g["start"], "Bitiş": g["end"],
               "Uzunluk": g["length"]} for g in ins.unidentified],
@@ -159,7 +160,7 @@ with tab_tani:
             alt="Tanınmayan bölgelerin listesi",
         )
         en_buyuk = max(ins.unidentified, key=lambda g: g["length"])
-        if st.button("En büyük bölgeyi dizi analizine gönder",
+        if st.button(t("En büyük bölgeyi dizi analizine gönder"),
                      icon=":material/search_insights:"):
             st.session_state.analyze_seq = ins.sequence[
                 en_buyuk["start"] - 1:en_buyuk["end"]]
@@ -171,13 +172,13 @@ with tab_harita:
     tek = {k: v for k, v in
            classify_cutters(ins.sequence, ez.search("", commercial_only=True),
                             circular=ins.circular)["tek"]}
-    goster = st.multiselect("Haritada gösterilecek tek kesen enzimler",
+    goster = st.multiselect(t("Haritada gösterilecek tek kesen enzimler"),
                             sorted(tek), default=sorted(tek)[:8])
     render_svg(circular_map(ins.name, ins.length, ins.catalog_features,
                             {k: tek[k] for k in goster}))
     st.caption(
-        "Haritadaki etiketler katalog eşleşmelerinden gelir; dosyanın "
-        "kendi öznitelikleri Tanınanlar sekmesinde listelenir."
+        t("Haritadaki etiketler katalog eşleşmelerinden gelir; dosyanın "
+        "kendi öznitelikleri Tanınanlar sekmesinde listelenir.")
     )
 
 # ---------------------------------------------------------------------------
@@ -187,10 +188,10 @@ with tab_enz:
                                ez.search("", commercial_only=True),
                                circular=ins.circular)
     g = st.container(horizontal=True)
-    g.metric("Tek kesen", len(gruplar["tek"]))
-    g.metric("İki kesen", len(gruplar["cift"]))
-    g.metric("Çok kesen", len(gruplar["cok"]))
-    g.metric("Kesmeyen", len(gruplar["kesmez"]))
+    g.metric(t("Tek kesen"), len(gruplar["tek"]))
+    g.metric(t("İki kesen"), len(gruplar["cift"]))
+    g.metric(t("Çok kesen"), len(gruplar["cok"]))
+    g.metric(t("Kesmeyen"), len(gruplar["kesmez"]))
     tekler = {k: v for k, v in gruplar["tek"]}
     if tekler:
         tanimalar = ez.recognition_sites(ins.sequence, sorted(tekler),
@@ -203,6 +204,6 @@ with tab_enz:
             alt="Plazmiti bir kez kesen enzimler",
         )
         st.caption(
-            "Yayımlanmış haritalar genellikle tanıma dizisinin başını "
-            "verir, uygulamalar ise kesim konumunu; ikisi de burada."
+            t("Yayımlanmış haritalar genellikle tanıma dizisinin başını "
+            "verir, uygulamalar ise kesim konumunu; ikisi de burada.")
         )

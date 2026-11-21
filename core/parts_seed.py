@@ -42,6 +42,22 @@ CATEGORIES = [
     "device",
 ]
 
+#: Tasarımcı sayfasındaki seçici sırası. `CATEGORIES`den iki farkı var:
+#: `device` en başta durur (bileşik parça seçilince tek tek parçalara
+#: gerek kalmaz) ve `cds` hiç yoktur - kodlayan dizi katalogdan
+#: seçilmez, kullanıcı kendi insert'ini yazar.
+#:
+#: Burada durmasının sebebi: aynı liste hem Tasarımcı'da hem Projeler
+#: sayfasında gerekiyor. Projeler sayfası kayıtlı bir tasarımı geri
+#: yüklerken Tasarımcı'nın `ms_<kategori>` widget'larını doldurmak
+#: zorunda, ve iki ayrı yerde tutulan liste kaçınılmaz olarak birbirinden
+#: ayrı düşer.
+DESIGNER_CATEGORIES = [
+    "device", "promoter", "operator", "rbs", "signal", "tag",
+    "protease_site", "linker", "mcs", "reporter", "terminator",
+    "ori", "marker", "regulator",
+]
+
 CATEGORY_TR = {
     "promoter": "Promotör",
     "operator": "Operatör",

@@ -9,14 +9,15 @@ from core.plasmid_map import circular_map, render as render_svg
 from core.recommend import QUESTIONS, default_answers, recommend, visible_questions
 from core.seq_utils import restriction_sites
 from core.validate import summarize, validate
+from core.i18n import t
 
 SEV_ICON = {"hata": ":material/error:", "uyari": ":material/warning:",
             "bilgi": ":material/info:"}
 
 st.caption(
-    "Birkaç soru soruyor, çalışan bir vektör öneriyor ve her parçayı neden "
+    t("Birkaç soru soruyor, çalışan bir vektör öneriyor ve her parçayı neden "
     "seçtiğini yazıyor. Öneri bir başlangıç noktasıdır - Tasarımcı sayfasına "
-    "aktarıp istediğini değiştirebilirsin."
+    "aktarıp istediğini değiştirebilirsin.")
 )
 
 # ---------------------------------------------------------------------------
@@ -32,7 +33,7 @@ for q in QUESTIONS:
 left, right = st.columns([0.37, 0.63], gap="large")
 
 with left:
-    st.subheader("Sorular")
+    st.subheader(t("Sorular"))
     shown = visible_questions(answers)
     for q in shown:
         opts = list(q["secenekler"].keys())
@@ -67,13 +68,13 @@ counts = summarize(findings)
 
 with right:
     m = st.container(horizontal=True)
-    m.metric("Uzunluk", f"{vec.length} bp")
-    m.metric("Parça", len(parts))
-    m.metric("Hata", counts["hata"])
-    m.metric("Uyarı", counts["uyari"])
+    m.metric(t("Uzunluk"), f"{vec.length} bp")
+    m.metric(t("Parça"), len(parts))
+    m.metric(t("Hata"), counts["hata"])
+    m.metric(t("Uyarı"), counts["uyari"])
 
     tab_oneri, tab_harita, tab_denetim, tab_protokol = st.tabs(
-        ["Öneri ve gerekçeler", "Harita", "Denetim", "Protokol"]
+        [t("Öneri ve gerekçeler"), t("Harita"), t("Denetim"), t("Protokol")]
     )
 
     with tab_oneri:
@@ -115,7 +116,7 @@ with right:
 
     with tab_denetim:
         if not findings:
-            st.success("Denetimden geçti - bilinen bir sorun yok.",
+            st.success(t("Denetimden geçti - bilinen bir sorun yok."),
                        icon=":material/check_circle:")
         for f in findings:
             with st.container(border=True):
@@ -128,17 +129,17 @@ with right:
                     st.markdown(f"**Ne yapmalı:** {f.fix}")
 
     with tab_protokol:
-        st.markdown("**Bu yapıyla nasıl çalışırsın**")
+        st.markdown(t("**Bu yapıyla nasıl çalışırsın**"))
         for i, adim in enumerate(rec.protocol, 1):
             st.markdown(f"{i}. {adim}")
         st.caption(
-            "Bu adımlar genel başlangıç koşullarıdır; kendi proteinin için "
-            "optimizasyon gerekebilir."
+            t("Bu adımlar genel başlangıç koşullarıdır; kendi proteinin için "
+            "optimizasyon gerekebilir.")
         )
 
     st.divider()
     actions = st.container(horizontal=True)
-    if actions.button("Tasarımcıya aktar", type="primary",
+    if actions.button(t("Tasarımcıya aktar"), type="primary",
                       icon=":material/construction:"):
         CATS = ["promoter", "operator", "rbs", "tag", "protease_site", "linker",
                 "mcs", "reporter", "terminator", "ori", "marker", "regulator"]
@@ -154,7 +155,7 @@ with right:
         st.switch_page("app_pages/designer.py")
 
     actions.download_button(
-        "GenBank indir", to_genbank(vec),
+        t("GenBank indir"), to_genbank(vec),
         file_name=f"{vec.name}.gb", mime="chemical/seq-na-genbank",
         icon=":material/download:",
     )

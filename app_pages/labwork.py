@@ -14,6 +14,7 @@ from core.cloning import fragments, plan
 from core.plasmid_map import circular_map, render as render_svg
 from core.seq_utils import clean_seq, find_orfs, translate_cds
 from core.validate import validate
+from core.i18n import t
 
 SEV_BOX = {"hata": st.error, "uyari": st.warning, "bilgi": st.info}
 SEV_ICON = {"hata": ":material/error:", "uyari": ":material/warning:",
@@ -41,7 +42,7 @@ def _ticari() -> list[str]:
 # ---------------------------------------------------------------------------
 
 kaynak = st.segmented_control(
-    "Hangi yapı üzerinde çalışıyoruz?",
+    t("Hangi yapı üzerinde çalışıyoruz?"),
     ["Tasarımcıdaki yapı", "Referans vektör"],
     default="Tasarımcıdaki yapı",
 ) or "Tasarımcıdaki yapı"
@@ -59,8 +60,8 @@ if kaynak == "Tasarımcıdaki yapı":
     ids = st.session_state.get("design_parts", [])
     if not ids:
         st.info(
-            "Tasarımcı sayfasında henüz yapı yok. Oradan parça seçin ya da "
-            "Sihirbaz'ı çalıştırın; sonra buraya dönün.",
+            t("Tasarımcı sayfasında henüz yapı yok. Oradan parça seçin ya da "
+            "Sihirbaz'ı çalıştırın; sonra buraya dönün."),
             icon=":material/construction:",
         )
     else:
@@ -82,7 +83,7 @@ if kaynak == "Tasarımcıdaki yapı":
 else:
     vlist = rv.list_vectors()
     vid = st.selectbox(
-        "Vektör", [v["vector_id"] for v in vlist],
+        t("Vektör"), [v["vector_id"] for v in vlist],
         format_func=lambda i: next(
             f"{v['name']} — {v['length']} bp" for v in vlist
             if v["vector_id"] == i),
@@ -105,18 +106,18 @@ insert_ad = st.session_state.get("design_insert_name") or "insert"
 enzimler = st.session_state.get("design_enzymes", [])
 
 ust = st.container(horizontal=True)
-ust.metric("Yapı", ad)
-ust.metric("Uzunluk", f"{uzunluk} bp")
-ust.metric("GC", f"%{gc}")
+ust.metric(t("Yapı"), ad)
+ust.metric(t("Uzunluk"), f"{uzunluk} bp")
+ust.metric(t("GC"), f"%{gc}")
 if insert_seq:
-    ust.metric("Insert", f"{len(insert_seq)} bp")
+    ust.metric(t("Insert"), f"{len(insert_seq)} bp")
 
 st.divider()
 
 (tab_pro, tab_gel, tab_prot, tab_montaj, tab_dogrula, tab_sorun,
  tab_rap) = st.tabs(
-    ["Protokol", "Jel simülasyonu", "Protein", "Montaj yöntemleri",
-     "Dizileme doğrulaması", "Sorun giderme", "Rapor"]
+    [t("Protokol"), t("Jel simülasyonu"), t("Protein"), t("Montaj yöntemleri"),
+     t("Dizileme doğrulaması"), t("Sorun giderme"), t("Rapor")]
 )
 
 # ---------------------------------------------------------------------------
@@ -127,17 +128,17 @@ with tab_pro:
     c = st.container(horizontal=True, vertical_alignment="bottom")
     tekler = _tek_kesenler(seq)
     secilen = c.multiselect(
-        "Kesim enzimleri", _ticari(),
+        t("Kesim enzimleri"), _ticari(),
         default=[e for e in enzimler if e in _ticari()][:2] or tekler[:2],
-        help="Tasarımcıda seçtikleriniz buraya gelir. Seçim yoksa bu "
+        help=t("Tasarımcıda seçtikleriniz buraya gelir. Seçim yoksa bu "
              "yapıyı tam olarak bir kez kesen enzimlerden ikisi "
-             "varsayılan olarak gelir.",
+             "varsayılan olarak gelir."),
     )
     if tekler:
         c.caption(f"Tek kesen: {', '.join(tekler[:8])}")
-    oran = c.slider("Ligasyon molar oranı (insert:vektör)", 1.0, 10.0, 3.0,
+    oran = c.slider(t("Ligasyon molar oranı (insert:vektör)"), 1.0, 10.0, 3.0,
                     0.5, width=260)
-    vektor_ng = c.number_input("Ligasyona konan vektör (ng)", 10, 200, 50,
+    vektor_ng = c.number_input(t("Ligasyona konan vektör (ng)"), 10, 200, 50,
                                step=10, width=200)
 
     frag = [f["length"] for f in fragments(seq, secilen)] if secilen else []
@@ -159,9 +160,9 @@ with tab_pro:
     if insert_seq and secilen:
         lig = pr.ligation_amounts(iskelet, len(insert_seq), vektor_ng, oran)
         m = st.container(horizontal=True)
-        m.metric("Vektör", f"{lig['vector_ng']} ng")
-        m.metric("Insert", f"{lig['insert_ng']} ng")
-        m.metric("Oran", f"{oran:g}:1")
+        m.metric(t("Vektör"), f"{lig['vector_ng']} ng")
+        m.metric(t("Insert"), f"{lig['insert_ng']} ng")
+        m.metric(t("Oran"), f"{oran:g}:1")
         st.caption(f"Hesap: {lig['formula']}")
 
     for s in p.steps:
@@ -181,7 +182,7 @@ with tab_pro:
                 st.warning(s.warning, icon=":material/priority_high:")
 
     st.download_button(
-        "Protokolü Markdown olarak indir", pr.to_markdown(p),
+        t("Protokolü Markdown olarak indir"), pr.to_markdown(p),
         file_name=f"{ad}-protokol.md", mime="text/markdown",
         icon=":material/download:",
     )
@@ -192,29 +193,29 @@ with tab_pro:
 
 with tab_gel:
     st.caption(
-        "Sindirimden ne çıkacağını fragman listesi tam anlatmaz: yakın "
+        t("Sindirimden ne çıkacağını fragman listesi tam anlatmaz: yakın "
         "boyutlar tek bant olur, kısa fragmanlar az boya bağladığı için "
-        "sönük kalır. Burası onu gösterir."
+        "sönük kalır. Burası onu gösterir.")
     )
     g = st.container(horizontal=True, vertical_alignment="bottom")
     jel_enz = g.multiselect(
-        "Sindirim enzimleri", _ticari(),
+        t("Sindirim enzimleri"), _ticari(),
         default=(secilen or _tek_kesenler(seq))[:2],
-        help="Tanı amaçlı sindirimde genelde iki tek kesen enzim "
+        help=t("Tanı amaçlı sindirimde genelde iki tek kesen enzim "
              "kullanılır: çıkan iki bandın boyutu yapının doğru "
-             "kurulduğunu gösterir.",
+             "kurulduğunu gösterir."),
     )
-    merdiven = g.selectbox("Merdiven", list(gel.LADDERS), width=170)
-    yukleme = g.number_input("Kuyuya yüklenen DNA (ng)", 50, 2000, 500,
+    merdiven = g.selectbox(t("Merdiven"), list(gel.LADDERS), width=170)
+    yukleme = g.number_input(t("Kuyuya yüklenen DNA (ng)"), 50, 2000, 500,
                              step=50, width=220)
 
     if not jel_enz:
-        st.info("Enzim seçin.", icon=":material/science:")
+        st.info(t("Enzim seçin."), icon=":material/science:")
     else:
         boyutlar = [f["length"] for f in fragments(seq, jel_enz)]
         onerilen = gel.recommend_agarose(boyutlar)
         yuzde = st.select_slider(
-            "Agaroz yüzdesi", list(gel.AGAROSE_RANGE), value=onerilen,
+            t("Agaroz yüzdesi"), list(gel.AGAROSE_RANGE), value=onerilen,
             format_func=lambda v: f"%{v}",
             help=f"Bu fragmanlar için önerilen: %{onerilen}",
         )
@@ -236,17 +237,17 @@ with tab_gel:
             width="stretch", hide_index=True,
             alt="Jeldeki bantların boyut ve görünürlük tablosu",
             column_config={"Görünürlük": st.column_config.ProgressColumn(
-                "Görünürlük", min_value=0.0, max_value=1.0, format="percent")},
+                t("Görünürlük"), min_value=0.0, max_value=1.0, format="percent")},
         )
         for n in gel.lane_notes(kulvar, yuzde):
             st.warning(n, icon=":material/info:")
         st.caption(
-            "Kesilmemiş plazmit karşılaştırma kulvarı üç bant olarak "
+            t("Kesilmemiş plazmit karşılaştırma kulvarı üç bant olarak "
             "çizildi: süperkıvrımlı, doğrusal ve açık dairesel. "
             "Süperkıvrımlı biçim sıkı paketlendiği için kendi boyutundan "
             "hızlı göçer, bu yüzden o banttan merdivene bakarak boyut "
             "okuyamazsınız. Kesiminizin tam olup olmadığını anlamanın "
-            "yolu, bu üçlünün kesilmiş kulvarda KAYBOLMUŞ olmasıdır."
+            "yolu, bu üçlünün kesilmiş kulvarda KAYBOLMUŞ olmasıdır.")
         )
 
 # ---------------------------------------------------------------------------
@@ -255,30 +256,30 @@ with tab_gel:
 
 with tab_prot:
     st.caption(
-        "İfade edeceğiniz proteinin kütlesi, pI'ı ve sönüm katsayısı; "
+        t("İfade edeceğiniz proteinin kütlesi, pI'ı ve sönüm katsayısı; "
         "yani SDS-PAGE'de bandı nerede arayacağınız ve derişimi nasıl "
-        "ölçeceğiniz."
+        "ölçeceğiniz.")
     )
-    kay = st.radio("Protein dizisi nereden gelsin?",
+    kay = st.radio(t("Protein dizisi nereden gelsin?"),
                    ["Insert dizisinden çevir", "Protein dizisi yapıştır"],
                    horizontal=True)
 
     aa = ""
     if kay == "Insert dizisinden çevir":
         if not insert_seq:
-            st.info("Tasarımcı sayfasında insert girilmemiş.",
+            st.info(t("Tasarımcı sayfasında insert girilmemiş."),
                     icon=":material/science:")
         else:
             orfs = find_orfs(insert_seq, min_aa=30, circular=False)
             if not orfs:
                 st.warning(
-                    "Insert içinde 30 aa'dan uzun açık okuma çerçevesi "
-                    "bulunamadı. Dizi doğru yönde mi, başlama kodonu var mı?",
+                    t("Insert içinde 30 aa'dan uzun açık okuma çerçevesi "
+                    "bulunamadı. Dizi doğru yönde mi, başlama kodonu var mı?"),
                     icon=":material/warning:",
                 )
             else:
                 sec = st.selectbox(
-                    "Okuma çerçevesi", orfs,
+                    t("Okuma çerçevesi"), orfs,
                     format_func=lambda o: o.label(),
                 )
                 aa = sec.protein
@@ -288,31 +289,31 @@ with tab_prot:
                     f"{'durdurma kodonu var' if sec.has_stop else 'DURDURMA KODONU YOK'}"
                 )
     else:
-        aa = st.text_area("Protein dizisi (tek harf kodu)", height=110,
-                          placeholder="MKWVTFISLLFLFSSAYS…")
+        aa = st.text_area(t("Protein dizisi (tek harf kodu)"), height=110,
+                          placeholder=t("MKWVTFISLLFLFSSAYS…"))
 
-    ph = st.slider("Saflaştırma tamponunun pH'ı", 5.0, 9.5, 8.0, 0.1,
+    ph = st.slider(t("Saflaştırma tamponunun pH'ı"), 5.0, 9.5, 8.0, 0.1,
                    width=280)
     rep = protein.analyze(aa, working_ph=ph) if aa else None
 
     if rep is None and aa:
-        st.warning("Dizi çok kısa ya da standart amino asit içermiyor.",
+        st.warning(t("Dizi çok kısa ya da standart amino asit içermiyor."),
                    icon=":material/warning:")
     elif rep:
         m = st.container(horizontal=True)
-        m.metric("Uzunluk", f"{rep.length_aa} aa")
-        m.metric("Kütle", f"{rep.mw_kda} kDa")
-        m.metric("pI", rep.pi)
-        m.metric("GRAVY", rep.gravy)
-        m.metric("Kararsızlık", rep.instability)
+        m.metric(t("Uzunluk"), f"{rep.length_aa} aa")
+        m.metric(t("Kütle"), f"{rep.mw_kda} kDa")
+        m.metric(t("pI"), rep.pi)
+        m.metric(t("GRAVY"), rep.gravy)
+        m.metric(t("Kararsızlık"), rep.instability)
         if rep.a280_for_1mg_ml:
-            m.metric("A280 (1 mg/mL)", rep.a280_for_1mg_ml)
+            m.metric(t("A280 (1 mg/mL)"), rep.a280_for_1mg_ml)
         st.caption(protein.sds_ladder_note(rep.mw_kda))
         for n in rep.notes:
             SEV_BOX.get(n["kind"], st.info)(
                 f"**{n['title']}** — {n['detail']}",
                 icon=SEV_ICON.get(n["kind"], ":material/info:"))
-        with st.expander("Amino asit bileşimi"):
+        with st.expander(t("Amino asit bileşimi")):
             st.dataframe(
                 [{"Amino asit": k, "Sayı": v,
                   "Oran": round(v / rep.length_aa, 4)}
@@ -328,38 +329,38 @@ with tab_prot:
 
 with tab_montaj:
     st.caption(
-        "Restriksiyon + ligasyon tek yol değil. Golden Gate birden çok "
+        t("Restriksiyon + ligasyon tek yol değil. Golden Gate birden çok "
         "parçayı tek tüpte ve iz bırakmadan birleştirir; Gibson hiç enzim "
         "bölgesi gerektirmez; mutagenez tek bazı değiştirir. Her birinin "
-        "kendi tuzağı var ve burada onlar denetleniyor."
+        "kendi tuzağı var ve burada onlar denetleniyor.")
     )
 
     yontem = st.segmented_control(
-        "Yöntem", ["Golden Gate", "Gibson", "Mutagenez"],
+        t("Yöntem"), ["Golden Gate", "Gibson", "Mutagenez"],
         default="Golden Gate", key="mont_yontem",
     ) or "Golden Gate"
 
     if yontem == "Mutagenez":
         kalip = st.text_area(
-            "Kalıp dizi", height=110,
+            t("Kalıp dizi"), height=110,
             value=insert_seq[:600] if insert_seq else "",
-            placeholder="Değiştireceğiniz bölgeyi kapsayan diziyi yapıştırın…",
+            placeholder=t("Değiştireceğiniz bölgeyi kapsayan diziyi yapıştırın…"),
             key="mont_kalip",
         )
         k = st.container(horizontal=True, vertical_alignment="bottom")
-        konum = k.number_input("Değişecek ilk nükleotid", 1,
+        konum = k.number_input(t("Değişecek ilk nükleotid"), 1,
                                max(len(clean_seq(kalip)), 1), 1,
                                key="mont_konum", width=220)
-        yerine = k.text_input("Yerine gelecek baz ya da kodon",
+        yerine = k.text_input(t("Yerine gelecek baz ya da kodon"),
                               value="GAT", key="mont_yerine", width=220)
-        kanat = k.slider("Her iki yanda eşleşen baz", 10, 25, 15,
+        kanat = k.slider(t("Her iki yanda eşleşen baz"), 10, 25, 15,
                          key="mont_kanat", width=240)
         plan_m = am.mutagenesis(kalip, int(konum), yerine, flank=int(kanat))
     else:
-        st.markdown("**Birleştirilecek parçalar** — sıra montaj sırasıdır")
+        st.markdown(t("**Birleştirilecek parçalar** — sıra montaj sırasıdır"))
         katalog = [x for x in db.list_parts() if x["seq_status"] == "full"]
         secim = st.multiselect(
-            "Katalogdan parça seç",
+            t("Katalogdan parça seç"),
             [x["part_id"] for x in katalog],
             default=[p for p in st.session_state.get("design_parts", [])
                      if (db.get_part(p) or {}).get("seq_status") == "full"][:4],
@@ -378,26 +379,26 @@ with tab_montaj:
             parca_listesi.append((insert_ad[:14], insert_seq))
 
         o = st.container(horizontal=True, vertical_alignment="bottom")
-        dairesel = o.toggle("Dairesel ürün", value=True, key="mont_dairesel")
+        dairesel = o.toggle(t("Dairesel ürün"), value=True, key="mont_dairesel")
         if yontem == "Golden Gate":
-            enz = o.selectbox("Tip IIS enzim", am.TYPE_IIS_COMMON,
+            enz = o.selectbox(t("Tip IIS enzim"), am.TYPE_IIS_COMMON,
                               key="mont_enz", width=200)
             plan_m = am.golden_gate(parca_listesi, enz, circular=dairesel)
         else:
-            ort = o.slider("Örtüşme uzunluğu (bp)", 15, 45, 25,
+            ort = o.slider(t("Örtüşme uzunluğu (bp)"), 15, 45, 25,
                            key="mont_ort", width=260)
             plan_m = am.gibson(parca_listesi, overlap=int(ort),
                                circular=dairesel)
 
     if not plan_m.parts and yontem != "Mutagenez":
-        st.info("Önce parça seçin.", icon=":material/category:")
+        st.info(t("Önce parça seçin."), icon=":material/category:")
     else:
         mm = st.container(horizontal=True)
-        mm.metric("Yöntem", plan_m.method)
-        mm.metric("Parça", len(plan_m.parts))
-        mm.metric("Ürün", f"{plan_m.product_length} bp")
-        mm.metric("Birleşme", len(plan_m.junctions))
-        mm.metric("Durum", "geçti" if plan_m.ok else "sorunlu")
+        mm.metric(t("Yöntem"), plan_m.method)
+        mm.metric(t("Parça"), len(plan_m.parts))
+        mm.metric(t("Ürün"), f"{plan_m.product_length} bp")
+        mm.metric(t("Birleşme"), len(plan_m.junctions))
+        mm.metric(t("Durum"), "geçti" if plan_m.ok else "sorunlu")
 
         for n in plan_m.notes:
             {"hata": st.error, "uyari": st.warning,
@@ -405,7 +406,7 @@ with tab_montaj:
                 f"**{n['title']}** — {n['detail']}")
 
         if plan_m.junctions:
-            st.markdown("**Birleşme noktaları**")
+            st.markdown(t("**Birleşme noktaları**"))
             st.dataframe(
                 [{"#": j.index, "Sol": j.left_part, "Sağ": j.right_part,
                   ("Çıkıntı" if yontem == "Golden Gate" else "Örtüşme"):
@@ -417,7 +418,7 @@ with tab_montaj:
             )
 
         if plan_m.primers:
-            st.markdown("**Sipariş edilecek primerler**")
+            st.markdown(t("**Sipariş edilecek primerler**"))
             st.dataframe(
                 [{"Ad": p2.name, "Dizi": p2.sequence, "Uzunluk": p2.length,
                   "Bağlanma Tm": p2.tm_anneal,
@@ -427,7 +428,7 @@ with tab_montaj:
                 alt="Montaj için tasarlanan primerler",
             )
             st.download_button(
-                "Primerleri CSV olarak indir",
+                t("Primerleri CSV olarak indir"),
                 "ad,dizi,uzunluk,tm\n" + "\n".join(
                     f"{p2.name},{p2.sequence},{p2.length},{p2.tm_anneal}"
                     for p2 in plan_m.primers),
@@ -435,9 +436,9 @@ with tab_montaj:
                 icon=":material/download:",
             )
             st.caption(
-                "Primerlerin 5' ucundaki kuyruk, montajın kendisini "
+                t("Primerlerin 5' ucundaki kuyruk, montajın kendisini "
                 "sağlayan kısımdır; Tm sütunu yalnızca kalıba bağlanan "
-                "bölümün değeridir, PCR koşulunu ona göre kurun."
+                "bölümün değeridir, PCR koşulunu ona göre kurun.")
             )
 
 
@@ -446,32 +447,32 @@ with tab_montaj:
 # ---------------------------------------------------------------------------
 
 with tab_dogrula:
-    alt_plan, alt_oku = st.tabs(["Dizileme planı", "Okumayı karşılaştır"])
+    alt_plan, alt_oku = st.tabs([t("Dizileme planı"), t("Okumayı karşılaştır")])
 
     with alt_plan:
         st.caption(
-            "Sanger okuması ~900 nükleotiddir ve primerin hemen ardındaki "
+            t("Sanger okuması ~900 nükleotiddir ve primerin hemen ardındaki "
             "ilk 50 baz güvenilir okunmaz. Tek primerle uzun bir yapıyı "
             "okutup 'doğruladım' demek, aradaki bölgeyi hiç görmemek "
             "demektir. Burası baştan sona kapatmak için kaç primer "
-            "gerektiğini hesaplar."
+            "gerektiğini hesaplar.")
         )
         d = st.container(horizontal=True, vertical_alignment="bottom")
-        okuma_uz = d.slider("Okuma uzunluğu (nt)", 400, 1200,
+        okuma_uz = d.slider(t("Okuma uzunluğu (nt)"), 400, 1200,
                             vf.READ_LENGTH, 50, key="vf_read", width=240)
-        olu = d.slider("Primer sonrası okunmayan (nt)", 0, 120,
+        olu = d.slider(t("Primer sonrası okunmayan (nt)"), 0, 120,
                        vf.DEAD_ZONE, 10, key="vf_dead", width=260)
-        iki_zincir = d.toggle("İki zincirden de okut", value=False,
+        iki_zincir = d.toggle(t("İki zincirden de okut"), value=False,
                               key="vf_both")
 
         splan = vf.sequencing_plan(seq, read_length=int(okuma_uz),
                                    dead_zone=int(olu),
                                    both_strands=iki_zincir)
         sm = st.container(horizontal=True)
-        sm.metric("Primer", len(splan.primers))
-        sm.metric("Kapsanan", f"{splan.covered} / {splan.length} nt")
-        sm.metric("Kapsama", f"%{round(100 * splan.covered / max(splan.length, 1), 1)}")
-        sm.metric("Boşluk", len(splan.gaps))
+        sm.metric(t("Primer"), len(splan.primers))
+        sm.metric(t("Kapsanan"), f"{splan.covered} / {splan.length} nt")
+        sm.metric(t("Kapsama"), f"%{round(100 * splan.covered / max(splan.length, 1), 1)}")
+        sm.metric(t("Boşluk"), len(splan.gaps))
 
         for n in splan.notes:
             {"hata": st.error, "uyari": st.warning,
@@ -492,7 +493,7 @@ with tab_dogrula:
                 alt="Dizileme primerleri ve kapsadıkları bölgeler",
             )
             st.download_button(
-                "Dizileme primerlerini indir",
+                t("Dizileme primerlerini indir"),
                 "ad,dizi,konum,yon,tm\n" + "\n".join(
                     f"{p3.name},{p3.sequence},{p3.position},"
                     f"{'+' if p3.strand > 0 else '-'},{p3.tm}"
@@ -503,31 +504,31 @@ with tab_dogrula:
 
     with alt_oku:
         st.caption(
-            "Dizileme sonucunu yapıştırın: tasarımla hizalanır ve her "
+            t("Dizileme sonucunu yapıştırın: tasarımla hizalanır ve her "
             "fark tek tek çıkarılır. Kodlayan bölgedeki farkların amino "
             "asit karşılığı da hesaplanır - sessiz mi, değiştiren mi, "
-            "yoksa erken durdurma mı."
+            "yoksa erken durdurma mı.")
         )
         ab1 = st.file_uploader(
-            "Kromatogram dosyası (.ab1) — isteğe bağlı",
+            t("Kromatogram dosyası (.ab1) — isteğe bağlı"),
             type=["ab1"], key="vf_ab1",
-            help="Firmanın gönderdiği kromatogramı yüklerseniz kalite "
+            help=t("Firmanın gönderdiği kromatogramı yüklerseniz kalite "
                  "değerleri okunur ve güvenilmez uçlar kırpılır. Metin "
                  "dizi kalite bilgisi taşımaz: uçlardaki bir 'fark' "
-                 "gerçek mutasyon değil, okuma hatası olabilir.",
+                 "gerçek mutasyon değil, okuma hatası olabilir."),
         )
         krom = None
         if ab1 is not None:
             krom = vf.read_chromatogram(ab1.getvalue())
             if krom is None:
-                st.error("Dosya .ab1 olarak okunamadı.",
+                st.error(t("Dosya .ab1 olarak okunamadı."),
                          icon=":material/error:")
             else:
                 q = st.container(horizontal=True)
-                q.metric("Okuma", f"{krom.length} baz")
-                q.metric("Güvenilir bölge",
+                q.metric(t("Okuma"), f"{krom.length} baz")
+                q.metric(t("Güvenilir bölge"),
                          f"{krom.trim_start}–{krom.trim_end}")
-                q.metric("Ortalama kalite", f"Q{krom.mean_quality}")
+                q.metric(t("Ortalama kalite"), f"Q{krom.mean_quality}")
                 for n in krom.notes:
                     {"hata": st.error, "uyari": st.warning,
                      "bilgi": st.info}.get(n["kind"], st.info)(
@@ -537,40 +538,40 @@ with tab_dogrula:
                     alt="Okuma boyunca baz çağırma kalitesi")
 
         okuma = st.text_area(
-            "Okunan dizi (FASTA ya da düz)", height=130,
+            t("Okunan dizi (FASTA ya da düz)"), height=130,
             value=(krom.trimmed_sequence if krom else ""),
-            placeholder="Dizileme firmasından gelen diziyi yapıştırın "
-                        "ya da yukarıdan .ab1 yükleyin…",
+            placeholder=t("Dizileme firmasından gelen diziyi yapıştırın "
+                        "ya da yukarıdan .ab1 yükleyin…"),
             key="vf_okuma",
         )
         k2 = st.container(horizontal=True, vertical_alignment="bottom")
-        kirp = k2.number_input("Baştan atılacak baz", 0, 200, 0,
+        kirp = k2.number_input(t("Baştan atılacak baz"), 0, 200, 0,
                                key="vf_trim", width=220,
-                               help="Kromatogramın başındaki güvenilmez "
-                                    "bölgeyi atmak için.")
-        cds_var = k2.toggle("Kodlayan bölge var", value=bool(insert_seq),
+                               help=t("Kromatogramın başındaki güvenilmez "
+                                    "bölgeyi atmak için."))
+        cds_var = k2.toggle(t("Kodlayan bölge var"), value=bool(insert_seq),
                             key="vf_cds")
         cds_bas = None
         if cds_var:
             cds_bas = k2.number_input(
-                "Başlama kodonunun konumu", 1, max(len(seq), 1),
+                t("Başlama kodonunun konumu"), 1, max(len(seq), 1),
                 min(1, len(seq)) or 1, key="vf_cdsbas", width=250)
 
         if clean_seq(okuma):
             rap2 = vf.compare_read(seq, okuma, cds_start=cds_bas,
                                    trim=int(kirp))
             om = st.container(horizontal=True)
-            om.metric("Benzerlik", f"%{rap2.identity}")
-            om.metric("Hizalanan", f"{rap2.aligned_from}–{rap2.aligned_to}")
-            om.metric("Okuma", f"{rap2.read_length} nt")
-            om.metric("Fark", len(rap2.differences))
+            om.metric(t("Benzerlik"), f"%{rap2.identity}")
+            om.metric(t("Hizalanan"), f"{rap2.aligned_from}–{rap2.aligned_to}")
+            om.metric(t("Okuma"), f"{rap2.read_length} nt")
+            om.metric(t("Fark"), len(rap2.differences))
 
             for n in rap2.notes:
                 {"hata": st.error, "uyari": st.warning,
                  "bilgi": st.info}.get(n["kind"], st.info)(
                     f"**{n['title']}** — {n['detail']}")
 
-            with st.expander("Hizalamayı göster", expanded=bool(
+            with st.expander(t("Hizalamayı göster"), expanded=bool(
                     rap2.differences)):
                 st.code(
                     vf.alignment_view(seq, okuma, cds_start=cds_bas,
@@ -590,7 +591,7 @@ with tab_dogrula:
                     alt="Okuma ile tasarım arasındaki farklar",
                 )
         else:
-            st.info("Karşılaştırmak için bir okuma yapıştırın.",
+            st.info(t("Karşılaştırmak için bir okuma yapıştırın."),
                     icon=":material/content_paste:")
 
 
@@ -599,17 +600,17 @@ with tab_dogrula:
 # ---------------------------------------------------------------------------
 
 with tab_sorun:
-    alt_kesim, alt_belirti = st.tabs(["Çift kesim uyumluluğu",
-                                      "Belirtiden yola çık"])
+    alt_kesim, alt_belirti = st.tabs([t("Çift kesim uyumluluğu"),
+                                      t("Belirtiden yola çık")])
 
     with alt_kesim:
         st.caption(
-            "İki enzimi aynı tüpte kullanmak her zaman mümkün değildir. "
+            t("İki enzimi aynı tüpte kullanmak her zaman mümkün değildir. "
             "Doğrulanabilir olanlar burada denetleniyor; tampon seçimi "
-            "üreticiye özgü ölçüm verisi olduğu için uydurulmuyor."
+            "üreticiye özgü ölçüm verisi olduğu için uydurulmuyor.")
         )
         cift = st.multiselect(
-            "Birlikte kullanılacak enzimler", _ticari(),
+            t("Birlikte kullanılacak enzimler"), _ticari(),
             default=(secilen or _tek_kesenler(seq))[:2],
             key="ts_cift",
         )
@@ -620,14 +621,14 @@ with tab_sorun:
 
     with alt_belirti:
         st.caption(
-            "Belirtiyi seçin: olası sebepler sıralanır. Uygulama "
+            t("Belirtiyi seçin: olası sebepler sıralanır. Uygulama "
             "tasarımınıza bakarak hangi sebebin sizde gerçekten var "
             "olduğunu işaretler - geri kalanı sizin kontrol etmeniz "
-            "gereken şeylerdir."
+            "gereken şeylerdir.")
         )
         belirtiler = ts.symptoms()
         secili_b = st.selectbox(
-            "Ne oldu?", [b.key for b in belirtiler],
+            t("Ne oldu?"), [b.key for b in belirtiler],
             format_func=lambda k: next(b.label for b in belirtiler
                                        if b.key == k),
             key="ts_belirti",
@@ -644,13 +645,13 @@ with tab_sorun:
         belirsiz = [c for c in sonuc.causes if c.applies is None]
 
         if var:
-            st.markdown("### Sizin tasarımınızda var")
+            st.markdown(t("### Sizin tasarımınızda var"))
             for c in var:
                 st.error(f"**{c.title}** — {c.detail}"
                          + (f"\n\n*Bakılacak:* {c.check}" if c.check else ""),
                          icon=":material/error:")
         if belirsiz:
-            st.markdown("### Kontrol etmeniz gerekenler")
+            st.markdown(t("### Kontrol etmeniz gerekenler"))
             for c in belirsiz:
                 with st.container(border=True):
                     st.markdown(f"**{c.title}**")
@@ -663,7 +664,7 @@ with tab_sorun:
                     st.markdown(f"- **{c.title}** — tasarımınızda bu durum "
                                 f"yok, bu sebebi eleyebilirsiniz.")
         if not sonuc.causes:
-            st.info("Bu belirti için kayıt yok.", icon=":material/help:")
+            st.info(t("Bu belirti için kayıt yok."), icon=":material/help:")
 
 
 # ---------------------------------------------------------------------------
@@ -672,14 +673,14 @@ with tab_sorun:
 
 with tab_rap:
     st.caption(
-        "Haritayı, parça listesini, denetim sonucunu, protein özelliklerini "
+        t("Haritayı, parça listesini, denetim sonucunu, protein özelliklerini "
         "ve protokolü tek bir HTML dosyasında toplar. Tarayıcıda açıp "
-        "oradan PDF'e basabilirsiniz."
+        "oradan PDF'e basabilirsiniz.")
     )
     r = st.container(horizontal=True, vertical_alignment="bottom")
-    yazar = r.text_input("Rapora yazılacak isim (isteğe bağlı)", width=300)
+    yazar = r.text_input(t("Rapora yazılacak isim (isteğe bağlı)"), width=300)
     icerik = r.multiselect(
-        "Rapora girecek bölümler",
+        t("Rapora girecek bölümler"),
         ["Harita", "Parçalar", "Denetim", "Protein", "Jel", "Protokol"],
         default=["Harita", "Parçalar", "Denetim", "Protokol"],
     )
@@ -709,14 +710,14 @@ with tab_rap:
     )
 
     st.download_button(
-        "Raporu HTML olarak indir", html_rapor,
+        t("Raporu HTML olarak indir"), html_rapor,
         file_name=f"{ad}-rapor.html", mime="text/html",
         icon=":material/download:", type="primary",
     )
     st.caption(f"Rapor {len(html_rapor) // 1024} KB · harita ve jel "
                "dosyanın içine gömülür, ayrı görsel gerekmez.")
 
-    with st.expander("Raporu burada önizle"):
+    with st.expander(t("Raporu burada önizle")):
         # st.iframe kaynak olarak adres ister, ham HTML almaz; raporu
         # data: adresine gömüp öyle veriyoruz - böylece dosyayı diske
         # yazmadan ve kaldırılmış bir API'ye dayanmadan gösterilebiliyor.

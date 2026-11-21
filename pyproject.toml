@@ -1,0 +1,62 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vectorlab"
+version = "1.0.0"
+description = "Bakteriyel vektör tasarımı ve literatür aracı"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "MelihDeniz" }]
+keywords = [
+    "molecular-biology", "plasmid", "cloning", "codon-optimization",
+    "restriction-enzymes", "synthetic-biology", "bacteria",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Education",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Programming Language :: Python :: 3",
+    "Natural Language :: Turkish",
+    "Natural Language :: English",
+]
+dependencies = [
+    "biopython>=1.85",
+    "streamlit>=1.57",
+    "requests>=2.31",
+]
+
+[project.optional-dependencies]
+# Masaüstü penceresi (Windows'ta WebView2 kullanır).
+desktop = ["pywebview>=5.0"]
+# Testler ve bağımsız doğrulama.
+dev = ["pytest>=8.0"]
+# Tek dosyalık Windows kurulumu üretmek için.
+build = ["pyinstaller>=6.6"]
+
+[project.urls]
+Homepage = "https://github.com/MelihDeniz/vectorlab"
+Source = "https://github.com/MelihDeniz/vectorlab"
+Issues = "https://github.com/MelihDeniz/vectorlab/issues"
+
+[project.scripts]
+# Konsoldan `vectorlab` yazınca masaüstü penceresi açılır.
+vectorlab = "desktop:main"
+
+[tool.setuptools]
+# Uygulama bir kütüphane değil; modüller ve veri olduğu gibi taşınır.
+py-modules = ["streamlit_app", "desktop"]
+
+[tool.setuptools.packages.find]
+include = ["core*", "app_pages*", "tools*"]
+
+[tool.setuptools.package-data]
+"*" = ["*.json", "*.txt", "*.toml"]
+
+# pytest ayarları `pytest.ini` dosyasındadır. Buraya da yazılsaydı
+# pytest.ini onu sessizce geçersiz kılardı; iki yerde ayar tutmak,
+# birini değiştirip diğerinin kazandığını fark etmemek demektir.

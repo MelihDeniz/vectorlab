@@ -17,6 +17,7 @@ from core.assembly import assemble
 from core.parts_seed import CATEGORY_TR
 from core.plasmid_map import circular_map, render as render_svg
 from core.seq_utils import Feature
+from core.i18n import t
 
 st.caption(
     f"{len(refbuild.RECIPES)} tarif var. Sıfırdan kurmuyoruz: gerçek bir "
@@ -25,7 +26,7 @@ st.caption(
 )
 
 tarif_key = st.selectbox(
-    "Tarif", [r.key for r in refbuild.RECIPES],
+    t("Tarif"), [r.key for r in refbuild.RECIPES],
     format_func=lambda k: refbuild.recipe_by_key(k).title,
 )
 tarif = refbuild.recipe_by_key(tarif_key)
@@ -52,7 +53,7 @@ URUN_ADI = f"p{(hastalik.short if hastalik else 'VL').split()[0]}-" \
            f"{rec['name'].split()[0]}"
 
 # ---------------------------------------------------------------------------
-st.header("1. Referans vektör")
+st.header(t("1. Referans vektör"))
 c1, c2 = st.columns([3, 2])
 ORIJINAL = ref_vectors.catalog_features(tarif.vector_id, db.list_parts())
 with c1:
@@ -69,7 +70,7 @@ with c2:
                 icon=":material/school:")
 
 # ---------------------------------------------------------------------------
-st.header("2. Hangi enzimler, neden")
+st.header(t("2. Hangi enzimler, neden"))
 satirlar = []
 kaynak = rec["sequence"]
 for i, (adim, basamak) in enumerate(zip(tarif.steps, res.steps), start=1):
@@ -88,7 +89,7 @@ for i, (adim, basamak) in enumerate(zip(tarif.steps, res.steps), start=1):
 st.dataframe(satirlar, width="stretch", hide_index=True,
              alt="Kullanılan restriksiyon enzimleri tablosu")
 st.caption(
-    "Her aşamada iki FARKLI enzim kullanılır, ama **farklı olmaları "
+    t("Her aşamada iki FARKLI enzim kullanılır, ama **farklı olmaları "
     "yetmez**: ne bıraktıklarına bakın. SalI ile XhoI ikisi de "
     "5' TCGA, XbaI ile SpeI ikisi de 5' CTAG, BamHI ile BclI ikisi "
     "de 5' GATC bırakır - böyle bir çiftle keserseniz uçlar "
@@ -99,28 +100,28 @@ st.caption(
     "İkinci kontrol: kullanılan enzim **eklenecek kasetin içinde** "
     "kesmemeli. Kesiyorsa inserti o enzimlerle hazırlayamazsınız ve "
     "tarif kağıt üzerinde kalır. On iki tarifin hepsi bu iki "
-    "sınavdan geçiyor (`tests/test_refbuild.py`)."
+    "sınavdan geçiyor (`tests/test_refbuild.py`).")
 )
 if any(refbuild.ENZYMES[e].get("dam")
        for a in tarif.steps for e in (a.left, a.right)):
     st.warning(
-        "Tarifte Dam metilasyonuna duyarlı bir enzim var. E. coli'den "
+        t("Tarifte Dam metilasyonuna duyarlı bir enzim var. E. coli'den "
         "saflaştırılan plazmitte o bölge kesilmeyebilir; plazmiti önce "
-        "JM110 gibi dam⁻ bir suşta çoğaltın.",
+        "JM110 gibi dam⁻ bir suşta çoğaltın."),
         icon=":material/warning:")
 
 # ---------------------------------------------------------------------------
-st.header("3. Adım adım kes-yapıştır")
+st.header(t("3. Adım adım kes-yapıştır"))
 sekmeler = st.tabs([f"{i+1}. aşama: {s.title}"
                     for i, s in enumerate(tarif.steps)])
 for sekme, adim, basamak, kaset in zip(sekmeler, tarif.steps, res.steps,
                                        kasetler):
     with sekme:
         m = st.container(horizontal=True)
-        m.metric("Atılan bölge", f"{basamak.removed} bp")
-        m.metric("Eklenen parça", f"{basamak.insert_length} bp")
-        m.metric("Ürün", f"{basamak.length} bp")
-        m.metric("Enzimler", f"{adim.left} + {adim.right}")
+        m.metric(t("Atılan bölge"), f"{basamak.removed} bp")
+        m.metric(t("Eklenen parça"), f"{basamak.insert_length} bp")
+        m.metric(t("Ürün"), f"{basamak.length} bp")
+        m.metric(t("Enzimler"), f"{adim.left} + {adim.right}")
         if adim.lesson:
             st.markdown(f"**Ne oluyor:** {adim.lesson}")
         st.dataframe(
@@ -134,7 +135,7 @@ for sekme, adim, basamak, kaset in zip(sekmeler, tarif.steps, res.steps,
             st.warning(n)
 
 # ---------------------------------------------------------------------------
-st.header("4. Orijinal ve bizim vektör")
+st.header(t("4. Orijinal ve bizim vektör"))
 
 
 def _uzunluk(a: int, b: int, L: int) -> int:
@@ -198,23 +199,23 @@ son_feats.sort(key=lambda f: f.start)
 
 a, b = st.columns(2)
 with a:
-    st.subheader("Orijinal")
+    st.subheader(t("Orijinal"))
     render_svg(circular_map(rec["name"], L0, ORIJINAL, {}, size=520))
 with b:
-    st.subheader("Bizim vektör")
+    st.subheader(t("Bizim vektör"))
     render_svg(circular_map(URUN_ADI, res.final_length, son_feats, {},
                             size=520))
 
-st.markdown("**Orijinal bölgelere ne oldu?**")
+st.markdown(t("**Orijinal bölgelere ne oldu?**"))
 st.dataframe(
     olanlar, width="stretch", hide_index=True,
     alt="Referans vektörün bölgelerinin kurulan vektördeki durumu",
     column_config={
-        "Orijinal": st.column_config.NumberColumn("Orijinal", format="%d bp"),
-        "Son vektörde": st.column_config.NumberColumn("Son vektörde",
+        "Orijinal": st.column_config.NumberColumn(t("Orijinal"), format="%d bp"),
+        "Son vektörde": st.column_config.NumberColumn(t("Son vektörde"),
                                                       format="%d bp"),
         "Kalan": st.column_config.ProgressColumn(
-            "Kalan oran", min_value=0.0, max_value=1.0, format="percent"),
+            t("Kalan oran"), min_value=0.0, max_value=1.0, format="percent"),
     })
 bozulan = [o["Bölge"] for o in olanlar if o["Durum"] != "bütün korundu"]
 st.caption(
@@ -244,7 +245,7 @@ st.dataframe(
     alt="Orijinal ve kurulan vektörün karşılaştırması")
 
 # ---------------------------------------------------------------------------
-st.header("5. Jel simülasyonu")
+st.header(t("5. Jel simülasyonu"))
 ilk = tarif.steps[0]
 son = tarif.steps[-1]
 boyutlar = refbuild.digest_sizes(res.final, [son.left, son.right])
@@ -261,12 +262,12 @@ for i, (adim, basamak) in enumerate(zip(tarif.steps, res.steps), start=1):
         agaroz))
 render_svg(gel.render_gel(lanes, agaroz, title="Beklenen sindirim deseni"))
 st.caption(
-    "Teorik desen: gerçek jel kesim verimine ve yüklenen DNA miktarına "
+    t("Teorik desen: gerçek jel kesim verimine ve yüklenen DNA miktarına "
     "bağlıdır. Doğru klonu ararken orijinal ile ürünün bant deseni "
-    "arasındaki farka bakarsınız.")
+    "arasındaki farka bakarsınız."))
 
 # ---------------------------------------------------------------------------
-st.header("6. Sonuç ve sınırlılıklar")
+st.header(t("6. Sonuç ve sınırlılıklar"))
 eksik = [p["name"] for k in kasetler for p in k.part_order
          if p.get("seq_status") != "full"]
 notlar = [
@@ -286,11 +287,11 @@ if eksik:
 
 c = st.container(horizontal=True)
 c.download_button(
-    "Son vektör FASTA",
+    t("Son vektör FASTA"),
     f">{URUN_ADI} {res.final_length} bp\n" + "\n".join(
         res.final[i:i + 70] for i in range(0, res.final_length, 70)) + "\n",
     file_name=f"{URUN_ADI}.fasta", mime="text/plain",
     icon=":material/download:")
-if c.button("Plazmit denetle sayfasında aç", icon=":material/fact_check:"):
+if c.button(t("Plazmit denetle sayfasında aç"), icon=":material/fact_check:"):
     st.session_state.analyze_seq = res.final
     st.switch_page("app_pages/inspect.py")

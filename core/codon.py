@@ -1,11 +1,20 @@
-"""Kodon kullanımı: CAI ölçümü ve E. coli için kodon optimizasyonu.
+"""Kodon kullanımı: CAI ölçümü ve konağa göre kodon optimizasyonu.
 
-Tablo `data/ecoli_codon_usage.json` dosyasından gelir ve
-`tools/fetch_codon_usage.py` ile E. coli K-12 genomunun 4200'den fazla
-kodlayan dizisinden hesaplanmıştır - ezberden yazılmış bir tablo değil.
+Tablolar `data/codon_usage/` altındaki dosyalardan gelir ve
+`tools/fetch_codon_usage.py` ile her konağın genomundaki bütün
+kodlayan dizilerden hesaplanmıştır - ezberden yazılmış tablo değil.
+
+**Neden beş tablo var.** Kodon tercihi organizmaya göre değişir ve bu
+fark küçük değildir: P. putida'da en sık lösin kodonu CTG (GC'den
+zengin genom), L. cremoris'te ise AT'den zengin kodonlar baskındır.
+Katalogda beş ayrı organizma konağı var ve uygulama hem E. coli'de hem
+L. cremoris'te terapötik tasarlıyor. Bir L. cremoris yapısını E. coli
+tablosuyla optimize etmek, optimize etmemekten daha iyi değildir -
+geni yanlış yöne çeker. Bu yüzden her çağrı hangi organizmaya göre
+optimize edildiğini `org` argümanıyla söyler; varsayılan E. coli'dir.
 
 Optimizasyon neden gerekli: bir gen başka bir organizmadan geliyorsa
-kodon tercihi E. coli'ninkiyle uyuşmaz. Ribozom, karşılığı az bulunan
+kodon tercihi konağınkiyle uyuşmaz. Ribozom, karşılığı az bulunan
 tRNA'yı beklerken durur; bu duraklamalar hem verimi düşürür hem de
 yanlış katlanmaya ve erken sonlanmaya yol açar.
 
@@ -29,7 +38,23 @@ from Bio.Data import CodonTable
 
 from core.seq_utils import clean_seq, gc_percent, revcomp
 
-DATA = Path(__file__).resolve().parent.parent / "data" / "ecoli_codon_usage.json"
+DATA_DIR = Path(__file__).resolve().parent.parent / "data" / "codon_usage"
+
+#: Tablo bulunmazsa ve çağrı organizma söylemezse bu kullanılır.
+DEFAULT_ORG = "ecoli"
+
+#: Katalogdaki konakların `organism` alanı -> kodon tablosu anahtarı.
+#: Anahtarlar `data/codon_usage/<anahtar>.json` dosyalarına karşılık
+#: gelir. Katalog "Lactococcus lactis" diyor, NCBI aynı suşu artık
+#: *Lactococcus cremoris* olarak kaydediyor; eşleme bu yüzden burada
+#: elle duruyor, dosyanın `taxonomy_note` alanı da farkı anlatıyor.
+ORGANISM_TABLES = {
+    "E. coli": "ecoli",
+    "Bacillus subtilis": "bsubtilis",
+    "Pseudomonas putida": "pputida",
+    "Lactococcus lactis": "llactis",
+    "Corynebacterium glutamicum": "cglutamicum",
+}
 
 _T11 = CodonTable.unambiguous_dna_by_id[11]
 STOPS = set(_T11.stop_codons)
@@ -87,27 +112,48 @@ class OptimizeResult:
 # ---------------------------------------------------------------------------
 
 
-@functools.lru_cache(maxsize=1)
-def table() -> dict[str, Any]:
-    if not DATA.exists():
+def available() -> list[str]:
+    """Diskte tablosu bulunan organizma anahtarları."""
+    if not DATA_DIR.exists():
+        return []
+    return sorted(p.stem for p in DATA_DIR.glob("*.json"))
+
+
+def table_key_for_organism(organism: str) -> str | None:
+    """Katalogdaki konak organizmasının tablo anahtarı, yoksa None.
+
+    None dönmesi "bu organizma için tablomuz yok" demektir ve arayüz
+    bunu kullanıcıya söylemek zorundadır: sessizce E. coli tablosuna
+    düşmek, yanlış tabloyla optimize etmek olur.
+    """
+    anahtar = ORGANISM_TABLES.get((organism or "").strip())
+    if anahtar and anahtar in available():
+        return anahtar
+    return None
+
+
+@functools.lru_cache(maxsize=None)
+def table(org: str = DEFAULT_ORG) -> dict[str, Any]:
+    yol = DATA_DIR / f"{org}.json"
+    if not yol.exists():
         return {}
-    return json.loads(DATA.read_text(encoding="utf-8"))
+    return json.loads(yol.read_text(encoding="utf-8"))
 
 
-@functools.lru_cache(maxsize=1)
-def weights() -> dict[str, float]:
-    return {c: d["w"] for c, d in table().get("codons", {}).items()}
+@functools.lru_cache(maxsize=None)
+def weights(org: str = DEFAULT_ORG) -> dict[str, float]:
+    return {c: d["w"] for c, d in table(org).get("codons", {}).items()}
 
 
-@functools.lru_cache(maxsize=1)
-def reference_fractions() -> dict[str, float]:
+@functools.lru_cache(maxsize=None)
+def reference_fractions(org: str = DEFAULT_ORG) -> dict[str, float]:
     """Çok ifade edilen genlerde her kodonun kendi amino asidi içindeki payı.
 
     w değeri `sayım / o amino asidin en sık kodonunun sayımı` olduğundan,
     payı w'leri normalize ederek geri alabiliyoruz. Optimizasyonun hedefi
     budur: geni bu dağılıma oturtmak.
     """
-    w = weights()
+    w = weights(org)
     out: dict[str, float] = {}
     by_aa: dict[str, list[str]] = {}
     for codon, aa in _T11.forward_table.items():
@@ -119,10 +165,10 @@ def reference_fractions() -> dict[str, float]:
     return out
 
 
-@functools.lru_cache(maxsize=1)
-def synonyms() -> dict[str, list[str]]:
+@functools.lru_cache(maxsize=None)
+def synonyms(org: str = DEFAULT_ORG) -> dict[str, list[str]]:
     """Amino asit -> o amino asidi kodlayan kodonlar, w'ye göre sıralı."""
-    w = weights()
+    w = weights(org)
     out: dict[str, list[str]] = {}
     for codon, aa in _T11.forward_table.items():
         out.setdefault(aa, []).append(codon)
@@ -131,13 +177,16 @@ def synonyms() -> dict[str, list[str]]:
     return out
 
 
-def source_note() -> str:
-    t = table()
+def source_note(org: str = DEFAULT_ORG) -> str:
+    t = table(org)
     if not t:
         return "Kodon tablosu bulunamadı."
-    return (f"{t['organism']} ({t['accession']}), {t['gene_count']} gen. "
+    not_ = (f"{t['organism']} ({t['accession']}), {t['gene_count']} gen. "
             f"CAI ölçütü {len(t['reference_set'])} çok ifade edilen genden "
             f"hesaplandı. İndirilme: {t['fetched']}.")
+    if t.get("taxonomy_note"):
+        not_ += " " + t["taxonomy_note"]
+    return not_
 
 
 # ---------------------------------------------------------------------------
@@ -151,17 +200,17 @@ def _codons(cds: str) -> list[str]:
     return [s[i:i + 3] for i in range(0, len(s), 3)]
 
 
-def cai(cds: str) -> float | None:
+def cai(cds: str, org: str = DEFAULT_ORG) -> float | None:
     """Codon Adaptation Index: 0-1, 1 = çok ifade edilen genler gibi.
 
     Başlama ve durdurma kodonları ile tek seçenekli amino asitler
     (Met, Trp) hesaba katılmaz - onlarda seçim yoktur, CAI'yi yapay
     olarak yukarı çekerler.
     """
-    w = weights()
+    w = weights(org)
     if not w:
         return None
-    syn = synonyms()
+    syn = synonyms(org)
     logs = []
     kodonlar = _codons(cds)
     for c in kodonlar[1:]:
@@ -177,9 +226,10 @@ def cai(cds: str) -> float | None:
     return round(math.exp(sum(logs) / len(logs)), 4)
 
 
-def rare_positions(cds: str, threshold: float = RARE_W) -> list[dict[str, Any]]:
+def rare_positions(cds: str, threshold: float = RARE_W,
+                   org: str = DEFAULT_ORG) -> list[dict[str, Any]]:
     """Nadir kodonların yeri - ribozomun duraklayabileceği noktalar."""
-    w = weights()
+    w = weights(org)
     out = []
     for i, c in enumerate(_codons(cds), start=1):
         if c in STOPS:
@@ -193,8 +243,8 @@ def rare_positions(cds: str, threshold: float = RARE_W) -> list[dict[str, Any]]:
     return out
 
 
-def rare_clusters(cds: str, window: int = 10, min_count: int = 3
-                  ) -> list[dict[str, Any]]:
+def rare_clusters(cds: str, window: int = 10, min_count: int = 3,
+                  org: str = DEFAULT_ORG) -> list[dict[str, Any]]:
     """Nadir kodonların kümelendiği yerler.
 
     Tek tek dağılmış nadir kodonlar genelde sorun çıkarmaz; arka arkaya
@@ -204,7 +254,7 @@ def rare_clusters(cds: str, window: int = 10, min_count: int = 3
     o pencere yoğun sayılır; komşu yoğun pencereler tek bir küme olarak
     birleştirilir ve kümenin gerçek nadir kodon sayısı raporlanır.
     """
-    pos = [r["position"] for r in rare_positions(cds)]
+    pos = [r["position"] for r in rare_positions(cds, org=org)]
     if len(pos) < min_count:
         return []
     pos_set = set(pos)
@@ -278,8 +328,14 @@ def optimize(
     min_w_full: float = 0.5,
     upstream: str = "",
     relieve_structure: bool = True,
+    org: str = DEFAULT_ORG,
 ) -> OptimizeResult:
-    """Kodonları E. coli'ye uyarla.
+    """Kodonları `org` organizmasına uyarla.
+
+    `org` hangi kodon tablosunun kullanılacağını söyler ("ecoli",
+    "bsubtilis", "pputida", "llactis", "cglutamicum"). Yapının konağı
+    E. coli değilse çağıranın bunu geçmesi gerekir; yoksa gen yanlış
+    organizmanın tercihine çekilir.
 
     mode="nadir"  yalnızca nadir kodonları değiştirir. Dizinin geri
                   kalanı olduğu gibi kalır; doğal mRNA yapısı ve
@@ -309,20 +365,20 @@ def optimize(
     if len(s) < 6:
         return OptimizeResult(sequence=s, protein="",
                               notes=["Dizi çok kısa."])
-    w = weights()
+    w = weights(org)
     if not w:
         return OptimizeResult(sequence=s, protein="",
-                              notes=["Kodon tablosu yüklenemedi; "
+                              notes=[f"'{org}' kodon tablosu yüklenemedi; "
                                      "tools/fetch_codon_usage.py çalıştırın."])
 
-    syn = synonyms()
+    syn = synonyms(org)
     patterns = _forbidden_patterns(forbidden_sites or [])
     avoid = [m.upper() for m in (avoid_motifs or []) if m]
     kodonlar = _codons(s)
 
     res = OptimizeResult(sequence=s, protein="")
-    res.cai_before = cai(s) or 0.0
-    res.rare_before = len(rare_positions(s, rare_threshold))
+    res.cai_before = cai(s, org=org) or 0.0
+    res.rare_before = len(rare_positions(s, rare_threshold, org=org))
     res.gc_before = gc_percent(s)
 
     # Değiştirilmeyecek kodonlar: ilk (başlama) ve varsa son (durdurma).
@@ -330,7 +386,7 @@ def optimize(
     son = len(kodonlar) - 1 if kodonlar[-1] in STOPS else len(kodonlar)
 
     yeni = list(kodonlar)
-    hedef_pay = reference_fractions()
+    hedef_pay = reference_fractions(org)
     aa_sayac: dict[str, dict[str, int]] = {}
     for i in range(ilk, son):
         mevcut = kodonlar[i]
@@ -432,10 +488,10 @@ def optimize(
 
     yeni_seq = "".join(yeni)
     res.sequence = yeni_seq
-    res.cai_after = cai(yeni_seq) or 0.0
+    res.cai_after = cai(yeni_seq, org=org) or 0.0
     res.repeats_before = len(find_repeats(s))
     res.repeats = find_repeats(yeni_seq)
-    res.rare_after = len(rare_positions(yeni_seq, rare_threshold))
+    res.rare_after = len(rare_positions(yeni_seq, rare_threshold, org=org))
     res.gc_after = gc_percent(yeni_seq)
 
     # Protein birebir aynı kalmalı - olmazsa sonucu vermeyiz.
@@ -666,31 +722,54 @@ def _translate(cds: str) -> str:
     return "".join(out)
 
 
-# Kendi tablomuzla hesaplanmış referans değerler - "iyi bir CAI kaçtır"
-# sorusunun cevabı uydurma bir eşik değil, gerçek genlerin değeridir.
-REF_CAI = {"rpsA": 0.787, "tufA": 0.824}
+def reference_scale(org: str = DEFAULT_ORG) -> dict[str, float]:
+    """"İyi bir CAI kaçtır" - o organizmanın kendi referans genlerinden.
+
+    Eskiden burada iki gömülü sayı vardı (E. coli `rpsA` 0,787 ve
+    `tufA` 0,824). Beş organizma olunca gömülü sayı yanlış oldu: her
+    tablonun ölçeği kendi genlerinden çıkmak zorunda. Değerler
+    `tools/fetch_codon_usage.py` tarafından hesaplanıp tablonun içine
+    yazılır, yani uydurma bir eşik değil ölçülmüş bir dağılımdır.
+    """
+    return table(org).get("reference_cai", {}) or {}
 
 
-def interpret(res: OptimizeResult) -> list[dict[str, str]]:
-    """Sonucu yorumla - sayılar tek başına karar verdirmez."""
+def interpret(res: OptimizeResult,
+              org: str = DEFAULT_ORG) -> list[dict[str, str]]:
+    """Sonucu yorumla - sayılar tek başına karar verdirmez.
+
+    `org` hangi organizmanın ölçeğine göre yorumlanacağını söyler;
+    "iyi bir CAI" her organizmada aynı sayı değildir.
+    """
     out: list[dict[str, str]] = []
     if res.cai_before and res.cai_after:
         fark = res.cai_after - res.cai_before
+        olcek = reference_scale(org)
+        t = table(org)
+        if olcek:
+            kiyas = (
+                f"**Ölçek için:** {t.get('organism', org)} genomunda, bu "
+                f"tablonun ölçütü olan {olcek.get('gene_count', 0)} çok "
+                f"ifade edilen genin CAI ortancası "
+                f"{olcek.get('median')} (%10-%90 aralığı "
+                f"{olcek.get('p10')}-{olcek.get('p90')}). Yani bu "
+                f"organizmanın en çok ifade edilen genleri bile 1,0'a "
+                f"yakın değil. "
+            )
+        else:
+            kiyas = ""
         out.append({
             "kind": "bilgi", "title": "CAI değişimi",
             "detail": (
                 f"{res.cai_before} → {res.cai_after} "
                 f"({'+' if fark >= 0 else ''}{round(fark, 4)}). "
-                f"**Ölçek için:** bu tablonun hesaplandığı genomda "
-                f"`rpsA` {REF_CAI['rpsA']} ve `tufA` {REF_CAI['tufA']} "
-                f"CAI'ye sahip - yani E. coli'nin en çok ifade edilen "
-                f"genleri bile 0,8 civarındadır. 1,0'a çıkmak doğada "
-                f"karşılığı olan bir hedef değildir ve bu yüzden "
-                f"optimizasyon oraya gitmez: her amino asit için kodon "
-                f"payları, çok ifade edilen genlerdeki paylara "
-                f"yaklaştırılır. Sonuç tipik olarak 0,85-0,92 aralığına "
-                f"oturur; doğal 0,8'in biraz üstünde kalmasının sebebi, "
-                f"nadir kodonların bilerek dışarıda bırakılmasıdır. "
+                + kiyas +
+                "1,0'a çıkmak doğada karşılığı olan bir hedef değildir "
+                "ve bu yüzden optimizasyon oraya gitmez: her amino asit "
+                "için kodon payları, çok ifade edilen genlerdeki paylara "
+                "yaklaştırılır. Sonucun doğal ortancanın biraz üstünde "
+                "kalmasının sebebi, nadir kodonların bilerek dışarıda "
+                "bırakılmasıdır. "
                 "CAI tek başına ifade düzeyini öngörmez: mRNA yapısı, "
                 "promotör gücü ve protein katlanması da belirleyicidir."
             )})

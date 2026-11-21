@@ -120,6 +120,79 @@ def test_gercek_e_coli_genleri_yuksek_cai_alir():
 
 
 # ---------------------------------------------------------------------------
+# Kodon tablosu - konak eşlemesi
+# ---------------------------------------------------------------------------
+
+
+def test_her_konak_organizmasinin_kodon_tablosu_var():
+    """Katalogdaki her organizma için kodon tablosu bulunmalı.
+
+    Bu testin varlık sebebi gerçek bir hatadır: uygulama tek bir
+    E. coli tablosuyla çalışıyordu, ama katalogda dört ayrı organizma
+    konağı var ve Hastalık vektörü sayfası L. cremoris'te terapötik
+    tasarlıyor. O yapıyı optimize eden kullanıcı sessizce E. coli
+    tablosunu alıyordu. Katalogda tablosu olmayan bir organizma
+    görünürse bu test onu yakalar.
+    """
+    organizmalar = {h["organism"] for h in db.list_hosts()}
+    assert organizmalar, "konak listesi boş"
+    eksik = [o for o in sorted(organizmalar)
+             if codon.table_key_for_organism(o) is None]
+    assert not eksik, (
+        f"bu organizmalar için kodon tablosu yok: {eksik}. "
+        f"tools/fetch_codon_usage.py içine eklenmeli.")
+
+
+def test_bilinmeyen_organizma_sessizce_e_coli_ye_dusmez():
+    """Tablosu olmayan organizma None dönmeli, E. coli DEĞİL.
+
+    Sessizce varsayılana düşmek, yanlış tabloyla optimize etmektir ve
+    kullanıcı bunu göremez. Arayüzün uyarabilmesi için None gerekir.
+    """
+    assert codon.table_key_for_organism("Saccharomyces cerevisiae") is None
+    assert codon.table_key_for_organism("") is None
+
+
+@pytest.mark.parametrize("org", ["ecoli", "bsubtilis", "pputida",
+                                 "llactis", "cglutamicum"])
+def test_her_tabloda_her_amino_asidin_en_iyi_kodonu_var(org):
+    w = codon.weights(org)
+    syn = codon.synonyms(org)
+    assert w, f"{org} tablosu yüklenemedi"
+    for aa, codons in syn.items():
+        assert max(w[c] for c in codons) == pytest.approx(1.0)
+
+
+def test_farkli_organizmalar_farkli_optimizasyon_veriyor():
+    """Aynı gen, iki organizmaya göre farklı optimize edilmeli.
+
+    Aynı diziyi veriyorsa `org` argümanı hiçbir işe yaramıyor demektir.
+    GC bakımından en uzak iki konak seçildi: P. putida (%61 GC) ve
+    L. cremoris (%35 GC).
+    """
+    pp = codon.optimize(GEN, mode="tam", org="pputida")
+    ll = codon.optimize(GEN, mode="tam", org="llactis")
+    assert pp.sequence != ll.sequence
+    # Protein ikisinde de korunmalı.
+    assert codon._translate(pp.sequence) == codon._translate(GEN)
+    assert codon._translate(ll.sequence) == codon._translate(GEN)
+    # GC'den zengin konak daha GC'li bir dizi vermeli.
+    assert pp.gc_after > ll.gc_after, (
+        f"P. putida {pp.gc_after}% vs L. cremoris {ll.gc_after}%")
+
+
+def test_cai_olcumu_tabloya_gore_degisiyor():
+    """Aynı dizi, iki tabloda farklı CAI almalı."""
+    gc_li = "ATG" + "CTGGCCGGCACCGTGCTGGCCGGCACCGTG" * 4 + "TAA"
+    pp = codon.cai(gc_li, org="pputida")
+    ll = codon.cai(gc_li, org="llactis")
+    assert pp is not None and ll is not None
+    assert pp > ll, (
+        f"GC'li dizi P. putida'da {pp}, L. cremoris'te {ll} - "
+        "tablolar ayrım yapmıyor")
+
+
+# ---------------------------------------------------------------------------
 # mRNA yapısı
 # ---------------------------------------------------------------------------
 

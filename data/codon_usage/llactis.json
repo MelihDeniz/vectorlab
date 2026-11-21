@@ -1,0 +1,548 @@
+{
+ "key": "llactis",
+ "organism": "Lactococcus cremoris subsp. cremoris MG1363",
+ "organism_ncbi": "Lactococcus cremoris subsp. cremoris MG1363",
+ "catalog_organism": "Lactococcus lactis",
+ "accession": "NC_009004.1",
+ "source": "NCBI Nucleotide, fasta_cds_na",
+ "fetched": "2026-11-21",
+ "gene_count": 2394,
+ "taxonomy_note": "Katalogdaki konak 'Lactococcus lactis NZ9000' olarak adlanır; NZ9000 MG1363 türevidir. NCBI bu suşu artık *Lactococcus cremoris* subsp. cremoris olarak kaydediyor: L. lactis subsp. cremoris 2021'de ayrı bir tür mertebesine çıkarıldı. Tablo MG1363'ün kendi genomundan hesaplandığı için adlandırmadaki bu değişiklik sayıları etkilemez, ama kaynağı ararken karşınıza iki ad çıkacağı için yazıldı.",
+ "reference_rule": "Çok ifade edilen genler iki kuralın BİRLEŞİMİYLE seçildi ve beş organizmanın hepsine aynı kurallar uygulandı: (1) RefSeq'in [protein=...] tanımı şu sınıflardan birine tam olarak uyuyorsa: ribozomal protein, uzama faktörü, şaperon, glikoliz, ATP sentaz; (2) ya da gen adı korunmuş ribozomal protein / uzama faktörü / glikoliz / şaperon adlandırmasına uyuyorsa. İkinci kural gerekli, çünkü bu beş kayıtta gen adı taşıyan CDS oranı %14 ile %100 arasında değişiyor; birinci kural gerekli, çünkü gen adı olmayan kayıtlarda tanınacak tek şey tanımdır.",
+ "reference_classes": {
+  "ribozomal protein": 52,
+  "uzama faktörü": 4,
+  "şaperon": 3,
+  "glikoliz": 5,
+  "ATP sentaz": 2,
+  "gen adı (korunmuş)": 4
+ },
+ "stop_codon_note": "Durdurma kodonlarının `count` ve `fraction` değerleri her genin SON kodonundan sayıldı; anlamlı kodonların istatistiğine girmedikleri için `per_1000` ve `w` sıfırdır. Bu kayıtta 34 gen iç çerçevede durdurma kodonu taşıyor (selenoproteinler ve okumadan geçme); onlar sayılmadı, çünkü gerçek durdurma kullanımını temsil etmiyorlar.",
+ "internal_stop_genes": 34,
+ "reference_cai": {
+  "gene_count": 70,
+  "median": 0.7344,
+  "p10": 0.6164,
+  "p90": 0.812
+ },
+ "reference_cai_note": "Referans kümedeki genlerin kendi tablosuyla hesaplanan CAI dağılımı. 'İyi bir CAI kaçtır' sorusunun cevabı budur ve organizmaya göre değişir; optimizasyonun 1,0'a gitmemesi gerektiğini gösteren ölçek de bu.",
+ "reference_set": [
+  "LLMG_RS01325",
+  "LLMG_RS11935",
+  "atpA",
+  "atpD",
+  "dnaK",
+  "efp",
+  "eno",
+  "fusA",
+  "gap",
+  "groES",
+  "groL",
+  "pyk",
+  "rplA",
+  "rplB",
+  "rplC",
+  "rplD",
+  "rplE",
+  "rplF",
+  "rplI",
+  "rplJ",
+  "rplK",
+  "rplL",
+  "rplM",
+  "rplN",
+  "rplO",
+  "rplP",
+  "rplQ",
+  "rplR",
+  "rplS",
+  "rplT",
+  "rplU",
+  "rplV",
+  "rplX",
+  "rpmA",
+  "rpmB",
+  "rpmC",
+  "rpmD",
+  "rpmF",
+  "rpmG",
+  "rpmH",
+  "rpmI",
+  "rpmJ",
+  "rpsA",
+  "rpsB",
+  "rpsC",
+  "rpsD",
+  "rpsE",
+  "rpsF",
+  "rpsG",
+  "rpsH",
+  "rpsI",
+  "rpsJ",
+  "rpsK",
+  "rpsL",
+  "rpsM",
+  "rpsO",
+  "rpsP",
+  "rpsQ",
+  "rpsR",
+  "rpsS",
+  "rpsT",
+  "rpsU",
+  "tig",
+  "tpiA",
+  "tsf",
+  "tuf"
+ ],
+ "reference_note": "CAI'nin w değerleri bu çok ifade edilen genlerden hesaplandı; fraction ve per_1000 ise genomun tamamından.",
+ "codons": {
+  "TTT": {
+   "aa": "F",
+   "count": 25356,
+   "per_1000": 36.58,
+   "fraction": 0.759,
+   "w": 0.6126
+  },
+  "TTC": {
+   "aa": "F",
+   "count": 8049,
+   "per_1000": 11.61,
+   "fraction": 0.241,
+   "w": 1.0
+  },
+  "TTA": {
+   "aa": "L",
+   "count": 21896,
+   "per_1000": 31.59,
+   "fraction": 0.315,
+   "w": 0.1313
+  },
+  "TTG": {
+   "aa": "L",
+   "count": 14785,
+   "per_1000": 21.33,
+   "fraction": 0.2127,
+   "w": 0.5216
+  },
+  "CTT": {
+   "aa": "L",
+   "count": 17678,
+   "per_1000": 25.5,
+   "fraction": 0.2543,
+   "w": 1.0
+  },
+  "CTC": {
+   "aa": "L",
+   "count": 5562,
+   "per_1000": 8.02,
+   "fraction": 0.08,
+   "w": 0.2289
+  },
+  "CTA": {
+   "aa": "L",
+   "count": 5337,
+   "per_1000": 7.7,
+   "fraction": 0.0768,
+   "w": 0.015
+  },
+  "CTG": {
+   "aa": "L",
+   "count": 4263,
+   "per_1000": 6.15,
+   "fraction": 0.0613,
+   "w": 0.0131
+  },
+  "TCT": {
+   "aa": "S",
+   "count": 11596,
+   "per_1000": 16.73,
+   "fraction": 0.255,
+   "w": 0.5253
+  },
+  "TCC": {
+   "aa": "S",
+   "count": 2199,
+   "per_1000": 3.17,
+   "fraction": 0.0484,
+   "w": 0.0107
+  },
+  "TCA": {
+   "aa": "S",
+   "count": 14700,
+   "per_1000": 21.21,
+   "fraction": 0.3233,
+   "w": 1.0
+  },
+  "TCG": {
+   "aa": "S",
+   "count": 2675,
+   "per_1000": 3.86,
+   "fraction": 0.0588,
+   "w": 0.0107
+  },
+  "AGT": {
+   "aa": "S",
+   "count": 10178,
+   "per_1000": 14.68,
+   "fraction": 0.2238,
+   "w": 0.0933
+  },
+  "AGC": {
+   "aa": "S",
+   "count": 4120,
+   "per_1000": 5.94,
+   "fraction": 0.0906,
+   "w": 0.1707
+  },
+  "TAT": {
+   "aa": "Y",
+   "count": 19543,
+   "per_1000": 28.19,
+   "fraction": 0.7823,
+   "w": 0.4975
+  },
+  "TAC": {
+   "aa": "Y",
+   "count": 5437,
+   "per_1000": 7.84,
+   "fraction": 0.2177,
+   "w": 1.0
+  },
+  "TGT": {
+   "aa": "C",
+   "count": 2489,
+   "per_1000": 3.59,
+   "fraction": 0.7563,
+   "w": 1.0
+  },
+  "TGC": {
+   "aa": "C",
+   "count": 802,
+   "per_1000": 1.16,
+   "fraction": 0.2437,
+   "w": 0.2353
+  },
+  "TGG": {
+   "aa": "W",
+   "count": 6921,
+   "per_1000": 9.98,
+   "fraction": 1.0,
+   "w": 1.0
+  },
+  "CCT": {
+   "aa": "P",
+   "count": 8054,
+   "per_1000": 11.62,
+   "fraction": 0.3589,
+   "w": 0.5377
+  },
+  "CCC": {
+   "aa": "P",
+   "count": 1985,
+   "per_1000": 2.86,
+   "fraction": 0.0885,
+   "w": 0.0137
+  },
+  "CCA": {
+   "aa": "P",
+   "count": 10391,
+   "per_1000": 14.99,
+   "fraction": 0.4631,
+   "w": 1.0
+  },
+  "CCG": {
+   "aa": "P",
+   "count": 2010,
+   "per_1000": 2.9,
+   "fraction": 0.0896,
+   "w": 0.0377
+  },
+  "CAT": {
+   "aa": "H",
+   "count": 9153,
+   "per_1000": 13.2,
+   "fraction": 0.7472,
+   "w": 0.4145
+  },
+  "CAC": {
+   "aa": "H",
+   "count": 3096,
+   "per_1000": 4.47,
+   "fraction": 0.2528,
+   "w": 1.0
+  },
+  "CAA": {
+   "aa": "Q",
+   "count": 21538,
+   "per_1000": 31.07,
+   "fraction": 0.831,
+   "w": 1.0
+  },
+  "CAG": {
+   "aa": "Q",
+   "count": 4381,
+   "per_1000": 6.32,
+   "fraction": 0.169,
+   "w": 0.0102
+  },
+  "CGT": {
+   "aa": "R",
+   "count": 10094,
+   "per_1000": 14.56,
+   "fraction": 0.395,
+   "w": 1.0
+  },
+  "CGC": {
+   "aa": "R",
+   "count": 3115,
+   "per_1000": 4.49,
+   "fraction": 0.1219,
+   "w": 0.2436
+  },
+  "CGA": {
+   "aa": "R",
+   "count": 3951,
+   "per_1000": 5.7,
+   "fraction": 0.1546,
+   "w": 0.0154
+  },
+  "CGG": {
+   "aa": "R",
+   "count": 1591,
+   "per_1000": 2.3,
+   "fraction": 0.0623,
+   "w": 0.0034
+  },
+  "AGA": {
+   "aa": "R",
+   "count": 5763,
+   "per_1000": 8.31,
+   "fraction": 0.2255,
+   "w": 0.0274
+  },
+  "AGG": {
+   "aa": "R",
+   "count": 1042,
+   "per_1000": 1.5,
+   "fraction": 0.0408,
+   "w": 0.005
+  },
+  "ATT": {
+   "aa": "I",
+   "count": 36136,
+   "per_1000": 52.13,
+   "fraction": 0.673,
+   "w": 0.6806
+  },
+  "ATC": {
+   "aa": "I",
+   "count": 11233,
+   "per_1000": 16.2,
+   "fraction": 0.2092,
+   "w": 1.0
+  },
+  "ATA": {
+   "aa": "I",
+   "count": 6324,
+   "per_1000": 9.12,
+   "fraction": 0.1178,
+   "w": 0.014
+  },
+  "ATG": {
+   "aa": "M",
+   "count": 15025,
+   "per_1000": 21.67,
+   "fraction": 1.0,
+   "w": 1.0
+  },
+  "ACT": {
+   "aa": "T",
+   "count": 14601,
+   "per_1000": 21.06,
+   "fraction": 0.3659,
+   "w": 1.0
+  },
+  "ACC": {
+   "aa": "T",
+   "count": 5126,
+   "per_1000": 7.39,
+   "fraction": 0.1284,
+   "w": 0.0526
+  },
+  "ACA": {
+   "aa": "T",
+   "count": 15364,
+   "per_1000": 22.16,
+   "fraction": 0.385,
+   "w": 0.7895
+  },
+  "ACG": {
+   "aa": "T",
+   "count": 4816,
+   "per_1000": 6.95,
+   "fraction": 0.1207,
+   "w": 0.0337
+  },
+  "AAT": {
+   "aa": "N",
+   "count": 28336,
+   "per_1000": 40.88,
+   "fraction": 0.7893,
+   "w": 0.5302
+  },
+  "AAC": {
+   "aa": "N",
+   "count": 7563,
+   "per_1000": 10.91,
+   "fraction": 0.2107,
+   "w": 1.0
+  },
+  "AAA": {
+   "aa": "K",
+   "count": 42527,
+   "per_1000": 61.35,
+   "fraction": 0.825,
+   "w": 1.0
+  },
+  "AAG": {
+   "aa": "K",
+   "count": 9021,
+   "per_1000": 13.01,
+   "fraction": 0.175,
+   "w": 0.0623
+  },
+  "GTT": {
+   "aa": "V",
+   "count": 21769,
+   "per_1000": 31.4,
+   "fraction": 0.4793,
+   "w": 1.0
+  },
+  "GTC": {
+   "aa": "V",
+   "count": 8480,
+   "per_1000": 12.23,
+   "fraction": 0.1867,
+   "w": 0.1529
+  },
+  "GTA": {
+   "aa": "V",
+   "count": 8951,
+   "per_1000": 12.91,
+   "fraction": 0.1971,
+   "w": 0.3987
+  },
+  "GTG": {
+   "aa": "V",
+   "count": 6215,
+   "per_1000": 8.97,
+   "fraction": 0.1368,
+   "w": 0.0719
+  },
+  "GCT": {
+   "aa": "A",
+   "count": 20856,
+   "per_1000": 30.09,
+   "fraction": 0.4086,
+   "w": 1.0
+  },
+  "GCC": {
+   "aa": "A",
+   "count": 8410,
+   "per_1000": 12.13,
+   "fraction": 0.1648,
+   "w": 0.1548
+  },
+  "GCA": {
+   "aa": "A",
+   "count": 15994,
+   "per_1000": 23.07,
+   "fraction": 0.3133,
+   "w": 0.6764
+  },
+  "GCG": {
+   "aa": "A",
+   "count": 5782,
+   "per_1000": 8.34,
+   "fraction": 0.1133,
+   "w": 0.1311
+  },
+  "GAT": {
+   "aa": "D",
+   "count": 26475,
+   "per_1000": 38.19,
+   "fraction": 0.7233,
+   "w": 1.0
+  },
+  "GAC": {
+   "aa": "D",
+   "count": 10128,
+   "per_1000": 14.61,
+   "fraction": 0.2767,
+   "w": 0.8892
+  },
+  "GAA": {
+   "aa": "E",
+   "count": 39719,
+   "per_1000": 57.3,
+   "fraction": 0.8151,
+   "w": 1.0
+  },
+  "GAG": {
+   "aa": "E",
+   "count": 9011,
+   "per_1000": 13.0,
+   "fraction": 0.1849,
+   "w": 0.0339
+  },
+  "GGT": {
+   "aa": "G",
+   "count": 16570,
+   "per_1000": 23.9,
+   "fraction": 0.3646,
+   "w": 1.0
+  },
+  "GGC": {
+   "aa": "G",
+   "count": 5804,
+   "per_1000": 8.37,
+   "fraction": 0.1277,
+   "w": 0.1398
+  },
+  "GGA": {
+   "aa": "G",
+   "count": 17189,
+   "per_1000": 24.8,
+   "fraction": 0.3782,
+   "w": 0.3441
+  },
+  "GGG": {
+   "aa": "G",
+   "count": 5890,
+   "per_1000": 8.5,
+   "fraction": 0.1296,
+   "w": 0.0497
+  },
+  "TAG": {
+   "aa": "*",
+   "count": 296,
+   "per_1000": 0.0,
+   "fraction": 0.1236,
+   "w": 0.0
+  },
+  "TGA": {
+   "aa": "*",
+   "count": 457,
+   "per_1000": 0.0,
+   "fraction": 0.1909,
+   "w": 0.0
+  },
+  "TAA": {
+   "aa": "*",
+   "count": 1641,
+   "per_1000": 0.0,
+   "fraction": 0.6855,
+   "w": 0.0
+  }
+ }
+}

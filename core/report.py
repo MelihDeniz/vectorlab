@@ -12,6 +12,7 @@ import datetime as _dt
 import html
 from typing import Any
 
+from core import notice
 from core import protocol as pr
 from core import provenance
 from core.parts_seed import CATEGORY_TR
@@ -205,10 +206,12 @@ def build_html(
 
     p.append(
         "<footer>Diziler NCBI Nucleotide ve iGEM Registry'den (CC BY 4.0) "
-        "alınmıştır; restriksiyon enzimi verisi REBASE'ten gelir. "
-        "Protokoldeki derişimler standart E. coli çalışma değerleridir, "
+        "alınmıştır; restriksiyon enzimi verisi REBASE'ten gelir — "
+        + _esc(notice.REBASE_CITATION) +
+        " Protokoldeki derişimler standart E. coli çalışma değerleridir, "
         "laboratuvarınızın kendi protokolü önceliklidir. Bu rapor bir "
-        "tasarım belgesidir; deney sonucu değildir.</footer>"
+        "tasarım belgesidir; deney sonucu değildir. "
+        + _esc(notice.FOOTER) + "</footer>"
         "</body></html>"
     )
     return "".join(p)

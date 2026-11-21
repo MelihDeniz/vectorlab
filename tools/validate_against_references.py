@@ -261,6 +261,110 @@ def main() -> int:
                 "kasetin icinde kesen enzim yok" if not ice
                 else f"kasetin icinde kesiyor: {ice}")
 
+    # ---------------------------------------------------------------
+    bolum("9. Kodon tablolari — Biopython'un kendi kodon tablosuyla "
+          "ve kataloga karsi")
+    from Bio.Data import CodonTable as _CT
+
+    _t11 = _CT.unambiguous_dna_by_id[11]
+    _stops = set(_t11.stop_codons)
+    anahtarlar = codon.available()
+    kontrol("bes organizmanin tablosu var", len(anahtarlar) == 5,
+            f"bulunan: {', '.join(anahtarlar)}")
+
+    katalog_org = {h["organism"] for h in db.list_hosts()}
+    parmak_izleri: dict[str, tuple] = {}
+
+    for anahtar in anahtarlar:
+        t = codon.table(anahtar)
+        kodonlar = t.get("codons", {})
+        kontrol(f"{anahtar} 64 kodon", len(kodonlar) == 64,
+                f"{len(kodonlar)} kodon")
+
+        # 1) Amino asit atamasi Biopython'un cevirisiyle ayni mi?
+        #    Tabloyu biz hesapliyoruz; dogrulugunu bagimsiz bir kaynak
+        #    soylemeli.
+        yanlis = []
+        for c, d in kodonlar.items():
+            beklenen = "*" if c in _stops else _t11.forward_table.get(c, "")
+            if d.get("aa") != beklenen:
+                yanlis.append(f"{c}:{d.get('aa')}!={beklenen}")
+        kontrol(f"{anahtar} amino asit atamasi Biopython ile ayni",
+                not yanlis, "; ".join(yanlis[:4]) or "64 kodonun hepsi")
+
+        # 2) per_1000 toplami 1000 olmali (yuvarlama payiyla).
+        toplam = sum(d["per_1000"] for d in kodonlar.values())
+        kontrol(f"{anahtar} per_1000 toplami 1000",
+                abs(toplam - 1000) < 1.0, f"toplam {round(toplam, 2)}")
+
+        # 3) Her amino asit icinde fraction toplami 1 olmali.
+        paylar: dict[str, float] = {}
+        for c, d in kodonlar.items():
+            paylar[d["aa"]] = paylar.get(d["aa"], 0.0) + d["fraction"]
+        sapan = {aa: round(v, 4) for aa, v in paylar.items()
+                 if abs(v - 1.0) > 0.01}
+        kontrol(f"{anahtar} her amino asitte fraction toplami 1",
+                not sapan, str(sapan) or f"{len(paylar)} amino asit")
+
+        # 4) Her amino asidin en iyi kodonunun w'si tam 1,0 olmali.
+        en_iyi: dict[str, float] = {}
+        for c, d in kodonlar.items():
+            if d["aa"] == "*":
+                continue
+            en_iyi[d["aa"]] = max(en_iyi.get(d["aa"], 0.0), d["w"])
+        bozuk = {aa: v for aa, v in en_iyi.items() if abs(v - 1.0) > 1e-6}
+        kontrol(f"{anahtar} her amino asitte en iyi kodon w=1",
+                not bozuk, str(bozuk) or f"{len(en_iyi)} amino asit")
+
+        # 4b) Durdurma kodonu dagilimi gercek olmali: anlamli kodonlarin
+        #     istatistigine girmedikleri icin per_1000 ve w sifir, ama
+        #     fraction genlerin son kodonundan sayilmis olmali.
+        stoplar = {c: d for c, d in kodonlar.items() if d["aa"] == "*"}
+        kontrol(f"{anahtar} durdurma kodonu gercekten sayilmis",
+                sum(d["count"] for d in stoplar.values()) > 1000
+                and all(d["per_1000"] == 0.0 and d["w"] == 0.0
+                        for d in stoplar.values()),
+                f"{sum(d['count'] for d in stoplar.values())} gen")
+
+        # 5) CAI olcegi olculmus ve tutarli mi?
+        o = t.get("reference_cai", {})
+        kontrol(f"{anahtar} referans CAI olcegi tutarli",
+                bool(o) and o["p10"] < o["median"] < o["p90"]
+                and 0.50 < o["median"] < 0.90,
+                f"ortanca {o.get('median')} "
+                f"({o.get('p10')}-{o.get('p90')}), "
+                f"{o.get('gene_count')} gen")
+
+        # 6) Tablonun bagli oldugu organizma katalogda gercekten var mi?
+        #    Bu, veri dosyasini uygulamanin kendi konak listesine baglar.
+        kontrol(f"{anahtar} organizmasi katalogda var",
+                t.get("catalog_organism") in katalog_org,
+                f"{t.get('catalog_organism')!r}")
+
+        parmak_izleri[anahtar] = tuple(
+            sorted((c, d["w"]) for c, d in kodonlar.items()))
+
+    # 7) Bes tablo birbirinden farkli olmali; ayni cikarsa is bosunadir.
+    kontrol("bes tablo birbirinden farkli",
+            len(set(parmak_izleri.values())) == len(parmak_izleri),
+            f"{len(set(parmak_izleri.values()))} ayri tablo")
+
+    # 8) Yayimlanmis bir oruntu: AT'den zengin genomlarda baskin
+    #    durdurma kodonu TAA, GC'den zengin olanlarda TGA'ya kayar.
+    #    Tablolar bunu kendiliginden gostermiyorsa hesap yanlistir.
+    def baskin_stop(anahtar: str) -> str:
+        kod = codon.table(anahtar)["codons"]
+        stoplar = {c: d["count"] for c, d in kod.items() if d["aa"] == "*"}
+        return max(stoplar, key=lambda c: stoplar[c])
+
+    for anahtar, beklenen in (("ecoli", "TAA"), ("bsubtilis", "TAA"),
+                              ("llactis", "TAA"), ("pputida", "TGA"),
+                              ("cglutamicum", "TAA")):
+        if anahtar in anahtarlar:
+            kontrol(f"{anahtar} baskin durdurma kodonu {beklenen}",
+                    baskin_stop(anahtar) == beklenen,
+                    f"hesaplanan {baskin_stop(anahtar)}")
+
     print(f"{gecen} kontrol gecti, {len(kalan)} kaldi.")
     if kalan:
         print("\nKALAN KONTROLLER:")

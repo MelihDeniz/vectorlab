@@ -1,8 +1,18 @@
 """Restriksiyon enzimi kütüphanesi.
 
-Veri kaynağı REBASE'dir (Roberts ve ark., rebase.neb.com) ve Biopython
-ile birlikte gelir - akademik kullanıma açıktır. Biopython 1088 enzim
-taşır, bunların 623'ü ticari olarak satılmaktadır.
+Veri kaynağı REBASE'dir ve Biopython ile birlikte gelir. Biopython 1088
+enzim taşır, bunların 623'ü ticari olarak satılmaktadır.
+
+REBASE kendi sayfasında "açık veritabanı" diyor ve kullanımı akademik
+çalışmayla sınırlamıyor; iki şey istiyor: künyesinin verilmesi ve
+REBASE'ten türetilen bilginin dağıtımının da açık kalması. İkisi de
+`core/notice.py` içinde yazılı (`REBASE_CITATION`, `REBASE_TERMS`) ve
+bu depo MIT lisansıyla açık. İstenen künye:
+
+    Roberts RJ, Vincze T, Posfai J, Macelis D. REBASE: a database for
+    DNA restriction and modification: enzymes, genes and genomes.
+    Nucleic Acids Res. 51: D629-D630 (2023).
+    doi:10.1093/nar/gkac975 (PMID 36318248)
 
 Modülün asıl işi, "bu enzim nereden keser" sorusunu gösterilebilir hale
 getirmek: tanıma dizisindeki kesim geometrisi ve gerçek bir dizideki

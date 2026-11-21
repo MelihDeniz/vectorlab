@@ -2,15 +2,16 @@
 
 import streamlit as st
 
-from core import db, enzymes as ez
+from core import db, enzymes as ez, notice
 from core.assembly import assemble, sort_canonical
 from core.seq_utils import clean_seq
+from core.i18n import t
 
 lib = ez.library_size()
 st.caption(
     f"REBASE'den gelen {lib['toplam']} enzim, {lib['ticari']} tanesi ticari "
-    "olarak satılıyor. Kaynak: Roberts ve ark., rebase.neb.com — Biopython "
-    "ile birlikte dağıtılır."
+    "olarak satılıyor; Biopython ile birlikte dağıtılır. "
+    f"REBASE'in istediği künye: {notice.REBASE_CITATION}"
 )
 
 
@@ -31,7 +32,7 @@ def _compatible(name):
 
 
 tab_lib, tab_cut, tab_comp = st.tabs(
-    ["Kütüphane", "Dizide kesim", "Uyumlu uçlar"]
+    [t("Kütüphane"), t("Dizide kesim"), t("Uyumlu uçlar")]
 )
 
 # ---------------------------------------------------------------------------
@@ -40,48 +41,48 @@ tab_lib, tab_cut, tab_comp = st.tabs(
 
 with tab_lib:
     f = st.container(horizontal=True, vertical_alignment="bottom")
-    q = f.text_input("Ara", placeholder="EcoRI ya da GAATTC…", width=240)
+    q = f.text_input(t("Ara"), placeholder=t("EcoRI ya da GAATTC…"), width=240)
     boy = f.selectbox(
-        "Tanıma dizisi", [None, 4, 5, 6, 7, 8],
+        t("Tanıma dizisi"), [None, 4, 5, 6, 7, 8],
         format_func=lambda v: "hepsi" if v is None else f"{v} bp", width=130,
     )
     cikinti = f.selectbox(
-        "Uç tipi", [None, "5", "3", "kor"],
+        t("Uç tipi"), [None, "5", "3", "kor"],
         format_func=lambda v: {
             None: "hepsi", "5": "5' çıkıntı", "3": "3' çıkıntı", "kor": "kör uç"
         }[v], width=150,
     )
-    ticari = f.toggle("Sadece satılanlar", value=True)
-    iis = f.toggle("Sadece Tip IIS", value=False)
+    ticari = f.toggle(t("Sadece satılanlar"), value=True)
+    iis = f.toggle(t("Sadece Tip IIS"), value=False)
 
     sonuc = _search(q, ticari, boy, cikinti, iis)
     st.caption(f"{len(sonuc)} enzim")
 
     if not sonuc:
-        st.info("Eşleşme yok. Filtreleri gevşetin.", icon=":material/search_off:")
+        st.info(t("Eşleşme yok. Filtreleri gevşetin."), icon=":material/search_off:")
     else:
         secili = st.selectbox(
-            "Enzim", sonuc,
+            t("Enzim"), sonuc,
             format_func=lambda n: f"{n}  —  {_details(n)['site']}",
         )
         d = _details(secili)
 
         m = st.container(horizontal=True)
-        m.metric("Tanıma dizisi", d["site"])
-        m.metric("Uç", d["overhang"])
-        m.metric("Optimum sıcaklık",
+        m.metric(t("Tanıma dizisi"), d["site"])
+        m.metric(t("Uç"), d["overhang"])
+        m.metric(t("Optimum sıcaklık"),
                  f"{d['opt_temp']} °C" if d["opt_temp"] else "—")
         if d["frequency"]:
-            m.metric("Beklenen sıklık", f"~1/{int(d['frequency'])} bp")
+            m.metric(t("Beklenen sıklık"), f"~1/{int(d['frequency'])} bp")
 
-        st.markdown("**Nereden keser**")
+        st.markdown(t("**Nereden keser**"))
         st.code(d["diagram"], language="text")
         st.caption(
-            "▼ üst zincirdeki, ▲ alt zincirdeki kesim. İkisi aynı sütundaysa "
-            "kör uç, kaymışsa yapışkan uç oluşur."
+            t("▼ üst zincirdeki, ▲ alt zincirdeki kesim. İkisi aynı sütundaysa "
+            "kör uç, kaymışsa yapışkan uç oluşur.")
         )
 
-        st.markdown("**Kesimden sonra oluşan uçlar**")
+        st.markdown(t("**Kesimden sonra oluşan uçlar**"))
         st.code(ez.site_products(secili), language="text")
 
         bilgi = []
@@ -121,8 +122,8 @@ with tab_lib:
                 + ", ".join(f"`{x}`" for x in d["isoschizomers"])
             )
             st.caption(
-                "Aynı bölgeyi tanırlar ama kesim noktaları ya da metilasyon "
-                "duyarlılıkları farklı olabilir."
+                t("Aynı bölgeyi tanırlar ama kesim noktaları ya da metilasyon "
+                "duyarlılıkları farklı olabilir.")
             )
 
 # ---------------------------------------------------------------------------
@@ -131,7 +132,7 @@ with tab_lib:
 
 with tab_cut:
     kaynak = st.radio(
-        "Dizi kaynağı", ["Tasarımcıdaki yapı", "Dizi yapıştır"],
+        t("Dizi kaynağı"), ["Tasarımcıdaki yapı", "Dizi yapıştır"],
         horizontal=True,
     )
 
@@ -139,7 +140,7 @@ with tab_cut:
     if kaynak == "Tasarımcıdaki yapı":
         ids = st.session_state.get("design_parts", [])
         if not ids:
-            st.info("Tasarımcı sayfasında henüz bir yapı yok.",
+            st.info(t("Tasarımcı sayfasında henüz bir yapı yok."),
                     icon=":material/construction:")
         else:
             vec = assemble(
@@ -151,16 +152,16 @@ with tab_cut:
             st.caption(f"{vec.name} — {len(seq)} bp")
     else:
         seq = clean_seq(
-            st.text_area("Dizi", height=120, placeholder="ATGC…")
+            st.text_area(t("Dizi"), height=120, placeholder=t("ATGC…"))
         )
 
     if seq:
         secim = st.multiselect(
-            "Enzimler", ez.search("", commercial_only=True),
+            t("Enzimler"), ez.search("", commercial_only=True),
             default=[e for e in ["EcoRI", "BamHI", "HindIII", "XhoI"]
                      if e in ez.search("", commercial_only=True)][:4],
         )
-        dairesel = st.toggle("Dairesel", value=True, key="cut_circ")
+        dairesel = st.toggle(t("Dairesel"), value=True, key="cut_circ")
 
         if secim:
             kesimler = ez.sites_in(seq, secim, circular=dairesel)
@@ -175,8 +176,8 @@ with tab_cut:
                             f"**{enz}** (`{d['site']}`) — bu dizide kesmiyor"
                         )
                         st.caption(
-                            "Insert içinde kullanmak için güvenli: diziyi "
-                            "parçalamaz."
+                            t("Insert içinde kullanmak için güvenli: diziyi "
+                            "parçalamaz.")
                         )
                         continue
                     tanima = ez.recognition_sites(seq, [enz],
@@ -196,7 +197,7 @@ with tab_cut:
                     hangi = konumlar[0]
                     if len(konumlar) > 1:
                         hangi = st.selectbox(
-                            "Hangi kesim gösterilsin?", konumlar,
+                            t("Hangi kesim gösterilsin?"), konumlar,
                             key=f"sel_{enz}",
                         )
                     ctx = ez.cut_context(seq, enz, hangi, flank=12)
@@ -208,7 +209,7 @@ with tab_cut:
                             f"önce kesilir · çıkıntı `{ctx['overhang_seq'] or '—'}` "
                             f"({ctx['overhang_label']})"
                         )
-                        st.markdown("Kesimden sonra:")
+                        st.markdown(t("Kesimden sonra:"))
                         st.code(ctx["products"], language="text")
 
 # ---------------------------------------------------------------------------
@@ -217,14 +218,14 @@ with tab_cut:
 
 with tab_comp:
     st.caption(
-        "Aynı çıkıntıyı bırakan enzimlerin ürünleri birbirine ligate "
+        t("Aynı çıkıntıyı bırakan enzimlerin ürünleri birbirine ligate "
         "edilebilir. Yönlü klonlamada bunlardan KAÇINMAK gerekir — iki uç "
         "uyumluysa insert ters de girer ve vektör kendi üzerine kapanır. "
         "Buna karşılık elinizde olmayan bir enzimin yerine geçecek bir uç "
-        "ararken tam olarak bu liste lazımdır."
+        "ararken tam olarak bu liste lazımdır.")
     )
     hepsi = ez.search("", commercial_only=True)
-    hedef = st.selectbox("Enzim", hepsi, index=hepsi.index("XbaI")
+    hedef = st.selectbox(t("Enzim"), hepsi, index=hepsi.index("XbaI")
                          if "XbaI" in hepsi else 0)
     uyumlular = _compatible(hedef)
     d = _details(hedef)
@@ -233,7 +234,7 @@ with tab_comp:
         f"`{d['overhang_seq'] or 'kör'}` ({d['overhang']})"
     )
     if not uyumlular:
-        st.info("Ticari enzimler arasında uyumlu uç bırakan başka enzim yok.",
+        st.info(t("Ticari enzimler arasında uyumlu uç bırakan başka enzim yok."),
                 icon=":material/block:")
     else:
         st.markdown(
@@ -243,7 +244,7 @@ with tab_comp:
         )
         if d["blunt"]:
             st.warning(
-                "Bu bir kör uç enzimi: TÜM kör uç enzimlerinin ürünleriyle "
-                "ligate olur. Kör uç ligasyonunda yön kontrolü yoktur.",
+                t("Bu bir kör uç enzimi: TÜM kör uç enzimlerinin ürünleriyle "
+                "ligate olur. Kör uç ligasyonunda yön kontrolü yoktur."),
                 icon=":material/warning:",
             )

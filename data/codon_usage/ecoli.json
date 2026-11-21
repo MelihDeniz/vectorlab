@@ -1,28 +1,46 @@
 {
+ "key": "ecoli",
  "organism": "Escherichia coli K-12 MG1655",
+ "organism_ncbi": "Escherichia coli str. K-12 substr. MG1655",
+ "catalog_organism": "E. coli",
  "accession": "NC_000913.3",
  "source": "NCBI Nucleotide, fasta_cds_na",
- "fetched": "2026-10-29",
+ "fetched": "2026-11-21",
  "gene_count": 4226,
+ "taxonomy_note": "",
+ "reference_rule": "Çok ifade edilen genler iki kuralın BİRLEŞİMİYLE seçildi ve beş organizmanın hepsine aynı kurallar uygulandı: (1) RefSeq'in [protein=...] tanımı şu sınıflardan birine tam olarak uyuyorsa: ribozomal protein, uzama faktörü, şaperon, glikoliz, ATP sentaz; (2) ya da gen adı korunmuş ribozomal protein / uzama faktörü / glikoliz / şaperon adlandırmasına uyuyorsa. İkinci kural gerekli, çünkü bu beş kayıtta gen adı taşıyan CDS oranı %14 ile %100 arasında değişiyor; birinci kural gerekli, çünkü gen adı olmayan kayıtlarda tanınacak tek şey tanımdır.",
+ "reference_classes": {
+  "ribozomal protein": 56,
+  "uzama faktörü": 3,
+  "şaperon": 4,
+  "glikoliz": 5,
+  "ATP sentaz": 2,
+  "gen adı (korunmuş)": 6
+ },
+ "stop_codon_note": "Durdurma kodonlarının `count` ve `fraction` değerleri her genin SON kodonundan sayıldı; anlamlı kodonların istatistiğine girmedikleri için `per_1000` ve `w` sıfırdır. Bu kayıtta 3 gen iç çerçevede durdurma kodonu taşıyor (selenoproteinler ve okumadan geçme); onlar sayılmadı, çünkü gerçek durdurma kullanımını temsil etmiyorlar.",
+ "internal_stop_genes": 3,
+ "reference_cai": {
+  "gene_count": 76,
+  "median": 0.7093,
+  "p10": 0.5507,
+  "p90": 0.7987
+ },
+ "reference_cai_note": "Referans kümedeki genlerin kendi tablosuyla hesaplanan CAI dağılımı. 'İyi bir CAI kaçtır' sorusunun cevabı budur ve organizmaya göre değişir; optimizasyonun 1,0'a gitmemesi gerektiğini gösteren ölçek de bu.",
  "reference_set": [
-  "ahpC",
   "atpA",
   "atpD",
   "dnaK",
   "eno",
   "fbaA",
+  "fbaB",
   "fusA",
   "gapA",
   "gpmA",
   "groL",
   "groS",
-  "lpp",
-  "nusA",
-  "nusG",
-  "ompA",
-  "ompC",
-  "ompF",
   "pgk",
+  "pgm",
+  "pykA",
   "pykF",
   "rplA",
   "rplB",
@@ -82,7 +100,9 @@
   "tpiA",
   "tsf",
   "tufA",
-  "tufB"
+  "tufB",
+  "ykgM",
+  "ykgO"
  ],
  "reference_note": "CAI'nin w değerleri bu çok ifade edilen genlerden hesaplandı; fraction ve per_1000 ise genomun tamamından.",
  "codons": {
@@ -91,7 +111,7 @@
    "count": 29765,
    "per_1000": 22.38,
    "fraction": 0.5732,
-   "w": 0.2563
+   "w": 0.2806
   },
   "TTC": {
    "aa": "F",
@@ -105,35 +125,35 @@
    "count": 18446,
    "per_1000": 13.87,
    "fraction": 0.1294,
-   "w": 0.0257
+   "w": 0.0267
   },
   "TTG": {
    "aa": "L",
    "count": 18149,
    "per_1000": 13.65,
    "fraction": 0.1273,
-   "w": 0.0385
+   "w": 0.0452
   },
   "CTT": {
    "aa": "L",
    "count": 14693,
    "per_1000": 11.05,
    "fraction": 0.1031,
-   "w": 0.0474
+   "w": 0.0534
   },
   "CTC": {
    "aa": "L",
    "count": 14907,
    "per_1000": 11.21,
    "fraction": 0.1046,
-   "w": 0.0454
+   "w": 0.0554
   },
   "CTA": {
    "aa": "L",
    "count": 5181,
    "per_1000": 3.9,
    "fraction": 0.0363,
-   "w": 0.0039
+   "w": 0.0062
   },
   "CTG": {
    "aa": "L",
@@ -154,42 +174,42 @@
    "count": 11520,
    "per_1000": 8.66,
    "fraction": 0.1491,
-   "w": 0.7003
+   "w": 0.7065
   },
   "TCA": {
    "aa": "S",
    "count": 9427,
    "per_1000": 7.09,
    "fraction": 0.122,
-   "w": 0.0489
+   "w": 0.0785
   },
   "TCG": {
    "aa": "S",
    "count": 11914,
    "per_1000": 8.96,
    "fraction": 0.1542,
-   "w": 0.0293
+   "w": 0.0546
   },
   "AGT": {
    "aa": "S",
    "count": 11612,
    "per_1000": 8.73,
    "fraction": 0.1503,
-   "w": 0.0749
+   "w": 0.0922
   },
   "AGC": {
    "aa": "S",
    "count": 21520,
    "per_1000": 16.18,
    "fraction": 0.2785,
-   "w": 0.4886
+   "w": 0.4915
   },
   "TAT": {
    "aa": "Y",
    "count": 21464,
    "per_1000": 16.14,
    "fraction": 0.5678,
-   "w": 0.3274
+   "w": 0.3924
   },
   "TAC": {
    "aa": "Y",
@@ -203,7 +223,7 @@
    "count": 6838,
    "per_1000": 5.14,
    "fraction": 0.4422,
-   "w": 0.4
+   "w": 0.5167
   },
   "TGC": {
    "aa": "C",
@@ -224,21 +244,21 @@
    "count": 9288,
    "per_1000": 6.98,
    "fraction": 0.1572,
-   "w": 0.1559
+   "w": 0.1583
   },
   "CCC": {
    "aa": "P",
    "count": 7280,
    "per_1000": 5.47,
    "fraction": 0.1232,
-   "w": 0.0099
+   "w": 0.0201
   },
   "CCA": {
    "aa": "P",
    "count": 11245,
    "per_1000": 8.46,
    "fraction": 0.1903,
-   "w": 0.1584
+   "w": 0.1583
   },
   "CCG": {
    "aa": "P",
@@ -252,7 +272,7 @@
    "count": 17179,
    "per_1000": 12.92,
    "fraction": 0.5692,
-   "w": 0.318
+   "w": 0.3378
   },
   "CAC": {
    "aa": "H",
@@ -266,7 +286,7 @@
    "count": 20574,
    "per_1000": 15.47,
    "fraction": 0.3467,
-   "w": 0.1795
+   "w": 0.192
   },
   "CAG": {
    "aa": "Q",
@@ -287,42 +307,42 @@
    "count": 29560,
    "per_1000": 22.23,
    "fraction": 0.4015,
-   "w": 0.4244
+   "w": 0.4335
   },
   "CGA": {
    "aa": "R",
    "count": 4651,
    "per_1000": 3.5,
    "fraction": 0.0632,
-   "w": 0.0042
+   "w": 0.0087
   },
   "CGG": {
    "aa": "R",
    "count": 7115,
    "per_1000": 5.35,
    "fraction": 0.0966,
-   "w": 0.0042
+   "w": 0.0087
   },
   "AGA": {
    "aa": "R",
    "count": 2597,
    "per_1000": 1.95,
    "fraction": 0.0353,
-   "w": 0.0056
+   "w": 0.0101
   },
   "AGG": {
    "aa": "R",
    "count": 1443,
    "per_1000": 1.09,
    "fraction": 0.0196,
-   "w": 0.005
+   "w": 0.0029
   },
   "ATT": {
    "aa": "I",
    "count": 40777,
    "per_1000": 30.66,
    "fraction": 0.5089,
-   "w": 0.257
+   "w": 0.3006
   },
   "ATC": {
    "aa": "I",
@@ -336,7 +356,7 @@
    "count": 5548,
    "per_1000": 4.17,
    "fraction": 0.0692,
-   "w": 0.0026
+   "w": 0.0042
   },
   "ATG": {
    "aa": "M",
@@ -350,7 +370,7 @@
    "count": 11893,
    "per_1000": 8.94,
    "fraction": 0.1655,
-   "w": 0.8497
+   "w": 0.8606
   },
   "ACC": {
    "aa": "T",
@@ -364,21 +384,21 @@
    "count": 9244,
    "per_1000": 6.95,
    "fraction": 0.1286,
-   "w": 0.0592
+   "w": 0.0807
   },
   "ACG": {
    "aa": "T",
    "count": 19271,
    "per_1000": 14.49,
    "fraction": 0.2681,
-   "w": 0.082
+   "w": 0.1149
   },
   "AAT": {
    "aa": "N",
    "count": 23409,
    "per_1000": 17.6,
    "fraction": 0.4469,
-   "w": 0.1159
+   "w": 0.166
   },
   "AAC": {
    "aa": "N",
@@ -399,7 +419,7 @@
    "count": 13665,
    "per_1000": 10.27,
    "fraction": 0.2327,
-   "w": 0.2932
+   "w": 0.3022
   },
   "GTT": {
    "aa": "V",
@@ -413,21 +433,21 @@
    "count": 20482,
    "per_1000": 15.4,
    "fraction": 0.2167,
-   "w": 0.131
+   "w": 0.1482
   },
   "GTA": {
    "aa": "V",
    "count": 14599,
    "per_1000": 10.98,
    "fraction": 0.1544,
-   "w": 0.5053
+   "w": 0.4972
   },
   "GTG": {
    "aa": "V",
    "count": 34909,
    "per_1000": 26.25,
    "fraction": 0.3693,
-   "w": 0.2831
+   "w": 0.3089
   },
   "GCT": {
    "aa": "A",
@@ -441,28 +461,28 @@
    "count": 34357,
    "per_1000": 25.83,
    "fraction": 0.27,
-   "w": 0.1798
+   "w": 0.2136
   },
   "GCA": {
    "aa": "A",
    "count": 27007,
    "per_1000": 20.31,
    "fraction": 0.2122,
-   "w": 0.6024
+   "w": 0.6322
   },
   "GCG": {
    "aa": "A",
    "count": 45445,
    "per_1000": 34.17,
    "fraction": 0.3572,
-   "w": 0.4396
+   "w": 0.5064
   },
   "GAT": {
    "aa": "D",
    "count": 42950,
    "per_1000": 32.29,
    "fraction": 0.626,
-   "w": 0.5253
+   "w": 0.5225
   },
   "GAC": {
    "aa": "D",
@@ -483,7 +503,7 @@
    "count": 23834,
    "per_1000": 17.92,
    "fraction": 0.3093,
-   "w": 0.2545
+   "w": 0.2773
   },
   "GGT": {
    "aa": "G",
@@ -497,41 +517,41 @@
    "count": 39944,
    "per_1000": 30.03,
    "fraction": 0.4061,
-   "w": 0.6794
+   "w": 0.7179
   },
   "GGA": {
    "aa": "G",
    "count": 10460,
    "per_1000": 7.87,
    "fraction": 0.1063,
-   "w": 0.0123
+   "w": 0.0241
   },
   "GGG": {
    "aa": "G",
    "count": 14690,
    "per_1000": 11.05,
    "fraction": 0.1493,
-   "w": 0.021
+   "w": 0.0334
   },
-  "TAA": {
+  "TAG": {
    "aa": "*",
-   "count": 0,
+   "count": 298,
    "per_1000": 0.0,
-   "fraction": 0.0,
+   "fraction": 0.0705,
    "w": 0.0
   },
   "TGA": {
    "aa": "*",
-   "count": 3,
+   "count": 1214,
    "per_1000": 0.0,
-   "fraction": 1.0,
+   "fraction": 0.2873,
    "w": 0.0
   },
-  "TAG": {
+  "TAA": {
    "aa": "*",
-   "count": 0,
+   "count": 2714,
    "per_1000": 0.0,
-   "fraction": 0.0,
+   "fraction": 0.6422,
    "w": 0.0
   }
  }

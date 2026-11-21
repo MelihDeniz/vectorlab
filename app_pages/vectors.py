@@ -6,6 +6,7 @@ from core import cloning, db, enzymes as ez, ref_vectors as rv
 from core.parts_seed import CATEGORIES, CATEGORY_TR
 from core.plasmid_map import circular_map, linear_map, render as render_svg
 from core.seq_utils import clean_seq, classify_cutters, gc_percent
+from core.i18n import t
 
 SEV_ICON = {"hata": ":material/error:", "uyari": ":material/warning:",
             "bilgi": ":material/info:"}
@@ -15,8 +16,8 @@ vectors = rv.list_vectors()
 
 if not vectors:
     st.error(
-        "Referans vektör verisi bulunamadı. `python "
-        "tools/fetch_reference_vectors.py` komutunu bir kez çalıştırın.",
+        t("Referans vektör verisi bulunamadı. `python "
+        "tools/fetch_reference_vectors.py` komutunu bir kez çalıştırın."),
         icon=":material/cloud_off:",
     )
     st.stop()
@@ -51,16 +52,16 @@ f1 = st.container(horizontal=True, vertical_alignment="bottom")
 with f1:
     organizmalar = ["tümü"] + rv.organisms()
     org = f1.selectbox(
-        "Hedef organizma", organizmalar,
+        t("Hedef organizma"), organizmalar,
         format_func=lambda o: "Tümü" if o == "tümü" else o, width=260,
-        help="Vektörün hangi bakteride çoğalabildiği. E. coli plazmiti "
+        help=t("Vektörün hangi bakteride çoğalabildiği. E. coli plazmiti "
              "Bacillus'ta çoğalmaz; buradan süzerek doğru replikonu "
-             "seçersiniz.",
+             "seçersiniz."),
     )
-    kullanim = f1.selectbox("Amaç", ["tümü", "klonlama", "ifade",
+    kullanim = f1.selectbox(t("Amaç"), ["tümü", "klonlama", "ifade",
                                      "genom düzenleme"],
                             format_func=lambda u: u.capitalize(), width=180)
-    arama = f1.text_input("Ara", placeholder="pUC, KanR, p15A…", width=200)
+    arama = f1.text_input(t("Ara"), placeholder=t("pUC, KanR, p15A…"), width=200)
 
 st.caption(
     f"Katalogda {len(vectors)} referans vektör var; {len(facet['cargo'])} "
@@ -71,15 +72,15 @@ st.caption(
 f2 = st.container(horizontal=True, vertical_alignment="bottom")
 with f2:
     s_marker = f2.selectbox(
-        "SEVA markerı", ["tümü"] + list(facet["marker"]),
+        t("SEVA markerı"), ["tümü"] + list(facet["marker"]),
         format_func=lambda k: ("Tümü" if k == "tümü"
                                else f"{k} — {facet['marker'][k]}"), width=240)
     s_ori = f2.selectbox(
-        "SEVA orijini", ["tümü"] + list(facet["ori"]),
+        t("SEVA orijini"), ["tümü"] + list(facet["ori"]),
         format_func=lambda k: ("Tümü" if k == "tümü"
                                else f"{k} — {facet['ori'][k]}"), width=240)
     s_cargo = f2.selectbox(
-        "SEVA kargosu", ["tümü"] + list(facet["cargo"]),
+        t("SEVA kargosu"), ["tümü"] + list(facet["cargo"]),
         format_func=lambda k: ("Tümü" if k == "tümü"
                                else f"{k} — {facet['cargo'][k]}"), width=300)
 
@@ -92,7 +93,7 @@ ids = rv.filter_vectors(
     search=arama,
 )
 if not ids:
-    st.info("Bu süzgeçlerle eşleşen vektör yok. Filtreleri gevşetin.",
+    st.info(t("Bu süzgeçlerle eşleşen vektör yok. Filtreleri gevşetin."),
             icon=":material/search_off:")
     st.stop()
 
@@ -101,21 +102,21 @@ with top:
     vid = st.selectbox(f"Vektör ({len(ids)})", ids,
                        format_func=lambda i: labels[i], width=400)
     benzerlik = st.slider(
-        "Benzerlik eşiği (%)", 85.0, 100.0, 90.0, 0.5, width=240,
-        help="Katalog parçaları bu orandan daha benzer bölgelerde "
-             "etiketlenir. %100 yalnızca birebir eşleşme demektir.",
+        t("Benzerlik eşiği (%)"), 85.0, 100.0, 90.0, 0.5, width=240,
+        help=t("Katalog parçaları bu orandan daha benzer bölgelerde "
+             "etiketlenir. %100 yalnızca birebir eşleşme demektir."),
     )
 
 rec = rv.load(vid)
 feats = _features(vid, benzerlik)
 
 m = st.container(horizontal=True)
-m.metric("Uzunluk", f"{rec['length']} bp")
-m.metric("GC", f"%{rec['gc']}")
-m.metric("Kopya sayısı", rec.get("kopya", "—"))
-m.metric("Uyumsuzluk grubu", rec.get("inc_group", "—"))
-m.metric("Organizma", rec.get("organizma", "E. coli"))
-m.metric("Etiketlenen bölge", len(feats))
+m.metric(t("Uzunluk"), f"{rec['length']} bp")
+m.metric(t("GC"), f"%{rec['gc']}")
+m.metric(t("Kopya sayısı"), rec.get("kopya", "—"))
+m.metric(t("Uyumsuzluk grubu"), rec.get("inc_group", "—"))
+m.metric(t("Organizma"), rec.get("organizma", "E. coli"))
+m.metric(t("Etiketlenen bölge"), len(feats))
 
 with st.container(border=True):
     st.markdown(f"**{rec['name']}** — {rec.get('ozet', '')}")
@@ -131,13 +132,13 @@ with st.container(border=True):
 
 act = st.container(horizontal=True)
 act.download_button(
-    "FASTA indir", rv.to_fasta(vid), file_name=f"{rec['name']}.fasta",
+    t("FASTA indir"), rv.to_fasta(vid), file_name=f"{rec['name']}.fasta",
     mime="text/plain", icon=":material/download:",
 )
-if act.button("Dizi analizine gönder", icon=":material/search_insights:"):
+if act.button(t("Dizi analizine gönder"), icon=":material/search_insights:"):
     st.session_state.analyze_seq = rec["sequence"]
     st.switch_page("app_pages/analyze.py")
-if act.button("Etiketlenen parçaları tasarımcıya aktar",
+if act.button(t("Etiketlenen parçaları tasarımcıya aktar"),
               icon=":material/construction:"):
     picked = {c: [] for c in CATEGORIES}
     for f in feats:
@@ -151,8 +152,8 @@ if act.button("Etiketlenen parçaları tasarımcıya aktar",
 st.divider()
 
 tab_map, tab_feat, tab_enz, tab_clone, tab_part = st.tabs(
-    ["Harita", "Öznitelikler", "Enzim haritası", "Klonlama planı",
-     "Parça çıkar"]
+    [t("Harita"), t("Öznitelikler"), t("Enzim haritası"), t("Klonlama planı"),
+     t("Parça çıkar")]
 )
 
 # ---------------------------------------------------------------------------
@@ -162,7 +163,7 @@ tab_map, tab_feat, tab_enz, tab_clone, tab_part = st.tabs(
 with tab_map:
     single = {k: v for k, v in _cutters(vid)["tek"]}
     goster = st.multiselect(
-        "Haritada gösterilecek tek kesen enzimler",
+        t("Haritada gösterilecek tek kesen enzimler"),
         sorted(single),
         default=sorted(single)[:10],
         help=f"{rec['name']} içinde tam olarak bir kez kesen "
@@ -172,8 +173,8 @@ with tab_map:
     render_svg(circular_map(rec["name"], rec["length"], feats, sites))
     render_svg(linear_map(rec["name"], rec["length"], feats, sites))
     st.caption(
-        "Etiketler katalog parçalarının bu dizide bulunduğu yerlerden "
-        "gelir; GenBank'ın kendi öznitelikleri Öznitelikler sekmesinde."
+        t("Etiketler katalog parçalarının bu dizide bulunduğu yerlerden "
+        "gelir; GenBank'ın kendi öznitelikleri Öznitelikler sekmesinde.")
     )
 
 # ---------------------------------------------------------------------------
@@ -181,9 +182,9 @@ with tab_map:
 # ---------------------------------------------------------------------------
 
 with tab_feat:
-    st.markdown("**Katalog eşleşmeleri**")
+    st.markdown(t("**Katalog eşleşmeleri**"))
     if not feats:
-        st.info("Bu eşikte katalog parçası eşleşmedi.",
+        st.info(t("Bu eşikte katalog parçası eşleşmedi."),
                 icon=":material/search_off:")
     else:
         st.dataframe(
@@ -201,20 +202,20 @@ with tab_feat:
         kismi = [f for f in feats if f.identity < 100]
         if kismi:
             st.caption(
-                "%100'ün altındaki satırlar nokta farkı taşıyan "
+                t("%100'ün altındaki satırlar nokta farkı taşıyan "
                 "varyantlardır - aynı gen, farklı plazmit soyu. Örneğin "
                 "`bla` pBR322'de birebir, pUC soyunda birkaç nükleotid "
                 "farklıdır. Hizalama yapılmadığı için yalnızca aynı "
-                "uzunluktaki farklar yakalanır."
+                "uzunluktaki farklar yakalanır.")
             )
 
     gb = rv.genbank_features(vid)
     st.markdown(f"**Kaydın kendi öznitelikleri** ({len(gb)})")
     if not gb:
         st.caption(
-            "Bu GenBank kaydı öznitelik tablosu taşımıyor - pUC19 ve pUC18 "
+            t("Bu GenBank kaydı öznitelik tablosu taşımıyor - pUC19 ve pUC18 "
             "kayıtları yalnızca diziden oluşur. Haritadaki etiketler bu "
-            "yüzden katalog taramasından geliyor."
+            "yüzden katalog taramasından geliyor.")
         )
     else:
         st.dataframe(
@@ -232,21 +233,21 @@ with tab_feat:
 with tab_enz:
     gruplar = _cutters(vid)
     g = st.container(horizontal=True)
-    g.metric("Tek kesen", len(gruplar["tek"]))
-    g.metric("İki kesen", len(gruplar["cift"]))
-    g.metric("Çok kesen", len(gruplar["cok"]))
-    g.metric("Kesmeyen", len(gruplar["kesmez"]))
+    g.metric(t("Tek kesen"), len(gruplar["tek"]))
+    g.metric(t("İki kesen"), len(gruplar["cift"]))
+    g.metric(t("Çok kesen"), len(gruplar["cok"]))
+    g.metric(t("Kesmeyen"), len(gruplar["kesmez"]))
     st.caption(
-        "Tek kesen enzimler klonlama için kullanılabilir; kesmeyenler "
+        t("Tek kesen enzimler klonlama için kullanılabilir; kesmeyenler "
         "inserti bozmadığı için insert içine eklenecek bölgeler olarak işe "
-        "yarar."
+        "yarar.")
     )
 
     tek = {k: v for k, v in gruplar["tek"]}
     if tek:
         tanimalar = ez.recognition_sites(rec["sequence"], sorted(tek))
         secili = st.selectbox(
-            "Kesimi incele", sorted(tek),
+            t("Kesimi incele"), sorted(tek),
             format_func=lambda n: (
                 f"{n} — tanıma {tanimalar[n][0] if tanimalar[n] else '?'}, "
                 f"kesim {tek[n][0]}"),
@@ -268,14 +269,14 @@ with tab_enz:
                 f"{ctx['bottom_cut_pos']}. bazdan önce kesilir · çıkıntı "
                 f"`{ctx['overhang_seq'] or '—'}` ({ctx['overhang_label']})"
             )
-            st.markdown("Kesimden sonra:")
+            st.markdown(t("Kesimden sonra:"))
             st.code(ctx["products"], language="text")
 
     with st.expander(f"Kesmeyen enzimler ({len(gruplar['kesmez'])})"):
         st.caption(
-            "Bu enzimlerin tanıma dizisi vektörde hiç yok. Inserte primerle "
+            t("Bu enzimlerin tanıma dizisi vektörde hiç yok. Inserte primerle "
             "böyle bir bölge eklerseniz vektörü parçalamadan "
-            "kullanabilirsiniz."
+            "kullanabilirsiniz.")
         )
         st.markdown(", ".join(f"`{n}`" for n, _ in gruplar["kesmez"][:150])
                     + (" …" if len(gruplar["kesmez"]) > 150 else ""))
@@ -289,13 +290,13 @@ with tab_clone:
     sec = st.container(horizontal=True)
     secenekler = _commercial()
     enz = sec.multiselect(
-        "Kesim enzimleri (yönlü klonlama için iki farklı enzim)",
+        t("Kesim enzimleri (yönlü klonlama için iki farklı enzim)"),
         secenekler,
         default=[e for e in sorted(tek) if e in ("EcoRI", "BamHI")][:2],
         max_selections=3,
     )
     kaynak = st.radio(
-        "Insert dizisi", ["Tasarımcıdaki insert", "Buraya yapıştır"],
+        t("Insert dizisi"), ["Tasarımcıdaki insert", "Buraya yapıştır"],
         horizontal=True,
     )
     if kaynak == "Tasarımcıdaki insert":
@@ -304,19 +305,19 @@ with tab_clone:
         st.caption(f"{ad}: {len(ins)} nt" if ins
                    else "Tasarımcı sayfasında insert girilmemiş.")
     else:
-        ins = clean_seq(st.text_area("Insert", height=110,
-                                     placeholder="ATGAGC…"))
+        ins = clean_seq(st.text_area(t("Insert"), height=110,
+                                     placeholder=t("ATGAGC…")))
         ad = "insert"
 
     p = cloning.plan(rec["sequence"], rec["name"], enz, ins, ad)
 
     if enz:
         k = st.container(horizontal=True)
-        k.metric("İskelet", f"{p.backbone_length} bp")
-        k.metric("Atılan parça", f"{p.removed_length} bp")
-        k.metric("Beklenen yapı", f"{p.product_length} bp")
+        k.metric(t("İskelet"), f"{p.backbone_length} bp")
+        k.metric(t("Atılan parça"), f"{p.removed_length} bp")
+        k.metric(t("Beklenen yapı"), f"{p.product_length} bp")
         if ins:
-            k.metric("Insert GC", f"%{gc_percent(ins)}")
+            k.metric(t("Insert GC"), f"%{gc_percent(ins)}")
 
         for n in p.notes:
             box = {"hata": st.error, "uyari": st.warning,
@@ -324,7 +325,7 @@ with tab_clone:
             box(f"**{n.title}** — {n.detail}", icon=SEV_ICON[n.severity])
 
         frag = cloning.fragments(rec["sequence"], enz)
-        st.markdown("**Kesimden çıkan fragmanlar**")
+        st.markdown(t("**Kesimden çıkan fragmanlar**"))
         st.dataframe(
             [{"Başlangıç": f["start"], "Bitiş": f["end"],
               "Uzunluk (bp)": f["length"], "Not": f["note"]} for f in frag],
@@ -332,9 +333,9 @@ with tab_clone:
             alt=f"{rec['name']} sindirim fragmanları tablosu",
         )
         st.caption(
-            "Jelde bu boyutları görmeniz beklenir. Yakın boyutlu fragmanlar "
+            t("Jelde bu boyutları görmeniz beklenir. Yakın boyutlu fragmanlar "
             "aynı bantta görünür; 50 bp'nin altındakiler çoğu jelde "
-            "kaybolur."
+            "kaybolur.")
         )
 
 # ---------------------------------------------------------------------------
@@ -343,23 +344,23 @@ with tab_clone:
 
 with tab_part:
     st.caption(
-        "Vektörün bir bölgesini katalog parçası olarak kaydedin. Kayıt "
+        t("Vektörün bir bölgesini katalog parçası olarak kaydedin. Kayıt "
         "kaynağını (aksesyon ve koordinat) taşır, böylece dizinin nereden "
-        "geldiği sonradan da belli olur."
+        "geldiği sonradan da belli olur.")
     )
 
     secim = ["— elle koordinat gir —"] + [
         f"{f.name}  [{f.start}..{f.end} {'+' if f.strand > 0 else '−'}, "
         f"%{f.identity}]" for f in feats
     ]
-    hangi = st.selectbox("Bölge", secim)
+    hangi = st.selectbox(t("Bölge"), secim)
 
     if hangi == secim[0]:
         c = st.container(horizontal=True)
-        bas = c.number_input("Başlangıç", 1, rec["length"], 1, width=140)
-        bit = c.number_input("Bitiş", 1, rec["length"],
+        bas = c.number_input(t("Başlangıç"), 1, rec["length"], 1, width=140)
+        bit = c.number_input(t("Bitiş"), 1, rec["length"],
                              min(300, rec["length"]), width=140)
-        yon = c.selectbox("Yön", [1, -1],
+        yon = c.selectbox(t("Yön"), [1, -1],
                           format_func=lambda v: "+" if v > 0 else "−",
                           width=100)
         on_ad = f"{rec['name']} {bas}..{bit}"
@@ -382,26 +383,26 @@ with tab_part:
         st.caption(f"{len(dizi)} nt · GC %{gc_percent(dizi)}")
 
     form = st.container(horizontal=True, vertical_alignment="bottom")
-    ad_yeni = form.text_input("Parça adı", value=on_ad, width=320)
+    ad_yeni = form.text_input(t("Parça adı"), value=on_ad, width=320)
     kat = form.selectbox(
-        "Kategori", CATEGORIES,
+        t("Kategori"), CATEGORIES,
         index=CATEGORIES.index(on_kat) if on_kat in CATEGORIES else 0,
         format_func=lambda c: CATEGORY_TR.get(c, c), width=220,
     )
     pid = form.text_input(
-        "Parça kimliği", value=f"REF_{vid}_{bas}_{bit}", width=220
+        t("Parça kimliği"), value=f"REF_{vid}_{bas}_{bit}", width=220
     )
     not_yeni = st.text_area(
-        "Not", height=80,
+        t("Not"), height=80,
         value=f"{rec['name']} ({rec['accession']}) üzerindeki "
               f"{bas}..{bit} bölgesinden çıkarıldı.",
     )
 
-    if st.button("Kataloğa ekle", icon=":material/add:", type="primary"):
+    if st.button(t("Kataloğa ekle"), icon=":material/add:", type="primary"):
         if not dizi:
-            st.error("Bölge boş.", icon=":material/error:")
+            st.error(t("Bölge boş."), icon=":material/error:")
         elif not pid.strip() or not ad_yeni.strip():
-            st.error("Kimlik ve ad boş olamaz.", icon=":material/error:")
+            st.error(t("Kimlik ve ad boş olamaz."), icon=":material/error:")
         else:
             db.upsert_part({
                 "part_id": pid.strip(),

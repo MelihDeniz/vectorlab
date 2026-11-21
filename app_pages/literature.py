@@ -4,9 +4,10 @@ import streamlit as st
 
 from core import db, literature as lit
 from core.assembly import sort_canonical
+from core.i18n import t
 
 tabs = st.tabs(
-    ["Arama", "Tasarımı doğrula", "Kaynakça", "Metin düzelt", "Katalog besle"]
+    [t("Arama"), t("Tasarımı doğrula"), t("Kaynakça"), t("Metin düzelt"), t("Katalog besle")]
 )
 
 
@@ -32,10 +33,10 @@ def render_results(results, key_prefix: str):
                 line += " · açık erişim"
             st.caption(line)
             if r["abstract"]:
-                with st.expander("Özet"):
+                with st.expander(t("Özet")):
                     st.write(r["abstract"])
             cols = st.container(horizontal=True)
-            if cols.button("Kaynakçaya ekle", key=f"{key_prefix}_save_{r['pmid']}",
+            if cols.button(t("Kaynakçaya ekle"), key=f"{key_prefix}_save_{r['pmid']}",
                            icon=":material/bookmark_add:"):
                 db.save_reference(r)
                 st.toast(f"Kaynakçaya eklendi: {r['title'][:50]}…")
@@ -48,20 +49,20 @@ def render_results(results, key_prefix: str):
 with tabs[0]:
     with st.form("lit_search"):
         q = st.text_input(
-            "Sorgu",
-            placeholder="örn. T7 promoter leaky expression pLysS",
+            t("Sorgu"),
+            placeholder=t("örn. T7 promoter leaky expression pLysS"),
         )
         c = st.container(horizontal=True, vertical_alignment="bottom")
-        limit = c.number_input("Sonuç", 5, 50, 15, step=5)
+        limit = c.number_input(t("Sonuç"), 5, 50, 15, step=5)
         sort = c.segmented_control(
-            "Sıralama", ["relevance", "cited", "recent"],
+            t("Sıralama"), ["relevance", "cited", "recent"],
             default="relevance",
             format_func=lambda s: {"relevance": "Alaka", "cited": "Çok atıf",
                                    "recent": "Yeni"}[s],
         )
-        bacterial = c.toggle("Bakteriyel konuyla sınırla", value=True)
-        oa = c.toggle("Sadece açık erişim", value=False)
-        submitted = st.form_submit_button("Ara", icon=":material/search:")
+        bacterial = c.toggle(t("Bakteriyel konuyla sınırla"), value=True)
+        oa = c.toggle(t("Sadece açık erişim"), value=False)
+        submitted = st.form_submit_button(t("Ara"), icon=":material/search:")
 
     if submitted and q.strip():
         with st.spinner("Europe PMC taranıyor…"):
@@ -85,13 +86,13 @@ with tabs[0]:
 
 with tabs[1]:
     st.caption(
-        "Tasarımcı sayfasındaki yapının her parçası için literatür taraması "
-        "yapar. Denetim kurallarının çıkardığı sorgular da buraya düşer."
+        t("Tasarımcı sayfasındaki yapının her parçası için literatür taraması "
+        "yapar. Denetim kurallarının çıkardığı sorgular da buraya düşer.")
     )
     selected = sort_canonical(db.get_parts(st.session_state.design_parts))
     if not selected:
         st.info(
-            "Önce Tasarımcı sayfasında bir yapı kurun.",
+            t("Önce Tasarımcı sayfasında bir yapı kurun."),
             icon=":material/construction:",
         )
     else:
@@ -100,11 +101,11 @@ with tabs[1]:
         )
         queries = lit.queries_for_parts(selected)
         picked = st.multiselect(
-            "Hangi parçalar için arama yapılsın?",
+            t("Hangi parçalar için arama yapılsın?"),
             [name for name, _ in queries],
             default=[name for name, _ in queries][:4],
         )
-        if st.button("Literatürü tara", icon=":material/travel_explore:"):
+        if st.button(t("Literatürü tara"), icon=":material/travel_explore:"):
             for name, query in queries:
                 if name not in picked:
                     continue
@@ -115,7 +116,7 @@ with tabs[1]:
                     if "error" in res:
                         st.error(res["error"])
                     elif not res["results"]:
-                        st.caption("Sonuç bulunamadı.")
+                        st.caption(t("Sonuç bulunamadı."))
                     else:
                         for r in res["results"]:
                             url = lit.url_for(r)
@@ -132,8 +133,8 @@ with tabs[1]:
                                 r["pmid"], note=query,
                             )
             st.success(
-                "Bulunan kaynaklar kaydedildi ve ilgili parçalara bağlandı. "
-                "Parça kataloğu sayfasında her parçanın altında görünürler.",
+                t("Bulunan kaynaklar kaydedildi ve ilgili parçalara bağlandı. "
+                "Parça kataloğu sayfasında her parçanın altında görünürler."),
                 icon=":material/check_circle:",
             )
 
@@ -145,14 +146,14 @@ with tabs[2]:
     refs = db.list_references()
     if not refs:
         st.info(
-            "Kaynakça boş. Arama sekmesinden kaynak ekleyin ya da "
-            "'Tasarımı doğrula' sekmesinde taramayı çalıştırın.",
+            t("Kaynakça boş. Arama sekmesinden kaynak ekleyin ya da "
+            "'Tasarımı doğrula' sekmesinde taramayı çalıştırın."),
             icon=":material/bookmark:",
         )
     else:
         st.caption(f"{len(refs)} kaynak kayıtlı.")
         style = st.segmented_control(
-            "Biçim", ["numarali", "bibtex", "markdown"],
+            t("Biçim"), ["numarali", "bibtex", "markdown"],
             default="numarali",
             format_func=lambda s: {"numarali": "Numaralı liste",
                                    "bibtex": "BibTeX",
@@ -174,17 +175,17 @@ with tabs[2]:
         st.code(text, language="bibtex" if style == "bibtex" else "text",
                 wrap_lines=True)
         st.download_button(
-            "İndir", text,
+            t("İndir"), text,
             file_name=f"kaynakca.{'bib' if style == 'bibtex' else 'txt'}",
             icon=":material/download:",
         )
 
-        with st.expander("Kaynakları yönet"):
+        with st.expander(t("Kaynakları yönet")):
             for r in refs:
                 row = st.container(horizontal=True,
                                    vertical_alignment="center")
                 row.markdown(f"{r['title'][:70]}…")
-                if row.button("Sil", key=f"delref_{r['pmid']}",
+                if row.button(t("Sil"), key=f"delref_{r['pmid']}",
                               icon=":material/delete:"):
                     db.delete_reference(r["pmid"])
                     st.rerun()
@@ -195,18 +196,18 @@ with tabs[2]:
 
 with tabs[3]:
     st.caption(
-        "Rapor ya da protokol metninizi moleküler biyoloji yazım kurallarına "
+        t("Rapor ya da protokol metninizi moleküler biyoloji yazım kurallarına "
         "göre denetler: gen ve tür adlarının italiği, enzim ve suş yazımı, "
-        "birim biçimleri."
+        "birim biçimleri.")
     )
     text = st.text_area(
-        "Metin", height=240,
-        placeholder="Raporunuzun ilgili bölümünü buraya yapıştırın…",
+        t("Metin"), height=240,
+        placeholder=t("Raporunuzun ilgili bölümünü buraya yapıştırın…"),
     )
     if text.strip():
         issues = lit.check_nomenclature(text)
         if not issues:
-            st.success("Bilinen bir yazım sorunu bulunamadı.",
+            st.success(t("Bilinen bir yazım sorunu bulunamadı."),
                        icon=":material/check_circle:")
         else:
             auto = [i for i in issues if i.auto_fixable]
@@ -225,16 +226,16 @@ with tabs[3]:
             )
             if manual:
                 st.info(
-                    "Türkçe ek alan terimler otomatik düzeltilmez: ünlü "
+                    t("Türkçe ek alan terimler otomatik düzeltilmez: ünlü "
                     "uyumu ve kaynaştırma harfi yüzünden kökü değiştirip "
                     "eki olduğu gibi bırakmak bozuk sonuç verir. Bu "
-                    "satırları siz uyarlayın.",
+                    "satırları siz uyarlayın."),
                     icon=":material/edit_note:",
                 )
             fixed = lit.apply_fixes(text, issues)
-            st.markdown("**Düzeltilmiş metin** (italikler Markdown `*` ile)")
+            st.markdown(t("**Düzeltilmiş metin** (italikler Markdown `*` ile)"))
             st.code(fixed, language="markdown", wrap_lines=True)
-            st.download_button("Düzeltilmiş metni indir", fixed,
+            st.download_button(t("Düzeltilmiş metni indir"), fixed,
                                file_name="duzeltilmis_metin.md",
                                icon=":material/download:")
 
@@ -244,23 +245,23 @@ with tabs[3]:
 
 with tabs[4]:
     st.caption(
-        "Makale özetinden ya da yöntem bölümünden plazmit, suş, promotör, "
+        t("Makale özetinden ya da yöntem bölümünden plazmit, suş, promotör, "
         "erişim numarası ve antibiyotik derişimi çıkarır. Çıkanlar "
-        "ÖNERİDİR — siz onaylamadan kataloğa yazılmaz."
+        "ÖNERİDİR — siz onaylamadan kataloğa yazılmaz.")
     )
     src = st.radio(
-        "Kaynak", ["Metin yapıştır", "Son arama sonuçlarından"],
+        t("Kaynak"), ["Metin yapıştır", "Son arama sonuçlarından"],
         horizontal=True,
     )
 
     corpus = []
     if src == "Metin yapıştır":
-        t = st.text_area("Metin", height=200)
+        t = st.text_area(t("Metin"), height=200)
         if t.strip():
             corpus = [("elle girilen metin", "", t)]
     else:
         if not st.session_state.lit_results:
-            st.info("Önce Arama sekmesinde bir tarama yapın.",
+            st.info(t("Önce Arama sekmesinde bir tarama yapın."),
                     icon=":material/search:")
         else:
             for r in st.session_state.lit_results:
@@ -274,11 +275,11 @@ with tabs[4]:
                 all_c.append((title, c))
 
         if not all_c:
-            st.caption("Tanınabilir bir öğe bulunamadı.")
+            st.caption(t("Tanınabilir bir öğe bulunamadı."))
         else:
             st.markdown(f"**{len(all_c)} aday bulundu**")
             kinds = sorted({c.kind for _, c in all_c})
-            pick = st.pills("Türe göre süz", kinds, selection_mode="multi",
+            pick = st.pills(t("Türe göre süz"), kinds, selection_mode="multi",
                             default=kinds)
             rows = [
                 {"Tür": c.kind, "Değer": c.value,
@@ -296,9 +297,9 @@ with tabs[4]:
                 },
             )
             st.info(
-                "Bu adaylar katalog kaydı DEĞİLDİR: dizi içermezler. "
+                t("Bu adaylar katalog kaydı DEĞİLDİR: dizi içermezler. "
                 "Kullanmak istediğiniz bir öğeyi 'Parça kataloğu' "
                 "sayfasındaki 'Yeni parça ekle' formuna, erişim "
-                "numarasından çektiğiniz gerçek diziyle birlikte girin.",
+                "numarasından çektiğiniz gerçek diziyle birlikte girin."),
                 icon=":material/info:",
             )
