@@ -706,6 +706,71 @@ bütün "yok" kurallarını tetikler ve sorunu tasarımdaymış gibi
 gösterir.
 
 
+### Gerçekleştirme yol haritası
+
+Tasarım bitince "artık tedavi var" olmuyor. Arada basamakları belli
+bir yol var ve bu yolun en kritik özelliği basamakların **sırası**:
+hayvan deneyine etik kurul onayından önce başlanmaz, içerme testi
+yapılmadan canlı GDO hayvana verilmez, ifade gösterilmeden işlev
+aranmaz. Sırayı bilmemek bir projeyi yanlış promotör seçmekten daha
+kesin batırır.
+
+Sayfa statik bir metin basmaz: yol haritası **tasarımın kendisinden**
+türetilir.
+
+| Tasarımdaki durum | Yol haritasına eklenen |
+|---|---|
+| Sinyal peptidi var | Salgılanma doğrulaması — lizis kontrolüyle birlikte |
+| Gram-pozitif konak | Dönüşüm optimizasyonu (glisin, yüksek sükroz; B planı konjugasyon) |
+| İnsan kaynaklı CDS | Kodon ve katlanma riski |
+| Antibiyotik markeri | "In vivo öncesi antibiyotiksiz idameye geç" riski |
+| İçerme markeri | Kaçak oranı ölçümü |
+| Hastalık kaydından geldi | In vivo okuma = o hastalığın biyobelirteci |
+| Denetimde bulgu | Her bulgu bir proje riski + önlemi |
+
+Beş aşama, her birinin bir **kapısı** var — kapı açılmadan sonrakine
+geçilmez ve kapılar süslü değil elemeli. Örnek: IBD tasarımı için
+*L. lactis*'te 258 iş günü ≈ 12,3 ay; sıradan bir klonlama vektörü
+için 70 gün ve in vivo aşaması hiç yok (neden eklenmediği de
+yazılıyor — sessizce atlamak yanıltır).
+
+**Tezgâh protokolü burada tekrarlanmaz.** Kesim, ligasyon,
+transformasyon ve koloni taraması `core/protocol.py` içindedir;
+birinci aşama ona yönlendirir. İki yerde iki protokol tutmak, biri
+değiştiğinde öbürünün sessizce yanlış kalması demektir ve bir test
+(`test_tezgah_protokolu_tekrarlanmiyor`) tezgâh ayrıntısının buraya
+sızmadığını denetler.
+
+**Yasal dayanaklar künyesiyle yazılır — ve ezberden yazılmaz.**
+HADYEK'in dayanağı *Hayvan Deneyleri Etik Kurullarının Çalışma Usul
+ve Esaslarına Dair Yönetmelik* (R.G. 15.02.2014, 28914, 5199 sayılı
+kanuna dayanır); GDO tarafında *5977 sayılı Biyogüvenlik Kanunu*
+(R.G. 26.03.2010, 27533). Önemli ayrıntı: **Biyogüvenlik Kurulu
+09.07.2018 tarihli 703 sayılı KHK ile kaldırılmıştır.** Bunu
+ezberden yazan bir başvuru var olmayan bir kurula başvurmuş olur, o
+yüzden sayfa güncel birimi teyit etmeyi açıkça söyler ve bir test
+(`test_mevzuatin_degistigi_sayfada_yaziyor`) bu uyarının silinmesini
+engeller. Mevzuat bir kez değişmiştir, yine değişebilir.
+
+### Proje başvurusu taslağı
+
+Yol haritasından doğrudan bir başvuru iskeleti üretilir: iş paketleri
+aşamalardan, takvim sürelerden, risk yönetimi denetim bulgularından,
+bütçe kalemleri malzeme listesinden, kaynakça hastalık kaydındaki
+doğrulanmış atıflardan.
+
+Köşeli parantezli bölümler **sizin** yazmanız gerekenlerdir. Aracın
+yazdığı yerle sizin yazdığınız yer karışmamalı; bir başvuru metninde
+bu ayrımın kaybolması, araçtan gelen bir cümleyi kendi iddianız gibi
+savunmak demektir.
+
+Risk bölümü hakkında: denetimde görünen bir eksiğin başvuruda risk
+olarak yazılmaması, hakemin ilk yakalayacağı şeydir. Tersi de doğru —
+bilinen bir açığı yazıp önlemini söylemek başvuruyu zayıf değil
+**güçlü** gösterir. Bu yüzden hastalık kaydındaki "bilinen açık" notu
+da riske dönüştürülür.
+
+
 ## Doğrulama
 
 Bir tasarım aracının "çalışıyor" olması yetmez, "doğru" olması gerekir.
@@ -717,7 +782,7 @@ Bir tasarım aracının "çalışıyor" olması yetmez, "doğru" olması gerekir
 python -m pytest
 ```
 
-345 test, on iki dosyada: dizi motoru, tasarım modülleri, veri
+377 test, on üç dosyada: dizi motoru, tasarım modülleri, veri
 bütünlüğü, PKU tasarımı ve simülasyonu, hastalık kayıt defteri,
 referanstan kes-yapıştır, primer tasarımı, **sipariş listesi, konak
 taşıma, denetim izi ve komut satırı**, **sayfaların kendisi** ve
@@ -1305,6 +1370,7 @@ app_pages/
   primers.py           primer tasarımı ve inceleme
   porting.py           konak taşıma: kaseti başka bakteriye uyarla
   procure.py           malzeme listesi, takvim, maliyet, denetim izi
+  roadmap.py           gerçekleştirme yol haritası ve başvuru taslağı
   projects.py          kayıtlı tasarımlar, sürüm geçmişi, defter
   literature.py        literatür modülü
 core/

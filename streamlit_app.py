@@ -95,6 +95,11 @@ page = st.navigation(
             icon=":material/receipt_long:",
         ),
         st.Page(
+            "app_pages/roadmap.py",
+            title=t("Gerçekleştirme yol haritası"),
+            icon=":material/route:",
+        ),
+        st.Page(
             "app_pages/enzyme_lab.py",
             title=t("Enzimler"),
             icon=":material/content_cut:",
