@@ -165,6 +165,16 @@ class Task:
     neden: str = ""
     kosul: str = ""            # bu tasarımda NEDEN var
     approval: str = ""         # önce alınması gereken izin
+    #: `core/methods.py` içindeki numaralı protokolün anahtarı.
+    #: Boşsa o iş için adım adım protokol yok demektir - `nasil`
+    #: alanı ne yapılacağını söyler ama nasıl yapılacağını değil.
+    method: str = ""
+
+    @property
+    def protokol(self):
+        """Bağlı protokol (`methods.Method`) ya da None."""
+        from core import methods
+        return methods.get(self.method) if self.method else None
 
 
 @dataclass
@@ -225,6 +235,7 @@ PHASE_DAYS: dict[str, float] = {
     "dizileme": 5.0,
     "suşa_aktarim": 5.0,
     "ifade": 10.0,
+    "western": 8.0,
     "salgilanma": 8.0,
     "etkinlik": 12.0,
     "kararlilik": 15.0,
@@ -363,7 +374,8 @@ def build(design_name: str, part_ids: list[str], host_id: str = "",
                    "alabilir."),
             kosul=(f"{organizma} Gram-pozitif, dönüşümü zor"
                    if gram_poz else
-                   "Terapötik suşa aktarım gerekiyor")))
+                   "Terapötik suşa aktarım gerekiyor"),
+            method="elektroporasyon" if gram_poz else ""))
     yol.phases.append(a1)
 
     # ---------------------------------------------------------------
@@ -391,9 +403,29 @@ def build(design_name: str, part_ids: list[str], host_id: str = "",
         cikti=("İndüklenmişte olup indüklenmemişte olmayan, beklenen "
                "boyda bant; çözünen kısımda olduğu gösterilmiş"),
         gun=_g("ifade", phase_days),
+        method="sdspage",
         neden=("İfade edilmeyen bir kasetin sebebi promotör, RBS, "
                "kodon kullanımı ya da toksisite olabilir - hangisi "
                "olduğunu ancak bu basamakta anlarsınız.")))
+
+    if terapotik and cds:
+        a2.tasks.append(Task(
+            "kimlik", "Bandın kimliğini doğrula",
+            nasil=("Western blot: SDS-PAGE'deki bandın gerçekten "
+                   "aradığınız protein olduğunu antikorla kanıtlar. "
+                   "Doğru boyda bir bant tek başına kanıt değildir; "
+                   "o boyda başka proteinler de vardır."),
+            gereken=("Transfer düzeneği, membran, birincil ve ikincil "
+                     "antikor"),
+            cikti=("Beklenen boyda, antikorla tanınan tek bant; boş "
+                   "vektör örneğinde yok"),
+            gun=_g("western", phase_days),
+            neden=("Terapötik bir üründe 'doğru boyda bant gördük' "
+                   "yeterli bir iddia değildir. Antikor bulamıyorsanız "
+                   "çözüm tasarım aşamasındadır: kasete bir etiket "
+                   "ekleyip etikete karşı antikor kullanmak."),
+            kosul="Terapötik bir kaset: ürünün kimliği kanıtlanmalı",
+            method="western"))
 
     if sinyal:
         a2.tasks.append(Task(
@@ -408,6 +440,7 @@ def build(design_name: str, part_ids: list[str], host_id: str = "",
             cikti=("Süpernatantta terapötik protein VAR, lizis "
                    "göstergesi protein YOK"),
             gun=_g("salgilanma", phase_days),
+        method="salgi",
             neden=("Sinyal peptidi koymak salgılandığını kanıtlamaz; "
                    "sinyal işlenmemiş olabilir ya da protein zarda "
                    "sıkışabilir."),
@@ -426,7 +459,12 @@ def build(design_name: str, part_ids: list[str], host_id: str = "",
                    "fark gösteren, birimi yazılı etkinlik değeri"),
             gun=_g("etkinlik", phase_days),
             neden=("Boş vektör kontrolü olmadan ölçülen etkinlik, "
-                   "konağın kendi arka planından ayırt edilemez.")))
+                   "konağın kendi arka planından ayırt edilemez. "
+                   "**Bu adımın numaralı protokolü yok ve olamaz:** "
+                   "etkinlik tayini terapötik moleküle özgüdür, "
+                   "ürikaz ile proteaz aynı yöntemle ölçülmez. "
+                   "Kayıt defterindeki kaynak makale kendi tayin "
+                   "yöntemini verir; başlangıç noktanız odur.")))
 
     a2.tasks.append(Task(
         "yuk", "Metabolik yükü ölç",
@@ -436,6 +474,7 @@ def build(design_name: str, part_ids: list[str], host_id: str = "",
         gereken="Plaka okuyucu ya da spektrofotometre",
         cikti="Büyüme eğrisi karşılaştırması ve üreme hızı farkı",
         gun=_g("yuk", phase_days),
+        method="buyume",
         neden=("Ağır bir kaset taşıyan hücre, bağırsakta taşımayan "
                "rakipleri tarafından birkaç nesilde elenebilir. "
                "Yükü ölçmemek, in vivo'da sebebi anlaşılmayan "
@@ -464,6 +503,7 @@ def build(design_name: str, part_ids: list[str], host_id: str = "",
         gereken="Seri pasaj kültürü, iki tip plak, koloni sayımı",
         cikti="Nesil sayısına karşı plazmit taşıyan hücre yüzdesi eğrisi",
         gun=_g("kararlilik", phase_days),
+        method="kararlilik",
         neden=("Antibiyotikle büyütülen bir kültürde plazmit elbette "
                "durur; soru, antibiyotik YOKKEN ne olduğudur. "
                "Hastaya antibiyotik verilmeyecek.")))
@@ -479,6 +519,7 @@ def build(design_name: str, part_ids: list[str], host_id: str = "",
             gereken="pH ayarlı tamponlar, safra tuzu, pepsin/pankreatin",
             cikti="Her koşul için log azalma değeri",
             gun=_g("sindirim", phase_days),
+        method="sindirim",
             neden=("Ağızdan verilen bir bakteri mideyi geçemezse "
                    "bağırsakta hiç bulunmaz; kasetin ne kadar iyi "
                    "olduğunun önemi kalmaz."),
@@ -494,6 +535,7 @@ def build(design_name: str, part_ids: list[str], host_id: str = "",
             gereken="Eksiltilmiş besiyeri, yüksek yoğunluklu ekim",
             cikti="Hücre başına kaçak oranı (bilimsel gösterimle)",
             gun=_g("icerme", phase_days),
+        method="icerme",
             neden=("İçerme mekanizmasının varlığı değil, KAÇAK ORANI "
                    "raporlanır. Bir mekanizma koymak onun çalıştığını "
                    "göstermez; kaçak oranı ölçülmeden hiçbir "
@@ -515,6 +557,7 @@ def build(design_name: str, part_ids: list[str], host_id: str = "",
             cikti=("Kontrol suşuna göre bariyer ve/veya iltihap "
                    "göstergelerinde fark"),
             gun=_g("hucre", phase_days),
+        method="teer",
             neden=("Hayvan deneyinden önce hücre modelinde bir etki "
                    "göstermek hem etik kurul başvurusunu "
                    "güçlendirir hem de hayvan sayısını azaltır."),
@@ -528,6 +571,7 @@ def build(design_name: str, part_ids: list[str], host_id: str = "",
             gereken="Plaka okuyucu, canlılık testi kiti",
             cikti="Doz-yanıt eğrisi ve toksik olmayan aralık",
             gun=_g("sitotoksisite", phase_days),
+        method="mtt",
             neden=("Terapötik olduğu varsayılan bir molekülün yüksek "
                    "derişimde toksik çıkması sık görülür.")))
     yol.phases.append(a3)
@@ -584,6 +628,7 @@ def build(design_name: str, part_ids: list[str], host_id: str = "",
             gereken="Gavaj düzeneği, seçici besiyeri, qPCR",
             cikti="Zamana karşı CFU/g dışkı eğrisi; grup başına n",
             gun=_g("hayvan_uygulama", phase_days),
+        method="gavaj",
             neden=("Nissle gibi suşlar insan bağırsağını kalıcı "
                    "kolonize etmez; doz tekrarı gerekir ve bu, "
                    "tedavi tasarımının parçasıdır."),
@@ -814,6 +859,14 @@ def to_markdown(r: Roadmap) -> str:
                 s += [f"**Neden önemli:** {t.neden}", ""]
             if t.approval:
                 s += [f"**Önce izin:** {APPROVALS[t.approval].title}", ""]
+            # Numaralı protokol dosyaya da girer: yol haritasını
+            # yazdırıp tezgâha götüren kişi, ekranda açtığı
+            # protokolü orada da bulmalı.
+            pr = t.protokol
+            if pr is not None:
+                from core import methods
+                s += [methods.to_markdown(pr).replace("### ", "#### ",
+                                                      1), ""]
         if p.kapi:
             s += [f"**Sonraki aşamaya geçiş koşulu:** {p.kapi}", ""]
 

@@ -135,6 +135,30 @@ for p in yol.phases:
             c.markdown(t("**Çıktı:** ") + gorev.cikti)
             if gorev.neden:
                 st.caption(t("Neden önemli: ") + gorev.neden)
+
+            # Numaralı protokol: bu işi hiç yapmamış biri için.
+            # Kapalı başlıyor, çünkü açıkken sayfa okunmaz hale
+            # geliyor - ama bir tık uzakta duruyor.
+            pr = gorev.protokol
+            if pr is not None:
+                with st.expander(
+                        t("Adım adım protokol — {0} ({1} basamak)").format(
+                            pr.title, len(pr.steps))):
+                    st.caption(pr.amac)
+                    for n, adim in enumerate(pr.steps, start=1):
+                        st.markdown(f"**{n}.** {adim}")
+                    st.markdown(t("**Gereken malzeme**"))
+                    for x in pr.malzeme:
+                        st.markdown(f"* {x}")
+                    st.success(t("**Şart olan kontrol:** ") + pr.kontrol,
+                               icon=":material/rule:")
+                    st.warning(t("**En sık yapılan hata:** ") + pr.tuzak,
+                               icon=":material/dangerous:")
+                    if pr.papers:
+                        st.markdown(t("**Kaynak**"))
+                        for m in pr.papers:
+                            st.markdown(f"* {m}")
+                    st.caption(pr.uyari)
             st.divider()
         if p.kapi:
             st.success(t("Sonraki aşamaya geçiş koşulu: ") + p.kapi,

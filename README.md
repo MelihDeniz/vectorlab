@@ -771,6 +771,54 @@ bilinen bir açığı yazıp önlemini söylemek başvuruyu zayıf değil
 da riske dönüştürülür.
 
 
+### Adım adım protokoller
+
+Yol haritası "ifadeyi göster" diyor; `core/methods.py` **nasıl**
+gösterileceğini basamak basamak yazıyor. Hedef, bu işi hiç yapmamış
+birinin okuyup uygulayabilmesi. **11 yöntem, 89 numaralı basamak, 16
+doğrulanmış atıf.**
+
+| Yöntem | Basamak | Kaynak |
+|---|---|---|
+| SDS-PAGE ile ifadeyi görme | 10 | Laemmli 1970 · Bradford 1976 |
+| Western blot ile bant kimliği | 9 | Towbin 1979 |
+| Salgılanma (lizis kontrolüyle) | 8 | Laemmli · Towbin |
+| Büyüme eğrisi / metabolik yük | 7 | — |
+| Plazmit kararlılığı (seri pasaj) | 8 | Herigstad 2001 |
+| Benzetilmiş sindirim | 8 | INFOGEST (Brodkorb 2019) |
+| İçerme kaçak oranı | 7 | Steidler 2003 |
+| Bağırsak epiteli / TEER | 8 | Srinivasan 2015 |
+| Sitotoksisite (MTT) | 7 | Mosmann 1983 |
+| Gram-pozitif elektroporasyon | 8 | Holo & Nes 1989 |
+| Hayvanda uygulama | 9 | ARRIVE 2.0 · Herigstad 2001 |
+
+Her protokolün üç zorunlu alanı var ve testler üçünü de şart koşuyor:
+
+* **Kaynak** — atıfların hepsi Europe PMC'den PMID ve DOI'siyle
+  alındı. Kaynaksız protokol, bir şey tutmadığında bakacak yeri
+  olmayan protokoldür.
+* **Şart olan kontrol** — kontrolsüz bir deney sonuç değil yorum
+  üretir. Örnek: salgılanma protokolünde süpernatantta sitoplazmik
+  bir proteini de aramak; o da çıkıyorsa gördüğünüz salgılanma değil
+  hücre lizisidir.
+* **En sık yapılan hata** — yeni başlayan birinin düşeceği çukur
+  genellikle protokolde değil, atladığı kontroldedir. Örnek:
+  SDS-PAGE'de bandı görüp "oldu" demek — protein inklüzyon
+  cisimciğindeyse jelde bol görünür ama işlevsizdir.
+
+**Sayılar başlangıç noktasıdır, emir değil.** Jel yüzdesi, voltaj,
+inkübasyon süresi; hepsi yaygın değerlerdir ama kesini kaynağın
+kendisinden ve kitin talimatından gelir. Her kayıtta bu uyarı var ve
+bir test onun silinmesini engelliyor.
+
+Her işin numaralı protokolü yok, ama **protokolü olmayan iş bunu
+söylüyor**: klonlama `core/protocol.py`'ye yönlendirilir, etkinlik
+tayini ise terapötik moleküle özgüdür (ürikaz ile proteaz aynı
+yöntemle ölçülmez) ve kayıt defterindeki kaynak makale kendi tayin
+yöntemini verir. Boş bırakmak "unutulmuş" gibi durur, o yüzden
+yazılıyor — bir test de bunu denetliyor.
+
+
 ## Doğrulama
 
 Bir tasarım aracının "çalışıyor" olması yetmez, "doğru" olması gerekir.
@@ -782,7 +830,7 @@ Bir tasarım aracının "çalışıyor" olması yetmez, "doğru" olması gerekir
 python -m pytest
 ```
 
-377 test, on üç dosyada: dizi motoru, tasarım modülleri, veri
+441 test, on dört dosyada: dizi motoru, tasarım modülleri, veri
 bütünlüğü, PKU tasarımı ve simülasyonu, hastalık kayıt defteri,
 referanstan kes-yapıştır, primer tasarımı, **sipariş listesi, konak
 taşıma, denetim izi ve komut satırı**, **sayfaların kendisi** ve
